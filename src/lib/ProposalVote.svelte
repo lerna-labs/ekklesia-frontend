@@ -76,7 +76,7 @@
 </script>
 
 {#if !inline}
-	<section id="vote" class="">
+	<section id="vote" class="mt-6">
 		{#if $loggedIn && ballot.voterValidated && ballot.status == 'live'}
 			<Card.Root class="relative h-full">
 				<Card.Header>
@@ -90,9 +90,9 @@
 				<Card.Content>
 					<RadioGroup.Root bind:value onValueChange={storeVote}>
 						{#each options as option, i}
-							<div class="flex items-center space-x-2">
+							<div class="mb-1 flex items-start space-x-2">
 								<RadioGroup.Item value={option.value} id={option.uniqueId} disabled={loading} />
-								<Label for={option.uniqueId}>{option.label}</Label>
+								<Label for={option.uniqueId} class="leading-4">{option.label}</Label>
 							</div>
 						{/each}
 					</RadioGroup.Root>
