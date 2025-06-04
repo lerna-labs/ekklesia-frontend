@@ -50,8 +50,8 @@ export async function load({ fetch, params, url }) {
 	const proposalsData = await proposalsResponse.json();
 
 	// Fetch filter options
-	const tagsFilterResponse = await api.fetch(fetch, '/proposals/tags');
-	const categoriesFilterResponse = await api.fetch(fetch, '/proposals/categories');
+	const tagsFilterResponse = await api.fetch(fetch, '/ballots/' + params.ballotId + '/tags');
+	const categoriesFilterResponse = await api.fetch(fetch, '/ballots/' + params.ballotId + '/categories');
 
 	// Process filter responses
 	let tagsOptions = [];

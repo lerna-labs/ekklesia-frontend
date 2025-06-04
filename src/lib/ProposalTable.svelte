@@ -6,7 +6,6 @@
 	import ProposalVote from './ProposalVote.svelte';
 	import ProposalDetails from './ProposalDetails.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';
-	import ProposalCost from './ProposalCost.svelte';
 	import VotePopover from './VotePopover.svelte';
 	let { proposalList, ballot } = $props();
 </script>
@@ -34,11 +33,6 @@
 					</a>
 					<div class="text-muted-foreground">
 						<ProposalDetails {proposal} {ballot} {index} />
-					</div>
-				</Table.Cell>
-				<Table.Cell class="pr-0 pt-2 text-right  align-top">
-					<div class="mt-[0.5em]">
-						<ProposalCost {proposal} />
 					</div>
 				</Table.Cell>
 			</Table.Row>

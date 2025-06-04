@@ -7,7 +7,6 @@
 	import VotePopover from './VotePopover.svelte';
 	import Comments from '$lib/Comments.svelte';
 	import ProposalDetails from './ProposalDetails.svelte';
-	import ProposalCost from './ProposalCost.svelte';
 	let { proposal, ballot } = $props();
 	let intersecting = $state(false);
 </script>
@@ -18,9 +17,6 @@
 			<div class="flex items-start">
 				<div class="flex-1 text-xl">
 					<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id}>{proposal.name}</a>
-				</div>
-				<div class="mt-1">
-					<ProposalCost {proposal} class="text-sm" />
 				</div>
 			</div>
 		</Card.Title>

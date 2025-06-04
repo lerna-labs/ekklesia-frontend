@@ -1,9 +1,10 @@
 <script>
+	import Text from './base/Text.svelte';
+	import Badge from '$lib/BallotBadge.svelte';
+	import BallotDetails from './BallotDetails.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import Badge from '$lib/BallotBadge.svelte';
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
-	import BallotDetails from './BallotDetails.svelte';
 	let { ballot } = $props();
 </script>
 
@@ -18,7 +19,7 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="text-sm">
-		{ballot.description}
+		<Text text={ballot.description} expanded={true} />
 	</Card.Content>
 
 	<Card.Footer class="flex items-center justify-between">
