@@ -5,7 +5,7 @@
 
 	let badgeClass = $derived.by(() => {
 		return cn(
-			'rounded-md text-xs pointer-events-none shadow-none inline-flex items-center py-1 mt-1 px-2 h-fit self-start',
+			'rounded-md text-xs pointer-events-none shadow-none inline-flex items-center py-1 mt-0 px-2 h-fit self-start',
 			status.toLowerCase() === 'live'
 				? 'bg-green-300 text-green-800 buzzing'
 				: status.toLowerCase() === 'closed'
