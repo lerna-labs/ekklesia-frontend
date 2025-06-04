@@ -24,7 +24,7 @@
 			<ProposalDetails {proposal} {ballot} />
 		</Card.Description>
 	</Card.Header>
-	<Card.Content class="pb-4">
+	<Card.Content class="pb-0">
 		<div class="mb-4">
 			<Text text={proposal.description} />
 		</div>
@@ -33,6 +33,12 @@
 		{/if}
 	</Card.Content>
 	<Card.Footer class="block">
+		{#if $loggedIn}
+			<div class="mb-4">
+				<ProposalVote {proposal} {ballot} />
+			</div>
+		{/if}
+
 		<div class="flex items-center justify-between">
 			<div class="flex gap-1">
 				<Button
@@ -45,22 +51,6 @@
 				<Comments {proposal} {ballot} />
 				<VotePopover {proposal} {ballot} />
 			</div>
-
-			{#if $loggedIn}
-				<ProposalVote {proposal} {ballot} inline />
-			{/if}
 		</div>
-		{#if proposal.data?.data}
-			<div class="mt-3 w-full">
-				<a
-					href={'https://gov.tools/budget_discussion/' + proposal.data.id}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="pl-0 text-xs font-medium text-orange-500 hover:text-orange-600"
-				>
-					View on Gov.tools
-				</a>
-			</div>
-		{/if}
 	</Card.Footer>
 </Card.Root>

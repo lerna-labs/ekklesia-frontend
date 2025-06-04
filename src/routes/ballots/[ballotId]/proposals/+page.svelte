@@ -38,11 +38,11 @@
 				]}
 			/>
 			<Filter filterOptions={data.filterOptions} voteFilters={ballot.voteFilters} />
-			<ViewSwitch
+			<!-- <ViewSwitch
 				onChange={(newView) => {
 					view = newView;
 				}}
-			/>
+			/> -->
 		</div>
 	</header>
 

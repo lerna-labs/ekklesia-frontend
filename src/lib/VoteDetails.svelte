@@ -65,20 +65,22 @@
 	<div class="border-t pt-3">
 		<h4 class="mb-2 text-[0.9rem] font-semibold">Results breakdown:</h4>
 		{#each results as result}
-			<div class="mb-2">
+			<div class="mb-4">
 				<div class="flex justify-between">
-					<span class="font-semibold">{result.label} Votes:</span>
-					<span>{result.count} ({((result.count / totalVotes) * 100).toFixed(2) || 0}%)</span>
+					<span class="font-semibold">{result.label}:</span>
+					<span class="text-nowrap font-semibold"
+						>{result.count} ({((result.count / totalVotes) * 100).toFixed(1) || 0}%)</span
+					>
 				</div>
 
 				{#if hasWeight}
-					<div class="mt-1 flex justify-between">
+					<div class="mt-1 flex justify-between text-muted-foreground">
 						<span class="whitespace-nowrap font-semibold">Voting Power:</span>
 						<span class="text-right"
 							>{lovelaceToAda(result.votingPower)} ({(
 								(result.votingPower / totalVotingPowerVoted) *
 								100
-							).toFixed(2)}%)</span
+							).toFixed(1)}%)</span
 						>
 					</div>
 				{/if}
@@ -86,6 +88,6 @@
 		{/each}
 	</div>
 </div>
-<div class="text-muted-foreground text-xs">
+<div class="text-xs text-muted-foreground">
 	Updated at {convertTimestamp(proposal.result?.updatedAt)}
 </div>

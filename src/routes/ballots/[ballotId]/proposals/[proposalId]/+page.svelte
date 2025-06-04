@@ -5,7 +5,6 @@
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import Text from '$lib/base/Text.svelte';
 	import ProposalVote from '$lib/ProposalVote.svelte';
-	import ProposalStats from '$lib/ProposalStats.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import { convertTimestamp } from '$lib/utils';
 	import Button from '$lib/components/ui/button/button.svelte';

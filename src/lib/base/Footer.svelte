@@ -4,7 +4,7 @@
 	import NetworkCheck from './NetworkCheck.svelte';
 </script>
 
-<div class="w-full bg-slate-900">
+<div class="mt-auto w-full bg-slate-900">
 	<footer class="m-auto max-w-3xl items-center justify-between bg-slate-900 p-4 text-slate-300">
 		<div class="mb-8 mt-1 leading-7">
 			<h3 class="font-medium">
@@ -22,11 +22,9 @@
 				&copy; Adam Dean & Mad Orkestra 2025 | Version {$versionInfo.version}
 			</div>
 			{#if $versionInfo.buildTime}
-				<!-- <NetworkCheck> -->
 				<span class="ml-1 text-gray-500">
 					(Built: {new Date($versionInfo.buildTime).toLocaleDateString()})
 				</span>
-				<!-- </NetworkCheck> -->
 			{/if}
 		</div>
 	</footer>

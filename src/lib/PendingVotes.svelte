@@ -26,12 +26,12 @@
 						<Badge status={ballot.status} />
 					</Card.Title>
 					<Card.Description>
-						<BallotDetails {ballot} class="text-muted-foreground text-sm" />
+						<BallotDetails {ballot} class="text-sm text-muted-foreground" />
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
 					<div
-						class="text-muted-foreground mb-2 flex items-center justify-between text-sm font-semibold"
+						class="mb-2 flex items-center justify-between text-sm font-semibold text-muted-foreground"
 					>
 						<div>Proposal</div>
 						<div>Your vote</div>
@@ -41,14 +41,14 @@
 							<div class="font-medium">
 								<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id} target="_blank">
 									{proposal.name}
-									<div class="text-muted-foreground mt-1 text-xs">
+									<div class="mt-1 text-xs text-muted-foreground">
 										<span>Proposal ID:</span>
 										{proposal._id}
 									</div>
 								</a>
 							</div>
 							<div
-								class="rounded-md p-2 text-xs {proposal.vote.label === 'Yes'
+								class="text-nowrap rounded-md p-2 text-xs {proposal.vote.label === 'Yes'
 									? 'bg-green-500 text-green-100'
 									: proposal.vote.label === 'No'
 										? 'bg-red-500 text-red-100'
