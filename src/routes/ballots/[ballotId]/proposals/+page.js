@@ -6,9 +6,8 @@ export async function load({ fetch, params, url }) {
 	const search = url.searchParams.get('search');
 	const page = url.searchParams.get('page') || '1';
 	const limit = url.searchParams.get('limit') || '10';
-	const committee = url.searchParams.get('committee');
-	const roadmap = url.searchParams.get('roadmap');
-	const type = url.searchParams.get('type');
+	const tags = url.searchParams.get('tags');
+	const categories = url.searchParams.get('categories');
 	const sort = url.searchParams.get('sort');
 	const direction = url.searchParams.get('direction') || 'desc';
 	const hasVoted = url.searchParams.get('hasVoted');
@@ -17,9 +16,9 @@ export async function load({ fetch, params, url }) {
 	// Build query string
 	let queryParams = [];
 	if (search) queryParams.push(`search=${encodeURIComponent(search)}`);
-	if (committee) queryParams.push(`committee=${encodeURIComponent(committee)}`);
-	if (roadmap) queryParams.push(`roadmap=${encodeURIComponent(roadmap)}`);
-	if (type) queryParams.push(`type=${encodeURIComponent(type)}`);
+	if (tags) queryParams.push(`tags=${encodeURIComponent(tags)}`);
+	if (categories) queryParams.push(`categories=${encodeURIComponent(categories)}`);
+
 	if (sort) queryParams.push(`sort=${encodeURIComponent(sort)}`);
 	if (direction) queryParams.push(`direction=${encodeURIComponent(direction)}`);
 	if (hasVoted) queryParams.push(`hasVoted=${encodeURIComponent(hasVoted)}`);
@@ -50,10 +49,21 @@ export async function load({ fetch, params, url }) {
 	const ballot = await ballotResponse.json();
 	const proposalsData = await proposalsResponse.json();
 
-	// fetch filter options
-	const committeesFilter = await api.fetch(fetch, '/proposals/committees');
-	const roadmapsFilter = await api.fetch(fetch, '/proposals/roadmaps');
-	const typesFilter = await api.fetch(fetch, '/proposals/types');
+	// Fetch filter options
+	const tagsFilterResponse = await api.fetch(fetch, '/proposals/tags');
+	const categoriesFilterResponse = await api.fetch(fetch, '/proposals/categories');
+
+	// Process filter responses
+	let tagsOptions = [];
+	let categoriesOptions = [];
+
+	if (tagsFilterResponse.status === 200) {
+		tagsOptions = await tagsFilterResponse.json();
+	}
+
+	if (categoriesFilterResponse.status === 200) {
+		categoriesOptions = await categoriesFilterResponse.json();
+	}
 
 	return {
 		ballot,
@@ -67,9 +77,8 @@ export async function load({ fetch, params, url }) {
 			totalPages: 0
 		},
 		search,
-		committee,
-		roadmap,
-		type,
+		tags,
+		categories,
 		sort,
 		direction,
 		hasVoted,
@@ -78,9 +87,9 @@ export async function load({ fetch, params, url }) {
 		currentPage: parseInt(page, 10),
 		perPage: parseInt(limit, 10),
 		filterOptions: {
-			committees: committeesFilter.status === 200 ? await committeesFilter.json() : [],
-			roadmaps: roadmapsFilter.status === 200 ? await roadmapsFilter.json() : [],
-			types: typesFilter.status === 200 ? await typesFilter.json() : []
+			tags: tagsOptions,
+			categories: categoriesOptions,
+			thresholdReached: ballot.voteThreshold != 0 ? true : false
 		}
 	};
 }

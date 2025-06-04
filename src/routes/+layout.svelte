@@ -11,9 +11,7 @@
 	let { children, data } = $props();
 	const NETWORK_ID = import.meta.env.VITE_NETWORK_ID;
 
-	let notice = $state(
-		'Voting is now closed. Final results will be pending verification and on-chain publication.'
-	);
+	let notice = $state();
 </script>
 
 <Toaster />

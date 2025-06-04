@@ -5,14 +5,8 @@
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
 	import BallotDetails from './BallotDetails.svelte';
 	let { ballot } = $props();
-	import Countdown from './Countdown.svelte';
 </script>
 
-<!-- {#if ballot.status == 'upcoming'}
-	<div class="relative top-4 z-0 rounded-xl rounded-b-none bg-slate-900">
-		<Countdown targetDate={ballot.votePeriodStart} className="text-white p-4 pb-8" />
-	</div>
-{/if} -->
 <Card.Root class="z-1000 relative mb-4">
 	<Card.Header class="pt-5">
 		<Card.Title class="flex gap-2 text-xl">

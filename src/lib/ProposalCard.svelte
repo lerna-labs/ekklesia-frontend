@@ -30,7 +30,7 @@
 	</Card.Header>
 	<Card.Content class="pb-4">
 		<div class="mb-4">
-			<Text text={proposal.data.description} />
+			<Text text={proposal.description} />
 		</div>
 		{#if $loggedIn && intersecting}
 			<Vote {proposal} {ballot} />

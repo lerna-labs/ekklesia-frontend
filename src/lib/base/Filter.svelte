@@ -12,18 +12,16 @@
 	const { filterOptions, voteFilters } = $props();
 
 	// Initialize filters from URL or default to 'All'
-	let committee = $state($page.url.searchParams.get('committee') || 'All');
-	let roadmap = $state($page.url.searchParams.get('roadmap') || 'All');
-	let type = $state($page.url.searchParams.get('type') || 'All');
+	let tags = $state($page.url.searchParams.get('tags') || 'All');
+	let categories = $state($page.url.searchParams.get('categories') || 'All');
 	let hasVoted = $state($page.url.searchParams.get('hasVoted') || 'All');
 	let thresholdReached = $state($page.url.searchParams.get('thresholdReached') || 'All');
 
 	// Computed property to determine if any filter is active
 	const filtersActive = $derived.by(() => {
 		if (
-			committee !== 'All' ||
-			roadmap !== 'All' ||
-			type !== 'All' ||
+			tags !== 'All' ||
+			categories !== 'All' ||
 			hasVoted !== 'All' ||
 			thresholdReached !== 'All'
 		) {
@@ -38,25 +36,18 @@
 		// Reset page to 1 when filters change
 		url.searchParams.delete('page');
 
-		// Handle committee filter
-		if (committee === 'All') {
-			url.searchParams.delete('committee');
+		// Handle tags filter
+		if (tags === 'All') {
+			url.searchParams.delete('tags');
 		} else {
-			url.searchParams.set('committee', committee);
+			url.searchParams.set('tags', tags);
 		}
 
-		// Handle roadmap filter
-		if (roadmap === 'All') {
-			url.searchParams.delete('roadmap');
+		// Handle categories filter
+		if (categories === 'All') {
+			url.searchParams.delete('categories');
 		} else {
-			url.searchParams.set('roadmap', roadmap);
-		}
-
-		// Handle type filter
-		if (type === 'All') {
-			url.searchParams.delete('type');
-		} else {
-			url.searchParams.set('type', type);
+			url.searchParams.set('categories', categories);
 		}
 
 		// Handle hasVoted filter
@@ -93,19 +84,19 @@
 		{#if voteFilters}
 			<div class="mt-2">
 				<div class="mb-1">
-					<Label for="committees" class="text-xs">Committee</Label>
+					<Label for="tags" class="text-xs">Tags</Label>
 				</div>
 				<Select.Root
 					type="single"
-					id="committees"
+					id="tags"
 					class="w-full text-xs"
-					bind:value={committee}
+					bind:value={tags}
 					onValueChange={handleFilterChange}
 				>
-					<Select.Trigger>{committee}</Select.Trigger>
+					<Select.Trigger>{tags}</Select.Trigger>
 					<Select.Content>
 						<Select.Item value="All">All</Select.Item>
-						{#each filterOptions.committees as option}
+						{#each filterOptions.tags || [] as option}
 							<Select.Item value={option} class="capitalize">
 								{option}
 							</Select.Item>
@@ -116,42 +107,19 @@
 
 			<div class="mt-2">
 				<div class="mb-1">
-					<Label for="roadmaps" class="text-xs">Roadmap</Label>
+					<Label for="categories" class="text-xs">Categories</Label>
 				</div>
 				<Select.Root
 					type="single"
-					id="roadmaps"
+					id="categories"
 					class="w-full text-xs"
-					bind:value={roadmap}
+					bind:value={categories}
 					onValueChange={handleFilterChange}
 				>
-					<Select.Trigger>{roadmap}</Select.Trigger>
+					<Select.Trigger>{categories}</Select.Trigger>
 					<Select.Content>
 						<Select.Item value="All">All</Select.Item>
-						{#each filterOptions.roadmaps as option}
-							<Select.Item value={option} class="capitalize">
-								{option}
-							</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
-			</div>
-
-			<div class="mt-2">
-				<div class="mb-1">
-					<Label for="types" class="text-xs">Type</Label>
-				</div>
-				<Select.Root
-					type="single"
-					id="types"
-					class="w-full text-xs"
-					bind:value={type}
-					onValueChange={handleFilterChange}
-				>
-					<Select.Trigger>{type}</Select.Trigger>
-					<Select.Content>
-						<Select.Item value="All">All</Select.Item>
-						{#each filterOptions.types as option}
+						{#each filterOptions.categories || [] as option}
 							<Select.Item value={option} class="capitalize">
 								{option}
 							</Select.Item>
@@ -189,30 +157,32 @@
 			</div>
 		{/if}
 
-		<div class="mt-2">
-			<div class="mb-1">
-				<Label for="thresholdReached" class="text-xs">Threshold</Label>
-			</div>
-			<Select.Root
-				type="single"
-				id="thresholdReached"
-				class="w-full text-xs"
-				bind:value={thresholdReached}
-				onValueChange={handleFilterChange}
-			>
-				<Select.Trigger
-					>{thresholdReached === 'All'
-						? 'All'
-						: thresholdReached === 'true'
-							? 'Threshold Reached'
-							: 'Threshold Not Reached'}</Select.Trigger
+		{#if filterOptions.thresholdReached}
+			<div class="mt-2">
+				<div class="mb-1">
+					<Label for="thresholdReached" class="text-xs">Threshold</Label>
+				</div>
+				<Select.Root
+					type="single"
+					id="thresholdReached"
+					class="w-full text-xs"
+					bind:value={thresholdReached}
+					onValueChange={handleFilterChange}
 				>
-				<Select.Content>
-					<Select.Item value="All">All</Select.Item>
-					<Select.Item value="true">Threshold Reached</Select.Item>
-					<Select.Item value="false">Threshold Not Reached</Select.Item>
-				</Select.Content>
-			</Select.Root>
-		</div>
+					<Select.Trigger
+						>{thresholdReached === 'All'
+							? 'All'
+							: thresholdReached === 'true'
+								? 'Threshold Reached'
+								: 'Threshold Not Reached'}</Select.Trigger
+					>
+					<Select.Content>
+						<Select.Item value="All">All</Select.Item>
+						<Select.Item value="true">Threshold Reached</Select.Item>
+						<Select.Item value="false">Threshold Not Reached</Select.Item>
+					</Select.Content>
+				</Select.Root>
+			</div>
+		{/if}
 	</Popover.Content>
 </Popover.Root>

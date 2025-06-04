@@ -8,7 +8,6 @@
 	import ProposalStats from '$lib/ProposalStats.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import ProposalCost from '$lib/ProposalCost.svelte';
-	import Countdown from '$lib/Countdown.svelte';
 	import { convertTimestamp } from '$lib/utils';
 	import ProposalOwner from '$lib/ProposalOwner.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';

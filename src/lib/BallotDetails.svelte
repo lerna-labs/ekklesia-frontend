@@ -1,5 +1,6 @@
 <script>
 	let { ballot } = $props();
+	import { loggedIn } from '$stores/sessionManager.js';
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
 </script>
 
@@ -28,7 +29,7 @@
 			{convertTimestamp(ballot.votePeriodEnd)}
 		</div>
 	{/if}
-	{#if ballot.voteWeighted}
+	{#if $loggedIn && ballot.voteWeighted}
 		<div>
 			<span class="font-semibold">Voting Power:</span>
 			{lovelaceToAda(ballot.votingPower)}

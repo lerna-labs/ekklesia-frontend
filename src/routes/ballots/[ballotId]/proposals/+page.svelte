@@ -1,7 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
 	import Badge from '$lib/BallotBadge.svelte';
-	import Countdown from '$lib/Countdown.svelte';
 	import ProposalCard from '$lib/ProposalCard.svelte';
 	import ProposalTable from '$lib/ProposalTable.svelte';
 	import Pagination from '$lib/base/Pagination.svelte';
@@ -34,7 +33,6 @@
 				showCost={ballot.voteFilters}
 				sortOptions={[
 					{ value: 'name', label: 'Name' },
-					{ value: 'cost', label: 'Cost' },
 					{ value: 'commentCount', label: 'Comment Count' },
 					{ value: 'voteCount', label: 'Vote Count' }
 				]}
