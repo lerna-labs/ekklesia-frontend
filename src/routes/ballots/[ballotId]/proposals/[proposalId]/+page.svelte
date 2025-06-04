@@ -32,11 +32,33 @@
 	</div>
 {/if}
 
-<section class="mt-6">
-	<h2 class="mb-1 text-lg">Proposal Details</h2>
+{#if proposal.data?.details}
+	<section class="mt-6">
+		<h2 class="mb-1 text-lg">Proposal Details</h2>
+		<Markdown markdown={proposal.data.details} />
+	</section>
+{/if}
 
-	<Markdown markdown={proposal.data.details} />
-</section>
+{#if proposal.data?.links}
+	<section class="mt-6">
+		<h2 class="mb-2 text-lg">Additional Information</h2>
+		<ul class="square-list pl-4 text-sm">
+			{#each proposal.data.links as link}
+				<li>
+					<a
+						href={link.url}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-orange-600 hover:underline"
+					>
+						{link.name || link.url}
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</section>
+{/if}
+
 <div class="mt-12"></div>
 {#if ballot.status != 'upcoming'}
 	<div class="mt-12 w-full">
@@ -69,3 +91,9 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	:global(.square-list li) {
+		list-style-type: square;
+	}
+</style>

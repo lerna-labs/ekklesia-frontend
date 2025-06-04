@@ -8,11 +8,20 @@
 
 	const content = md.render(markdown);
 	let accordionSections = $state([]);
+	let pageTitle = $state('');
 
 	onMount(() => {
 		// Create a temporary div to hold rendered markdown
 		const tempDiv = document.createElement('div');
 		tempDiv.innerHTML = content;
+
+		// Check for h1 element first
+		const h1Element = tempDiv.querySelector('h1');
+		if (h1Element) {
+			pageTitle = h1Element.textContent;
+			// Remove the h1 from the content to avoid duplication
+			h1Element.remove();
+		}
 
 		// Find all h2 elements
 		const h2Elements = tempDiv.querySelectorAll('h2');
@@ -48,8 +57,12 @@
 </script>
 
 <section class="markdown-content">
+	{#if pageTitle}
+		<h1>{pageTitle}</h1>
+	{/if}
+
 	{#if accordionSections.length > 0}
-		<Accordion.Root type="single" collapsible multiple>
+		<Accordion.Root type="multiple">
 			{#each accordionSections as section}
 				<Accordion.Item value={section.id}>
 					<Accordion.Trigger>{section.title}</Accordion.Trigger>
@@ -59,6 +72,8 @@
 				</Accordion.Item>
 			{/each}
 		</Accordion.Root>
+	{:else}
+		{@html content}
 	{/if}
 </section>
 
@@ -66,10 +81,15 @@
 	:global(.markdown-content) {
 		font-size: 1rem;
 		line-height: 1.6;
+
+		font-family: 'Geist', sans-serif;
 	}
+
 	:global(.markdown-content h1) {
 		margin-top: auto;
-		font-weight: 400;
+		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+		font-weight: 500;
 	}
 
 	:global(.markdown-content h2) {
@@ -82,14 +102,19 @@
 		font-weight: 400;
 	}
 
+	:global(.markdown-content strong) {
+		font-weight: 500;
+	}
+
 	:global(.markdown-content p) {
 		margin-bottom: 1rem;
+		line-height: 1.6rem;
 	}
 
 	:global(.markdown-content ul),
 	:global(.markdown-content ol) {
 		margin-left: 1rem;
-		margin-bottom: 1rem;
+		margin-bottom: 1.5rem;
 		padding-left: 0.5rem;
 	}
 
@@ -98,7 +123,20 @@
 	}
 
 	:global(.markdown-content ul li) {
-		list-style-type: disc;
+		list-style-type: square;
+	}
+
+	:global(.markdown-content ol li) {
+		list-style-type: decimal;
+	}
+
+	/* Nested lists */
+	:global(.markdown-content ol ol li) {
+		list-style-type: lower-alpha;
+	}
+
+	:global(.markdown-content ol ol ol li) {
+		list-style-type: lower-roman;
 	}
 
 	/* Table styles */

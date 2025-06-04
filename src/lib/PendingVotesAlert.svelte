@@ -7,7 +7,7 @@
 	<div class="ring-animation">
 		<BellRing />
 	</div>
-	Unsubmitted Votes!
+	<span class="hidden sm:inline-block">Unsubmitted Votes</span>
 </Button>
 
 <style>
