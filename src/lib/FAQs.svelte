@@ -87,7 +87,9 @@
 		<Accordion.Item value="item-6">
 			<Accordion.Trigger>Which Wallets are supported?</Accordion.Trigger>
 			<Accordion.Content>
-				<p>As of today, the following CIP95 compatible wallet are supported on Ekklesia:</p>
+				<p>
+					As of today, the following CIP95 compatible wallets are supported for voting on Ekklesia:
+				</p>
 
 				<div class="mt-3">
 					<div>
