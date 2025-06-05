@@ -37,7 +37,7 @@
 						<div>Your vote</div>
 					</div>
 					{#each ballot.proposals as proposal}
-						<div class="mb-2 flex items-start justify-between">
+						<div class="mb-2 flex items-start justify-between gap-3">
 							<div class="font-medium">
 								<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id} target="_blank">
 									{proposal.name}

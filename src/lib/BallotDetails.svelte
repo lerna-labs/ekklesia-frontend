@@ -6,7 +6,9 @@
 
 <section class="text-xs *:mb-1">
 	<div><span class="font-semibold">Ballot ID:</span> {ballot._id}</div>
-	<div><span class="font-semibold">Voter Group:</span> {ballot.voterType}</div>
+	{#if ballot.voterType}
+		<div><span class="font-semibold">Voter Group:</span> {ballot.voterType}</div>
+	{/if}
 
 	{#if ballot.status == 'live'}
 		<div>
@@ -31,9 +33,9 @@
 			{convertTimestamp(ballot.votePeriodEnd)}
 		</div>
 	{/if}
-	{#if $loggedIn && ballot.voteWeighted}
+	{#if $loggedIn && ballot.voteWeighted && ballot.status == 'live' && ballot.votingPower}
 		<div>
-			<span class="font-semibold">You Voting Power:</span>
+			<span class="font-semibold">Your Voting Power:</span>
 			{lovelaceToAda(ballot.votingPower)}
 		</div>
 	{/if}
