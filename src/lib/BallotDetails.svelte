@@ -4,8 +4,10 @@
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
 </script>
 
-<section class="mb-2 text-xs *:mb-1">
+<section class="text-xs *:mb-1">
 	<div><span class="font-semibold">Ballot ID:</span> {ballot._id}</div>
+	<div><span class="font-semibold">Voter Group:</span> {ballot.voterType}</div>
+
 	{#if ballot.status == 'live'}
 		<div>
 			<span class="font-semibold">Voting ends on:</span>
@@ -31,7 +33,7 @@
 	{/if}
 	{#if $loggedIn && ballot.voteWeighted}
 		<div>
-			<span class="font-semibold">Voting Power:</span>
+			<span class="font-semibold">You Voting Power:</span>
 			{lovelaceToAda(ballot.votingPower)}
 		</div>
 	{/if}

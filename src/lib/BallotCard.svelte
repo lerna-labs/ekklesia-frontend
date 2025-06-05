@@ -18,7 +18,7 @@
 			<BallotDetails {ballot} />
 		</Card.Description>
 	</Card.Header>
-	<Card.Content class="text-sm">
+	<Card.Content class="pt-4 text-sm">
 		<Text text={ballot.description} expanded={true} />
 	</Card.Content>
 
