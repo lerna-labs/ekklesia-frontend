@@ -1,6 +1,5 @@
 <script>
 	let { proposal } = $props();
-	console.log('ProposalDetails', proposal);
 </script>
 
 <section class=" mt-2 flex flex-col gap-1 text-xs">
