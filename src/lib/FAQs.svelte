@@ -7,7 +7,7 @@
 
 	<Accordion.Root type="multiple">
 		<Accordion.Item value="item-1">
-			<Accordion.Trigger>How do I vote?</Accordion.Trigger>
+			<Accordion.Trigger class="text-left">How do I vote?</Accordion.Trigger>
 			<Accordion.Content>
 				<p class="mb-3">
 					To vote, you need to connect your CIP95 compatible wallet. If you have a Ledger or
@@ -31,26 +31,26 @@
 		</Accordion.Item>
 
 		<Accordion.Item value="item-2">
-			<Accordion.Trigger>I am logged in but still can't vote</Accordion.Trigger>
+			<Accordion.Trigger class="text-left">I am logged in but still can't vote</Accordion.Trigger>
 			<Accordion.Content>
 				<p class="mb-3">
-					Make sure you are logged in with the wallet that is eligable to vote. Voter groups might
-					vary from ballot to ballot.
+					Make sure you are logged in with the wallet that is eligable to vote. Eligable voter
+					groups might vary from ballot to ballot.
 				</p>
 			</Accordion.Content>
 		</Accordion.Item>
 
 		<Accordion.Item value="item-3">
-			<Accordion.Trigger>How did my DRep vote?</Accordion.Trigger>
+			<Accordion.Trigger class="text-left">How did my DRep vote?</Accordion.Trigger>
 			<Accordion.Content>
 				You can check how your DRep voted in the <a href="/voters" class="link">Voter Directory</a> by
-				entering your DRep's ID or browse other DReps voting history. The Voter Directory is a public
-				and votes may change until a ballot is closed.
+				entering your DRep's ID or browse other DReps voting history. The Voter Directory is public and
+				votes may change until a ballot is closed.
 			</Accordion.Content>
 		</Accordion.Item>
 
 		<Accordion.Item value="item-4">
-			<Accordion.Trigger
+			<Accordion.Trigger class="text-left"
 				>I voted but my vote doesn't seem to be included in the results</Accordion.Trigger
 			>
 			<Accordion.Content>
@@ -66,7 +66,9 @@
 		</Accordion.Item>
 
 		<Accordion.Item value="item-5">
-			<Accordion.Trigger>Where do I go if I have problems or questions</Accordion.Trigger>
+			<Accordion.Trigger class="text-left"
+				>Where do I go if I have problems or questions</Accordion.Trigger
+			>
 			<Accordion.Content>
 				All polls on this page are run by <a
 					href="https://intersectmbo.org"
@@ -85,7 +87,7 @@
 		</Accordion.Item>
 
 		<Accordion.Item value="item-6">
-			<Accordion.Trigger>Which Wallets are supported?</Accordion.Trigger>
+			<Accordion.Trigger class="text-left">Which Wallets are supported?</Accordion.Trigger>
 			<Accordion.Content>
 				<p>
 					As of today, the following CIP95 compatible wallets are supported for voting on Ekklesia:
@@ -125,7 +127,7 @@
 		</Accordion.Item>
 
 		<Accordion.Item value="item-7">
-			<Accordion.Trigger>What is Ekklesia?</Accordion.Trigger>
+			<Accordion.Trigger class="text-left">What is Ekklesia?</Accordion.Trigger>
 			<Accordion.Content>
 				<p class="mb-3">
 					Ekklesia is a voting platform for verifiable and transparent on-chain voting on Cardano
