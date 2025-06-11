@@ -9,12 +9,12 @@
 		<Accordion.Item value="item-1">
 			<Accordion.Trigger class="text-left">How do I vote?</Accordion.Trigger>
 			<Accordion.Content>
-				<p class="mb-3">
+				<p class="mb-4">
 					To vote, you need to connect your CIP95 compatible wallet. If you have a Ledger or
 					Keystone hardware wallet, please make sure to use it with a compatible browser extension
 					like Eternl, Yoroi or Lace.
 				</p>
-				<p class="mb-3">
+				<p class="mb-4">
 					Once connected, you can browse live ballots you are eligable to vote on and save your
 					vote.<br />
 					<u
@@ -24,7 +24,7 @@
 					>
 				</p>
 
-				<p class="mb-3">
+				<p class="mb-4">
 					You can change your vote as often as you want to as long as a ballot is live.
 				</p>
 			</Accordion.Content>
@@ -33,7 +33,7 @@
 		<Accordion.Item value="item-2">
 			<Accordion.Trigger class="text-left">I am logged in but still can't vote</Accordion.Trigger>
 			<Accordion.Content>
-				<p class="mb-3">
+				<p class="mb-4">
 					Make sure you are logged in with the wallet that is eligable to vote. Eligable voter
 					groups might vary from ballot to ballot.
 				</p>
@@ -54,7 +54,7 @@
 				>I voted but my vote doesn't seem to be included in the results</Accordion.Trigger
 			>
 			<Accordion.Content>
-				<p class="mb-3">
+				<p class="mb-4">
 					For performance reasons results (if there are new votes) are rolled up every 10 minutes.
 					If you just submitted and signed your votes, it might take a few minutes until your vote
 					is included in the results.
@@ -67,6 +67,28 @@
 		</Accordion.Item>
 
 		<Accordion.Item value="item-5">
+			<Accordion.Trigger class="text-left"
+				>Final results deviate slightly from the last preliminary results, why?</Accordion.Trigger
+			>
+			<Accordion.Content>
+				<p class="mb-4">
+					On final rollup we re-validate voting power and check for invalid votes (different wallets
+					voting with the same asset twice for example) which might lead to slight deviations from
+					the last published preliminary results.
+				</p>
+			</Accordion.Content>
+		</Accordion.Item>
+
+		<Accordion.Item value="item-6">
+			<Accordion.Trigger class="text-left"
+				>How do I verify my vote has been included correctly in the final results?</Accordion.Trigger
+			>
+			<Accordion.Content>
+				<p>We will provide a verification tool shortly.</p>
+			</Accordion.Content>
+		</Accordion.Item>
+
+		<Accordion.Item value="item-7">
 			<Accordion.Trigger class="text-left"
 				>Where do I go if I have problems or questions</Accordion.Trigger
 			>
@@ -87,8 +109,8 @@
 			</Accordion.Content>
 		</Accordion.Item>
 
-		<Accordion.Item value="item-6">
-			<Accordion.Trigger class="text-left">Which Wallets are supported?</Accordion.Trigger>
+		<Accordion.Item value="item-8">
+			<Accordion.Trigger class="text-left">Which wallets are supported?</Accordion.Trigger>
 			<Accordion.Content>
 				<p>
 					As of today, the following CIP95 compatible wallets are supported for voting on Ekklesia:
@@ -127,11 +149,28 @@
 			</Accordion.Content>
 		</Accordion.Item>
 
-		<Accordion.Item value="item-7">
+		<Accordion.Item value="item-9">
+			<Accordion.Trigger class="text-left"
+				>What data provider is used by Ekklesia?</Accordion.Trigger
+			>
+			<Accordion.Content>
+				<p>
+					Ekklesia is currently using community run <a
+						href="https://koios.rest/"
+						target="_blank"
+						class="link">Koios</a
+					> as its main data provider for live voting power, asset holdings and other on chain data.
+					During the still ongoing development we run occasional checks against DB-Sync data to ensure
+					accuracy.
+				</p>
+			</Accordion.Content>
+		</Accordion.Item>
+
+		<Accordion.Item value="item-10">
 			<Accordion.Trigger class="text-left">What is Ekklesia?</Accordion.Trigger>
 			<Accordion.Content>
-				<p class="mb-3">
-					Ekklesia is a voting platform for verifiable and transparent on-chain voting on Cardano
+				<p class="mb-4">
+					Ekklesia is a voting tool for verifiable and transparent on-chain voting on Cardano
 					developed by <a href="https://x.com/adamkdean" target="_blank" class="link">Adam Dean</a>
 					&
 					<a href="https://bsky.app/profile/madorkestra.com" target="_blank" class="link"
@@ -139,10 +178,10 @@
 					>, funded by <a href="https://x.com/InputOutputHK" target="_blank" class="link">IOG</a>.
 				</p>
 
-				<p class="mb-3">
-					Ekklesia is able to host votes for all kind of voter groups from DReps, SPOs, token
-					holders or simply just everyone with a Cardano wallet. It supports MultiSigs as well as
-					CLI based authentication using the CardanoSigner.
+				<p class="mb-4">
+					Ekklesia is able to accommodate votes for all kind of voter groups from DReps, SPOs, token
+					or NFT holders or simply just everyone with a Cardano wallet. It supports MultiSigs as
+					well as CLI based authentication using the CardanoSigner.
 				</p>
 
 				<p>As of today Ekklesia is still under development.</p>
