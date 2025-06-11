@@ -1,5 +1,6 @@
 <script>
 	let { proposal, ballot } = $props();
+	import { convertTimestamp } from '$lib/utils.js';
 </script>
 
 <section class=" mt-2 flex flex-col gap-1 text-xs">
@@ -19,6 +20,30 @@
 			>
 				{proposal.ipfsHash}
 			</a>
+		</div>
+	{/if}
+
+	{#if ballot.status == 'live'}
+		<div>
+			<span class="font-semibold">Voting ends on:</span>
+			{convertTimestamp(ballot.votePeriodEnd)}
+		</div>
+	{/if}
+	{#if ballot.status == 'closed'}
+		<div>
+			<span class="font-semibold">Voting ended on:</span>
+			{convertTimestamp(ballot.votePeriodEnd)}
+		</div>
+	{/if}
+	{#if ballot.status == 'upcoming'}
+		<div>
+			<span class="font-semibold">Voting starts on:</span>
+			{convertTimestamp(ballot.votePeriodStart)}
+		</div>
+
+		<div>
+			<span class="font-semibold">Voting ends on:</span>
+			{convertTimestamp(ballot.votePeriodEnd)}
 		</div>
 	{/if}
 
