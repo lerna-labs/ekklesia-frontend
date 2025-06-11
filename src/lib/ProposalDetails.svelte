@@ -1,5 +1,5 @@
 <script>
-	let { proposal } = $props();
+	let { proposal, ballot } = $props();
 </script>
 
 <section class=" mt-2 flex flex-col gap-1 text-xs">
@@ -7,6 +7,21 @@
 		<span class="font-semibold">Proposal ID:</span>
 		{proposal._id}
 	</div>
+
+	{#if proposal.ipfsHash}
+		<div>
+			<span class="font-semibold">IPFS:</span>
+			<a
+				href={'https://ipfs.io/ipfs/' + proposal.ipfsHash}
+				target="_blank"
+				class="link inline-block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+				title={proposal.ipfsHash}
+			>
+				{proposal.ipfsHash}
+			</a>
+		</div>
+	{/if}
+
 	{#if proposal.categories?.length}
 		<div>
 			<span class="font-semibold"> Category: </span>
