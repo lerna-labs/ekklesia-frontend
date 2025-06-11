@@ -16,12 +16,12 @@
 </script>
 
 <div class="flex gap-2 text-xl">
-	<h1>{proposal.name}</h1>
+	<h1 class="mb-1">{proposal.name}</h1>
 	<BallotBadge status={ballot.status} />
 </div>
 
-<section class="text-sm">
-	<ProposalDetails {proposal} />
+<section class="text-sm text-muted-foreground">
+	<ProposalDetails {proposal} {ballot} />
 </section>
 
 {#if proposal.description}

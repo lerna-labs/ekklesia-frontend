@@ -23,19 +23,19 @@
 		</div>
 	{/if}
 
-	{#if ballot.status == 'live'}
+	{#if ballot?.status == 'live'}
 		<div>
 			<span class="font-semibold">Voting ends on:</span>
 			{convertTimestamp(ballot.votePeriodEnd)}
 		</div>
 	{/if}
-	{#if ballot.status == 'closed'}
+	{#if ballot?.status == 'closed'}
 		<div>
 			<span class="font-semibold">Voting ended on:</span>
 			{convertTimestamp(ballot.votePeriodEnd)}
 		</div>
 	{/if}
-	{#if ballot.status == 'upcoming'}
+	{#if ballot?.status == 'upcoming'}
 		<div>
 			<span class="font-semibold">Voting starts on:</span>
 			{convertTimestamp(ballot.votePeriodStart)}
