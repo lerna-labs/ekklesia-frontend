@@ -47,6 +47,23 @@
 		</div>
 	{/if}
 
+	{#if ballot?.status == 'closed'}
+		<div>
+			<span class="font-semibold">On-Chain Results:</span>
+			{#if ballot.resultTxHash}
+				<a
+					href={'https://adastat.net/transactions/' + ballot.resultTxHash}
+					target="_blank"
+					class="link"
+				>
+					{ballot.resultTxHash}
+				</a>
+			{:else}
+				Pending
+			{/if}
+		</div>
+	{/if}
+
 	{#if proposal.categories?.length}
 		<div>
 			<span class="font-semibold"> Category: </span>

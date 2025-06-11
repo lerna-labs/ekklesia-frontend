@@ -55,8 +55,9 @@
 			>
 			<Accordion.Content>
 				<p class="mb-3">
-					For performance reasons results are rolled up every 10 minutes. If you just submitted and
-					signed your votes, it might take a few minutes until your vote is included in the results.
+					For performance reasons results (if there are new votes) are rolled up every 10 minutes.
+					If you just submitted and signed your votes, it might take a few minutes until your vote
+					is included in the results.
 				</p>
 				<p>
 					Always make sure you have signed and submitted your votes and no votes are still marked as

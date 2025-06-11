@@ -33,6 +33,24 @@
 			{convertTimestamp(ballot.votePeriodEnd)}
 		</div>
 	{/if}
+
+	{#if ballot?.status == 'closed'}
+		<div>
+			<span class="font-semibold">On-Chain Results:</span>
+			{#if ballot.resultTxHash}
+				<a
+					href={'https://adastat.net/transactions/' + ballot.resultTxHash}
+					target="_blank"
+					class="link inline-block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+				>
+					{ballot.resultTxHash}
+				</a>
+			{:else}
+				Pending
+			{/if}
+		</div>
+	{/if}
+
 	{#if $loggedIn && ballot.voteWeighted && ballot.status == 'live' && ballot.votingPower}
 		<div>
 			<span class="font-semibold">Your Voting Power:</span>
