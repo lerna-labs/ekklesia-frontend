@@ -11,7 +11,7 @@
 		<h1 class="text-3xl">{ballot.title}</h1>
 		<Badge status={ballot.status} />
 	</div>
-	<BallotDetails {ballot} />1
+	<BallotDetails {ballot} />
 	<p class="mb-4">{ballot.description}</p>
 	<Button href={'/ballots/' + data.ballot._id + '/proposals'}>View Proposals</Button>
 {:else}

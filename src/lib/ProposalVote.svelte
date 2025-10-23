@@ -8,96 +8,28 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { lovelaceToAda } from './utils';
 	import { onMount } from 'svelte';
+	import ProposalVoteDefault from './ProposalVoteDefault.svelte';
+	import ProposalVoteBudget from './ProposalVoteBudget.svelte';
 
-	// Generate a simple unique component instance ID
-	const componentId = Math.random().toString(36).substring(2, 8);
-
-	// Props for required data
-	let { proposal, ballot, inline } = $props();
-	let options = $state(proposal.voteOptions);
-
-	let value = $derived(proposal.voterVote ?? null);
 	let loading = $state(true);
-	let error = $state(null);
-	let voteData = $state(null);
-
-	let showVoteBanner = $state(value === null);
+	// Props for required data
+	// TODO remove inline if not used
+	let { proposal, ballot, inline } = $props();
 
 	onMount(async () => {
-		// Fix: Use option.value instead of option.id for uniqueId creation
-		options = options.map((option) => ({
-			...option,
-			uniqueId: `option_${option.value}_${proposal?._id || ''}_${componentId}`
-		}));
 		loading = false;
 	});
-
-	// Function to handle vote change
-	async function storeVote(newValue) {
-		if (newValue !== null && newValue !== undefined) {
-			loading = true;
-
-			try {
-				const voteStoreRequest = await api.fetch(fetch, '/vote/' + proposal._id, {
-					method: 'POST',
-					body: JSON.stringify({ vote: newValue }),
-					headers: {
-						'Content-Type': 'application/json'
-					}
-				});
-
-				if (voteStoreRequest.status === 200) {
-					const voteStored = await voteStoreRequest.json();
-					if (voteStored.changes) $voter.pendingVotesCount = true;
-					toast.success('Vote updated successfully (not submitted!)');
-				} else {
-					const errorData = await voteStoreRequest.json();
-					throw new Error(errorData.message || voteStoreRequest.statusText);
-				}
-			} catch (err) {
-				toast.error('Error storing vote: ' + err.body.message);
-				console.error('Error storing vote:', err);
-			} finally {
-				loading = false;
-			}
-		}
-	}
-
-	function handleVote(option) {
-		value = option.value;
-
-		// Let the animation play before removing the element
-		setTimeout(() => {
-			showVoteBanner = false;
-		}, 500); // Match animation duration
-
-		storeVote(option.value);
-	}
 </script>
 
 {#if !inline}
 	<section id="vote" class="mt-6">
 		{#if $loggedIn && ballot.voterValidated && ballot.status == 'live'}
-			<Card.Root class="relative h-full">
-				<Card.Header>
-					<Card.Title>{value ? 'Your Vote' : 'Vote now!'}</Card.Title>
-					<Card.Description>
-						{#if ballot.voteWeighted}
-							Voting Power: {lovelaceToAda(ballot.votingPower)}
-						{/if}
-					</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<RadioGroup.Root bind:value onValueChange={storeVote}>
-						{#each options as option, i}
-							<div class="mb-1 flex items-start space-x-2">
-								<RadioGroup.Item value={option.value} id={option.uniqueId} disabled={loading} />
-								<Label for={option.uniqueId} class="leading-4">{option.label}</Label>
-							</div>
-						{/each}
-					</RadioGroup.Root>
-				</Card.Content>
-			</Card.Root>
+			{#if proposal.voteType === 'default'}
+				<ProposalVoteDefault {proposal} {ballot} />
+			{/if}
+			{#if proposal.voteType === 'budget'}
+				<ProposalVoteBudget {proposal} {ballot} />
+			{/if}
 		{/if}
 		{#if $loggedIn && !ballot.voterValidated && ballot.status == 'live'}
 			<Card.Root class="h-full">
@@ -112,21 +44,12 @@
 				</Card.Content>
 			</Card.Root>
 		{/if}
-		{#if $loggedIn && ballot.status != 'live' && value}
+		{#if $loggedIn && ballot.status != 'live'}
 			<Card.Root class="h-full">
 				<Card.Header>
 					<Card.Title>Voting is closed</Card.Title>
 					<Card.Description>The voting for this proposal has ended.</Card.Description>
 				</Card.Header>
-				<Card.Content>
-					{#if value}
-						<p class="text-sm text-gray-500">
-							You voted <strong>{value}</strong> on this proposal. Thank you for participating!
-						</p>
-					{:else}
-						<p class="text-sm text-gray-500">Voting is closed. You cannot vote anymore.</p>
-					{/if}
-				</Card.Content>
 			</Card.Root>
 		{/if}
 		{#if !$loggedIn}
@@ -143,7 +66,7 @@
 	</section>
 {/if}
 
-{#if inline}
+<!-- {#if inline}
 	<div class="relative inline-flex rounded-md">
 		{#if showVoteBanner}
 			<div
@@ -170,7 +93,7 @@
 			</Button>
 		{/each}
 	</div>
-{/if}
+{/if} -->
 
 <style>
 	.fade-out {
