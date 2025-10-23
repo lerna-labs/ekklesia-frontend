@@ -38,6 +38,37 @@
 	</section>
 {/if}
 
+{#if proposal.data?.collapsible}
+	<section class="mt-6">
+		<Accordion.Root type="multiple" class="w-full">
+			{#each proposal.data.collapsible as item, index}
+				<Accordion.Item value={'item-' + index}>
+					<Accordion.Trigger>
+						{item.title}
+					</Accordion.Trigger>
+					<Accordion.Content class="pb-4 pt-0">
+						<Markdown markdown={item.content} />
+						<div class="mt-4">
+							{#if item.link}
+								<Button
+									variant="outline"
+									size="sm"
+									as="a"
+									href={item.link}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									View More
+								</Button>
+							{/if}
+						</div>
+					</Accordion.Content>
+				</Accordion.Item>
+			{/each}
+		</Accordion.Root>
+	</section>
+{/if}
+
 {#if proposal.data?.links}
 	<section class="mt-6">
 		<h2 class="mb-2 text-lg">Additional Information</h2>

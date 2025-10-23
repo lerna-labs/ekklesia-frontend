@@ -79,7 +79,7 @@
 
 <style>
 	:global(.markdown-content) {
-		font-size: 1rem;
+		font-size: 0.9rem;
 		line-height: 1.6;
 
 		font-family: 'Geist', sans-serif;
