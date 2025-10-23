@@ -166,6 +166,11 @@
 						} else {
 							newValue = (prevValue || []).filter((v) => v !== option.id);
 						}
+						// ensure the ids are stored in the order of options
+						newValue = proposal.voteOptions
+							.map((opt) => opt.id)
+							.filter((id) => newValue.includes(id));
+
 						// optimistic update: reflect change immediately
 						value = newValue;
 						storeVote(newValue, prevValue);
