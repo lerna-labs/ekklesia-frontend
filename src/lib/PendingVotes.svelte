@@ -22,7 +22,7 @@
 			<Card.Root class="mb-4">
 				<Card.Header class="pt-5">
 					<Card.Title class="flex gap-2 text-xl">
-						{ballot.name}
+						{ballot.title}
 						<Badge status={ballot.status} />
 					</Card.Title>
 					<Card.Description>
@@ -40,7 +40,7 @@
 						<div class="mb-2 flex items-start justify-between gap-3">
 							<div class="font-medium">
 								<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id} target="_blank">
-									{proposal.name}
+									{proposal.title}
 									<div class="mt-1 text-xs text-muted-foreground">
 										<span>Proposal ID:</span>
 										{proposal._id}

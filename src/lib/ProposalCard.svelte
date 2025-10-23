@@ -16,7 +16,7 @@
 		<Card.Title>
 			<div class="flex items-start">
 				<div class="flex-1 text-xl">
-					<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id}>{proposal.name}</a>
+					<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id}>{proposal.title}</a>
 				</div>
 			</div>
 		</Card.Title>

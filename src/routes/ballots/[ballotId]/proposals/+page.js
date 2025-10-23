@@ -47,6 +47,7 @@ export async function load({ fetch, params, url }) {
 
 	// Parse the response data
 	const ballot = await ballotResponse.json();
+	console.log(ballot);
 	const proposalsData = await proposalsResponse.json();
 
 	// Fetch filter options

@@ -11,7 +11,7 @@
 <Card.Root class="z-1000 relative mb-4">
 	<Card.Header class="pt-5">
 		<Card.Title class="flex gap-2 text-xl">
-			{ballot.name}
+			{ballot.title}
 			<Badge status={ballot.status} />
 		</Card.Title>
 		<Card.Description>

@@ -29,7 +29,7 @@
 						href={'/ballots/' + proposal.ballotId + '/proposals/' + proposal._id}
 						class="mt-1.5 block"
 					>
-						<span class="font-medium">{proposal.name}</span>
+						<span class="font-medium">{proposal.title}</span>
 					</a>
 					<div class="text-muted-foreground">
 						<ProposalDetails {proposal} {ballot} {index} />

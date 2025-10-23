@@ -8,10 +8,10 @@
 
 {#if ballot}
 	<div class="flex items-start gap-2">
-		<h1 class="text-3xl">{ballot.name}</h1>
+		<h1 class="text-3xl">{ballot.title}</h1>
 		<Badge status={ballot.status} />
 	</div>
-	<BallotDetails {ballot} />
+	<BallotDetails {ballot} />1
 	<p class="mb-4">{ballot.description}</p>
 	<Button href={'/ballots/' + data.ballot._id + '/proposals'}>View Proposals</Button>
 {:else}

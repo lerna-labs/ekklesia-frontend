@@ -31,16 +31,16 @@
 
 			// Handle ballot pages
 			if (resourceType === 'ballots' && isIdLike) {
-				if (pageData.ballot && pageData.ballot.name) {
-					pageParts.push(pageData.ballot.name);
+				if (pageData.ballot && pageData.ballot.title) {
+					pageParts.push(pageData.ballot.title);
 				} else {
 					pageParts.push('Ballot Details');
 				}
 			}
 			// Handle proposal pages
 			else if (resourceType === 'proposals' && isIdLike) {
-				if (pageData.proposal && pageData.proposal.name) {
-					pageParts.push(pageData.proposal.name);
+				if (pageData.proposal && pageData.proposal.title) {
+					pageParts.push(pageData.proposal.title);
 				} else {
 					pageParts.push('Proposal Details');
 				}
@@ -96,7 +96,7 @@
 							? pageData.ballot.description.substring(0, 157) + '...'
 							: pageData.ballot.description;
 					}
-					return `Voting information for ballot: ${pageData.ballot.name || 'Unnamed ballot'}`;
+					return `Voting information for ballot: ${pageData.ballot.title || 'Unnamed ballot'}`;
 				}
 				return 'Ballot details and voting information';
 			}
@@ -109,7 +109,7 @@
 							? pageData.proposal.description.substring(0, 157) + '...'
 							: pageData.proposal.description;
 					}
-					return `Details for proposal: ${pageData.proposal.name || 'Unnamed proposal'}`;
+					return `Details for proposal: ${pageData.proposal.title || 'Unnamed proposal'}`;
 				}
 				return 'Proposal details and voting options';
 			}

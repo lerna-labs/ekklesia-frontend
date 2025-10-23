@@ -16,8 +16,8 @@
 <div class="mb-2 flex items-start justify-between">
 	<div class="font-medium">
 		<a href={'/ballots/' + proposal.ballotId + '/proposals/' + proposal._id} target="_blank">
-			{proposal.name}
-			<div class="text-muted-foreground mt-1 text-xs">
+			{proposal.title}
+			<div class="mt-1 text-xs text-muted-foreground">
 				<span>Proposal ID:</span>
 				{proposal._id}
 			</div>

@@ -19,7 +19,7 @@
 </script>
 
 <div class="flex items-start gap-2">
-	<h1 class="text-3xl">{ballot.name}</h1>
+	<h1 class="text-3xl">{ballot.title}</h1>
 	<Badge status={ballot.status} />
 </div>
 <BallotDetails {ballot} class="mt-2" />

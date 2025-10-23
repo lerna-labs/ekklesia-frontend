@@ -41,7 +41,7 @@
 					pageData.ballot._id === segment
 				) {
 					// Limit the length for ballot names
-					label = pageData.ballot.name || 'Ballot Details';
+					label = pageData.ballot.title || 'Ballot Details';
 					if (label.length > 30) {
 						label = label.substring(0, 30) + '...';
 					}
@@ -53,7 +53,7 @@
 					pageData.proposal._id === segment
 				) {
 					// Limit the length for proposal names
-					label = pageData.proposal.name || 'Proposal Details';
+					label = pageData.proposal.title || 'Proposal Details';
 					if (label.length > 30) {
 						label = label.substring(0, 30) + '...';
 					}
