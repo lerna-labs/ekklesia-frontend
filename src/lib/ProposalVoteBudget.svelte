@@ -183,7 +183,7 @@
 </Card.Root>
 
 <style>
-	/* brief red flash + small shake to indicate the option was reverted */
+	/* small shake to indicate the option was reverted */
 	.revert-flash {
 		animation: revertFlash 1.1s ease;
 	}

@@ -1,7 +1,6 @@
 import { api } from '$stores/sessionManager.js';
 
 export async function load({ fetch }) {
-	console.log('Loading dashboard data');
 	const voterData = await api.fetch(fetch, '/dashboard/');
 	const voterBallots = await api.fetch(fetch, '/dashboard/ballots');
 	const voterTransactions = await api.fetch(fetch, '/transactions');
