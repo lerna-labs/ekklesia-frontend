@@ -168,6 +168,24 @@
 		</Accordion.Item>
 
 		<Accordion.Item value="item-10">
+			<Accordion.Trigger class="text-left">Can I fetch Ekklesia Data via API?</Accordion.Trigger>
+			<Accordion.Content>
+				<p class="mb-4">
+					While we appreciate the interest and are all for quick integrations into other tools and
+					platforms, we are still developing the overall architecture and data models for Ekklesia.
+					There are no future-proof endpoints available at this time, implement everything at your
+					own risk - endpoints might even be different from instance to instance right now.
+				</p>
+				<p class="mb-4">
+					If you're eager to implement live results, please note this: Results are rolled up every
+					10 minutes and endpoints are cached. Spamming endpoints may result in temporary
+					blacklisting your IPs.
+				</p>
+				<p>We will provide proper API endpoints and documentation in the future.</p>
+			</Accordion.Content>
+		</Accordion.Item>
+
+		<Accordion.Item value="item-11">
 			<Accordion.Trigger class="text-left">What is Ekklesia?</Accordion.Trigger>
 			<Accordion.Content>
 				<p class="mb-4">
