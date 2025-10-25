@@ -52,10 +52,10 @@
 		</div>
 	{/if}
 
-	{#if $loggedIn && ballot.voteWeighted && ballot.status == 'live' && ballot.votingPower && !$page.params?.voterId}
+	<!-- {#if $loggedIn && ballot.voteWeighted && ballot.status == 'live' && ballot.votingPower}
 		<div>
-			<span class="font-semibold">Your Voting Power:</span>
+			<span class="font-semibold">Voting Power:</span>
 			{lovelaceToAda(ballot.votingPower)}
 		</div>
-	{/if}
+	{/if} -->
 </section>

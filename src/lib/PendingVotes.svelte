@@ -47,11 +47,14 @@
 									</div>
 								</a>
 							</div>
-							<!-- loop through votes-->
-							<div>
+							<!-- DUPLICATE FROM BallotCardVotes -->
+							<div
+								class="flex flex-col items-end gap-0.5 md:max-w-[30vw] md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-0.5"
+							>
 								{#each proposal.vote as label}
 									<div
-										class="mb-1 text-nowrap rounded-md p-2 text-center text-xs {label === 'Yes'
+										class="mb-0.5 w-full overflow-hidden whitespace-nowrap rounded-md px-3 py-1 text-center text-xs md:inline-flex md:w-auto {label ===
+										'Yes'
 											? 'bg-green-500 text-green-100'
 											: label === 'No'
 												? 'bg-red-500 text-red-100'

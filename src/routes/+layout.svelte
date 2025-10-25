@@ -31,8 +31,8 @@
 	<PageHead />
 
 	<!-- Header area - outside the main content -->
-	<Breadcrumbs {data} />
-	<div class="sticky top-0 z-[10] bg-[#1E1E2F]">
+	<!-- <Breadcrumbs {data} /> -->
+	<div class="sticky top-0 z-[10] bg-[#1E1E2F] pt-4">
 		<div class="scrollWatcher bg-orange-500"></div>
 		<Header />
 	</div>

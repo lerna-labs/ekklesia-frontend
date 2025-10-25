@@ -16,14 +16,14 @@
 	</p>
 
 	<p class="mb-4">
-		You can look up any DRep voting on this tool in the <a href="/voters" class="link"
+		You can look up any DRep voting on this tool in the <a href="/voter-directory" class="link"
 			>Voter Directory</a
 		>. The Voter Directory is public, updated every 10 minutes and votes may change until a ballot
 		is closed. Final results may differ slightly from preliminary votes as the voting power per DRep
 		may change during the duration of the vote. Final results will be published on-chain and can be
 		verified.
 	</p>
-	<Button href="/voters" size="sm">Go to Voter Directory</Button>
+	<Button href="/voter-directory" size="sm">Go to Voter Directory</Button>
 </section>
 
 {#if data.upcomingBallots.data.length > 0}

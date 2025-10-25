@@ -52,7 +52,7 @@
 					<Table.Row>
 						<Table.Cell class="pl-0 align-top">{voter.votes}</Table.Cell>
 						<Table.Cell class="align-top font-medium">
-							<a href={`/voters/${voter.voterId}`} class="text-sm font-semibold">
+							<a href={`/voter-directory/${voter.voterId}`} class="text-sm font-semibold">
 								{shortenString(voter.voterId, 20, true)}
 							</a>
 						</Table.Cell>

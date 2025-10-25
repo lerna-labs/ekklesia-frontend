@@ -43,9 +43,10 @@
 		<Accordion.Item value="item-3">
 			<Accordion.Trigger class="text-left">How did my DRep vote?</Accordion.Trigger>
 			<Accordion.Content>
-				You can check how your DRep voted in the <a href="/voters" class="link">Voter Directory</a> by
-				entering your DRep's ID or browse other DReps voting history. The Voter Directory is public and
-				votes may change until a ballot is closed.
+				You can check how your DRep voted in the <a href="/voter-directory" class="link"
+					>Voter Directory</a
+				> by entering your DRep's ID or browse other DReps voting history. The Voter Directory is public
+				and votes may change until a ballot is closed.
 			</Accordion.Content>
 		</Accordion.Item>
 
