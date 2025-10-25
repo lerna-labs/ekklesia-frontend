@@ -145,9 +145,8 @@
 					</div>
 				{:else}
 					<div>
-						<span class="font-semibold">
-							{value?.length || 0} of {proposal.voterBudget} Options selected
-						</span>
+						<span class="font-semibold"> Options selected:</span>
+						{value?.length || 0} of {proposal.voterBudget}
 					</div>
 				{/if}
 			</div>
