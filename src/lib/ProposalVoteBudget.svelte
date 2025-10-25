@@ -131,54 +131,66 @@
 	<Card.Header>
 		<Card.Title>{value ? 'Your Vote' : 'Vote now!'}</Card.Title>
 		<Card.Description>
-			{#if ballot.voteWeighted}
-				<div>Voting Power: {lovelaceToAda(ballot.votingPower)}</div>
-			{/if}
-			{#if actualBudgetVote}
-				<div>Budget left: {proposal.voteOptions.length - (value?.length || 0)}</div>
-			{:else}
-				<div>
-					{value?.length || 0} of {proposal.voterBudget} Options selected
-				</div>
-			{/if}
+			<div class="mt-2 flex flex-col gap-1 text-xs">
+				{#if ballot.voteWeighted}
+					<div>
+						<span class="font-semibold">Voting Power:</span>
+						{lovelaceToAda(ballot.votingPower)}
+					</div>
+				{/if}
+				{#if actualBudgetVote}
+					<div>
+						<span class="font-semibold">Budget left:</span>
+						{proposal.voteOptions.length - (value?.length || 0)}
+					</div>
+				{:else}
+					<div>
+						<span class="font-semibold">
+							{value?.length || 0} of {proposal.voterBudget} Options selected
+						</span>
+					</div>
+				{/if}
+			</div>
 		</Card.Description>
 	</Card.Header>
 	<Card.Content>
-		{#each options as option, i}
-			<div
-				class="mb-1 flex items-start space-x-2"
-				class:revert-flash={reverted.includes(option.id)}
-				title={value.length >= proposal.voterBudget && !value?.includes(option.id)
-					? 'You have selected the maximum number of options.'
-					: option.label}
-			>
-				<Checkbox
-					id={'voteOption' + option.id}
-					value={option.id}
-					disabled={loading ||
-						(value.length >= proposal.voterBudget && !value?.includes(option.id))}
-					checked={value?.includes(option.id) || false}
-					onCheckedChange={(e) => {
-						const prevValue = value ? [...value] : [];
-						let newValue;
-						if (e) {
-							newValue = [...(prevValue || []), option.id];
-						} else {
-							newValue = (prevValue || []).filter((v) => v !== option.id);
-						}
-						// ensure the ids are stored in the order of options
-						newValue = proposal.voteOptions
-							.map((opt) => opt.id)
-							.filter((id) => newValue.includes(id));
+		<div class="grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
+			{#each options as option, i}
+				<div
+					class="mb-1 flex items-center space-x-2"
+					class:revert-flash={reverted.includes(option.id)}
+					title={value.length >= proposal.voterBudget && !value?.includes(option.id)
+						? 'You have selected the maximum number of options.'
+						: option.label}
+				>
+					<Checkbox
+						id={'voteOption' + option.id}
+						value={option.id}
+						disabled={loading ||
+							(value.length >= proposal.voterBudget && !value?.includes(option.id))}
+						checked={value?.includes(option.id) || false}
+						onCheckedChange={(e) => {
+							const prevValue = value ? [...value] : [];
+							let newValue;
+							if (e) {
+								newValue = [...(prevValue || []), option.id];
+							} else {
+								newValue = (prevValue || []).filter((v) => v !== option.id);
+							}
+							// ensure the ids are stored in the order of options
+							newValue = proposal.voteOptions
+								.map((opt) => opt.id)
+								.filter((id) => newValue.includes(id));
 
-						// optimistic update: reflect change immediately
-						value = newValue;
-						storeVote(newValue, prevValue);
-					}}
-				/>
-				<Label for={'voteOption' + option.id} class="leading-4">{option.label}</Label>
-			</div>
-		{/each}
+							// optimistic update: reflect change immediately
+							value = newValue;
+							storeVote(newValue, prevValue);
+						}}
+					/>
+					<Label for={'voteOption' + option.id} class="truncate leading-4">{option.label}</Label>
+				</div>
+			{/each}
+		</div>
 	</Card.Content>
 </Card.Root>
 

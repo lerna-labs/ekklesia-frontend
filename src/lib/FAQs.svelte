@@ -151,7 +151,7 @@
 
 		<Accordion.Item value="item-9">
 			<Accordion.Trigger class="text-left"
-				>What data provider is used by Ekklesia?</Accordion.Trigger
+				>Which data provider is used by Ekklesia?</Accordion.Trigger
 			>
 			<Accordion.Content>
 				<p>
@@ -175,7 +175,12 @@
 					&
 					<a href="https://bsky.app/profile/madorkestra.com" target="_blank" class="link"
 						>Mad Orkestra</a
-					>, funded by <a href="https://x.com/InputOutputHK" target="_blank" class="link">IOG</a>.
+					>, initially funded by
+					<a href="https://x.com/InputOutputHK" target="_blank" class="link">IOG</a> and just
+					received further funding from
+					<a href="https://projectcatalyst.io/" target="_blank" class="link"
+						>Project Catalyst Fund14</a
+					>.
 				</p>
 
 				<p class="mb-4">
@@ -184,7 +189,14 @@
 					well as CLI based authentication using the CardanoSigner.
 				</p>
 
-				<p>As of today Ekklesia is still under development.</p>
+				<p>
+					As of today Ekklesia is still under development. You will be able to track all further
+					development on our <a
+						href="https://projectcatalyst.io/funds/14/cardano-use-cases-concepts/ekklesia-high-frequency-voting-on-cardano-with-hydra"
+						target="_blank"
+						class="link">Project Catalyst Profile</a
+					>.
+				</p>
 			</Accordion.Content>
 		</Accordion.Item>
 	</Accordion.Root>

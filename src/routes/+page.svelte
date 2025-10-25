@@ -6,9 +6,24 @@
 	let { data } = $props();
 </script>
 
-<section class="mb-6">
+<section class="mb-8">
 	<h1>Welcome to Intersect Polling on Ekklesia</h1>
-	<p>Your place for all Intersect related polling.</p>
+	<p class="mb-4">
+		Your place for all Intersect related polling. All Polls on this platform are powered by
+		Ekklesia, but run by <a href="https://intersectmbo.org" target="_blank" class="link"
+			>Intersect</a
+		>.
+	</p>
+
+	<p class="mb-4">
+		You can look up any DRep voting on this tool in the <a href="/voters" class="link"
+			>Voter Directory</a
+		>. The Voter Directory is public, updated every 10 minutes and votes may change until a ballot
+		is closed. Final results may differ slightly from preliminary votes as the voting power per DRep
+		may change during the duration of the vote. Final results will be published on-chain and can be
+		verified.
+	</p>
+	<Button href="/voters" size="sm">Go to Voter Directory</Button>
 </section>
 
 {#if data.upcomingBallots.data.length > 0}
@@ -29,7 +44,7 @@
 {/if}
 
 {#if data.liveBallots.data.length > 0}
-	<section class="mb-8">
+	<section class="mb-10">
 		<h2>Live Ballots</h2>
 		<p class="mb-6">
 			The following Ballots are open for voting. Every registered DRep can login with their CIP95

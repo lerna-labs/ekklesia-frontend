@@ -3,7 +3,6 @@
 	import { loggedIn, voter } from '$stores/sessionManager.js';
 	import { page } from '$app/stores.js';
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
-	console.log($page);
 </script>
 
 <section class="text-xs *:mb-1">

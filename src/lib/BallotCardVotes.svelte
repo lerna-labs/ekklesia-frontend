@@ -36,16 +36,19 @@
 						</div>
 					</div>
 
-					<div
-						class="rounded-md p-2 text-xs {proposal.voteOptions.find(
-							(el) => el.value == proposal.vote
-						)?.label === 'Yes'
-							? 'bg-green-500 text-green-100'
-							: proposal.voteOptions.find((el) => el.value == proposal.vote)?.label === 'No'
-								? 'bg-red-500 text-red-100'
-								: 'bg-slate-500 text-slate-100'}"
-					>
-						{proposal.voteOptions.find((el) => el.value == proposal.vote)?.label}
+					<!-- loop through votes-->
+					<div>
+						{#each proposal.vote as label}
+							<div
+								class="mb-1 text-nowrap rounded-md p-2 text-center text-xs {label === 'Yes'
+									? 'bg-green-500 text-green-100'
+									: label === 'No'
+										? 'bg-red-500 text-red-100'
+										: 'bg-slate-500 text-slate-100'}"
+							>
+								{label}
+							</div>
+						{/each}
 					</div>
 				</div>
 				<div class="mt-1 text-sm">{proposal.description}</div>

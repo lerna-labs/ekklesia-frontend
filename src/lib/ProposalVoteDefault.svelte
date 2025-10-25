@@ -120,7 +120,12 @@
 		<Card.Title>{value ? 'Your Vote' : 'Vote now!'}</Card.Title>
 		<Card.Description>
 			{#if ballot.voteWeighted}
-				Voting Power: {lovelaceToAda(ballot.votingPower)}
+				<div class="mt-2 flex flex-col gap-1 text-xs">
+					<div>
+						<span class="font-semibold">Voting Power:</span>
+						{lovelaceToAda(ballot.votingPower)}
+					</div>
+				</div>
 			{/if}
 		</Card.Description>
 	</Card.Header>
