@@ -2,17 +2,11 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import { lovelaceToAda, convertTimestamp } from '$lib/utils.js';
 	let { proposal, ballot, showall = false } = $props();
-	console.log(ballot);
 
 	let hasThreshold = ballot.voteThreshold > 0;
 	let hasWeight = ballot.voteWeighted;
 	let totalVotes = $derived(proposal.voteCount);
 	let resultsSorted = $state([]);
-
-	if (ballot.voteWeighted) {
-		// sort result by voting power descending
-		resultsSorted = proposal.result?.results.sort((a, b) => b.votingPower - a.votingPower);
-	}
 
 	const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
 
@@ -35,6 +29,7 @@
 	// });
 </script>
 
+<h1 class="text-sm font-semibold">Vote Details</h1>
 <div class="max-h-100 space-y-2 p-1 pb-2 text-xs">
 	<div class="flex justify-between">
 		<span class="font-semibold">Total votes:</span>
@@ -64,7 +59,18 @@
 		{/if} -->
 	{/if}
 
-	<div class="border-t pt-3">
+	<div class="mt-4">
+		<Button
+			href={'/ballots/' + ballot._id + '/proposals/' + proposal._id + '/results'}
+			variant="primary"
+			size="sm"
+			class="m-auto bg-orange-600 text-white"
+		>
+			View {ballot.status == 'live' ? 'Preliminary' : 'Final'} Results
+		</Button>
+	</div>
+
+	<!-- <div class="border-t pt-3">
 		<h4 class="mb-2 text-[0.9rem] font-semibold">
 			{#if resultsSorted.length > 10 && !showall}
 				Results (Top 10)
@@ -117,7 +123,7 @@
 				class="mt-0 text-xs font-medium text-orange-500 hover:text-orange-700">Show all Results</a
 			>
 		{/if}
-	</div>
+	</div> -->
 </div>
 <div class="pl-1 text-xs text-muted-foreground">
 	Updated {convertTimestamp(proposal.result?.updatedAt)}

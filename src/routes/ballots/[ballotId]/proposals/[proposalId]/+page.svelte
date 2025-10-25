@@ -94,7 +94,7 @@
 {#if ballot.status != 'upcoming'}
 	<div class="mt-3 w-full">
 		<div class="relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] w-screen bg-slate-900">
-			<div class="m-auto grid max-w-3xl grid-cols-1 gap-6 p-4 pb-12 pt-8 text-white md:grid-cols-2">
+			<div class="m-auto grid max-w-3xl grid-cols-1 gap-6 p-4 pb-12 pt-8 text-white md:grid-cols-1">
 				<Card.Root class="flex h-full flex-col">
 					<Card.Header>
 						<Card.Title class="mb-2 p-0 text-lg">
@@ -108,7 +108,15 @@
 					</Card.Content>
 				</Card.Root>
 
-				<Card.Root class="flex h-full flex-col">
+				<Button
+					href={'/ballots/' + ballot._id + '/proposals/' + proposal._id + '/results'}
+					variant="primary"
+					class="m-auto bg-orange-600 text-white"
+				>
+					View {ballot.status == 'live' ? 'Preliminary' : 'Final'} Results
+				</Button>
+
+				<!-- <Card.Root class="flex h-full flex-col">
 					<Card.Header>
 						<Card.Title class="mb-2 p-0 text-lg">
 							{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
@@ -117,7 +125,7 @@
 					<Card.Content class="flex-1 pt-1">
 						<VoteDetails {ballot} {proposal} showall={true} />
 					</Card.Content>
-				</Card.Root>
+				</Card.Root> -->
 			</div>
 		</div>
 	</div>
