@@ -92,7 +92,7 @@
 <div id="results"></div>
 <div class="mt-[72px]"></div>
 {#if ballot.status != 'upcoming'}
-	<div class="mt-3 w-full">
+	<div class="mt-3 w-full border-b">
 		<div class="relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] w-screen bg-slate-900">
 			<div class="m-auto grid max-w-3xl grid-cols-1 gap-6 p-4 pb-12 pt-8 text-white md:grid-cols-1">
 				<Card.Root class="flex h-full flex-col">
