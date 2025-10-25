@@ -18,7 +18,7 @@
 		: '0.00';
 </script>
 
-<Popover.Root open={true}>
+<Popover.Root>
 	<Popover.Trigger
 		class={outline
 			? buttonVariants({ size: 'sm', variant: 'outline' })
@@ -62,12 +62,7 @@
 
 			<div class="flex justify-between">
 				<span class="font-semibold">Active Voters:</span>
-				<span
-					>{totalVotes}/{totalAllowedVoterCount} ({(
-						(totalVotes / totalAllowedVoterCount) *
-						100
-					).toFixed(2)}%)
-				</span>
+				<span>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%) </span>
 			</div>
 
 			{#if hasWeight}
@@ -80,7 +75,7 @@
 					<span class="font-semibold">Active Voting Power:</span>
 					<span>
 						{lovelaceToAda(proposal.votingPower)}
-						({((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)}%)
+						({activeVotingPowerPerc}%)
 					</span>
 				</div>
 			{/if}

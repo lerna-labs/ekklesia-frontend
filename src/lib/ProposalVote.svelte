@@ -21,94 +21,45 @@
 	});
 </script>
 
-{#if !inline}
-	<section id="vote" class="mt-6">
-		{#if $loggedIn && ballot.voterValidated && ballot.status == 'live'}
-			{#if proposal.voteType === 'default'}
-				<ProposalVoteDefault {proposal} {ballot} />
-			{/if}
-			{#if proposal.voteType === 'budget'}
-				<ProposalVoteBudget {proposal} {ballot} />
-			{/if}
+<section id="vote" class="mt-6">
+	{#if $loggedIn && ballot.voterValidated && ballot.status == 'live'}
+		{#if proposal.voteType === 'default'}
+			<ProposalVoteDefault {proposal} {ballot} />
 		{/if}
-		{#if $loggedIn && !ballot.voterValidated && ballot.status == 'live'}
-			<Card.Root class="h-full">
-				<Card.Header>
-					<Card.Title>Vote not possible</Card.Title>
-					<Card.Description>Your are not a valid voter for this proposal.</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<p class="text-sm text-gray-500">
-						Please check your voting eligibility or contact support for assistance.
-					</p>
-				</Card.Content>
-			</Card.Root>
+		{#if proposal.voteType === 'budget'}
+			<ProposalVoteBudget {proposal} {ballot} />
 		{/if}
-		{#if $loggedIn && ballot.status != 'live'}
-			<Card.Root class="h-full">
-				<Card.Header>
-					<Card.Title>Voting is closed</Card.Title>
-					<Card.Description>The voting for this proposal has ended.</Card.Description>
-				</Card.Header>
-			</Card.Root>
-		{/if}
-		{#if !$loggedIn}
-			<Card.Root class="h-full">
-				<Card.Header>
-					<Card.Title>Login required</Card.Title>
-					<Card.Description>You need to be logged in to vote on this proposal.</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<p class="text-sm text-gray-500">Please log in to your account to cast your vote.</p>
-				</Card.Content>
-			</Card.Root>
-		{/if}
-	</section>
-{/if}
-
-<!-- {#if inline}
-	<div class="relative inline-flex rounded-md">
-		{#if showVoteBanner}
-			<div
-				class="absolute -top-6 z-0 w-full rounded-lg rounded-b-none bg-zinc-400 pb-2 pt-1 text-center text-xs text-white {value !==
-				null
-					? 'fade-out'
-					: ''}"
-			>
-				Vote now
-			</div>
-		{/if}
-		{#each options as option, i}
-			<Button
-				class={`
-				  ${i === 0 ? 'rounded-l-md' : 'rounded-l-none'} 
-				  ${i === options.length - 1 ? 'rounded-r-md' : 'rounded-r-none'}
-				  ${i !== 0 ? 'z-1000 relative -ml-px ' : 'z-1000 relative '}`}
-				size="sm"
-				variant={value === option.value ? 'default' : 'outline'}
-				onclick={() => handleVote(option)}
-				disabled={ballot.status !== 'live' || !ballot.voterValidated}
-			>
-				{option.label}
-			</Button>
-		{/each}
-	</div>
-{/if} -->
-
-<style>
-	.fade-out {
-		animation: fadeOutDown 0.5s forwards;
-		pointer-events: none;
-	}
-
-	@keyframes fadeOutDown {
-		from {
-			opacity: 1;
-			transform: translateY(0);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(24px);
-		}
-	}
-</style>
+	{/if}
+	{#if $loggedIn && !ballot.voterValidated && ballot.status == 'live'}
+		<Card.Root class="h-full">
+			<Card.Header>
+				<Card.Title>Vote not possible</Card.Title>
+				<Card.Description>Your are not a valid voter for this proposal.</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<p class="text-sm text-gray-500">
+					Please check your voting eligibility or contact support for assistance.
+				</p>
+			</Card.Content>
+		</Card.Root>
+	{/if}
+	{#if $loggedIn && ballot.status != 'live'}
+		<Card.Root class="h-full">
+			<Card.Header>
+				<Card.Title>Voting is closed</Card.Title>
+				<Card.Description>The voting for this proposal has ended.</Card.Description>
+			</Card.Header>
+		</Card.Root>
+	{/if}
+	{#if !$loggedIn}
+		<Card.Root class="h-full">
+			<Card.Header>
+				<Card.Title>Login required</Card.Title>
+				<Card.Description>You need to be logged in to vote on this proposal.</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<p class="text-sm text-gray-500">Please log in to your account to cast your vote.</p>
+			</Card.Content>
+		</Card.Root>
+	{/if}
+</section>

@@ -101,9 +101,8 @@
 							{ballot.status == 'live' ? 'Vote now!' : 'Voting'}
 						</Card.Title>
 					</Card.Header>
-					<Card.Content class="flex-1 pt-0">
-						<ProposalDetails {proposal} />
-
+					<Card.Content class="flex-1 pt-0 text-muted-foreground">
+						<ProposalDetails {proposal} {ballot} />
 						<ProposalVote {ballot} {proposal} />
 					</Card.Content>
 				</Card.Root>

@@ -3,6 +3,8 @@
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { lovelaceToAda, convertTimestamp } from '$lib/utils.js';
+	import DonutChart from '$lib/charts/DonutChart.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	let { data } = $props();
 	let { ballot, proposal } = data;
@@ -12,6 +14,14 @@
 
 	let resultsSorted = $state([]);
 	const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
+
+	const activeVoterPerc = totalAllowedVoterCount
+		? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
+		: '0.00';
+
+	const activeVotingPowerPerc = ballot.totalVotingPower
+		? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
+		: '0.00';
 
 	if (ballot.voteWeighted) {
 		// sort result by voting power descending
@@ -28,44 +38,100 @@
 	<ProposalDetails {proposal} {ballot} />
 </section>
 
-<Card.Root class="mb-8 mt-8 flex h-full flex-col">
-	<Card.Header>
-		<Card.Title class="mb-2 p-0 text-lg">
-			{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
-		</Card.Title>
-	</Card.Header>
-	<Card.Content class="flex-1 pt-1">
-		<div class="max-h-100 space-y-2 p-1 pb-2 text-xs">
-			<div class="flex justify-between">
-				<span class="font-semibold">Total votes:</span>
-				<span
-					>{totalVotes}/{totalAllowedVoterCount} ({(
-						(totalVotes / totalAllowedVoterCount) *
-						100
-					).toFixed(2)}%)
-				</span>
-			</div>
+<section>
+	<Button
+		href={`/ballots/${ballot._id}/proposals/${proposal._id}`}
+		variant="outline"
+		size="sm"
+		class="mt-4"
+	>
+		View Full Proposal
+	</Button>
+</section>
 
-			{#if hasWeight}
-				<div class="flex justify-between">
-					<span class="font-semibold">Total voting power:</span>
-					<span>{lovelaceToAda(proposal.votingPower)}</span>
+<section id="participation" class="mt-8">
+	<h2>Vote Statistics</h2>
+	<div class="grid gap-4 md:grid-cols-2">
+		<Card.Root class="flex h-full flex-col">
+			<Card.Header class="pt-4">
+				<Card.Title class="mb-2  p-0 text-lg">Participation</Card.Title>
+			</Card.Header>
+			<Card.Content class="h-full pt-0 text-sm">
+				<div class="mb-2 flex justify-between">
+					<span class="font-semibold">Active Voters:</span>
+					<span>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%) </span>
 				</div>
 
-				<!-- {#if hasThreshold}
-			<div class="flex justify-between">
-				<span class="font-semibold">Vote threshold reached:</span>
-				<span
-					class={`rounded px-1 ${proposal.thresholdReached ? 'bg-green-400' : 'bg-red-400'} text-white`}
-				>
-					{voteThresholdReached ? 'Yes' : 'No'} ({voteThreshold.toFixed(2)}%)
-				</span>
-			</div>
-		{/if} -->
-			{/if}
+				{#if hasWeight}
+					<div class="mb-2 flex justify-between">
+						<span class="font-semibold">Total Voting Power:</span>
+						<span>{lovelaceToAda(ballot.totalVotingPower)}</span>
+					</div>
 
+					<div class="flex justify-between">
+						<span class="font-semibold">Active Voting Power:</span>
+						<span>
+							{lovelaceToAda(proposal.votingPower)}
+							({activeVotingPowerPerc}%)
+						</span>
+					</div>
+				{/if}
+			</Card.Content>
+			<Card.Footer>
+				<div class="pl-1 text-xs text-muted-foreground">
+					Last updated {convertTimestamp(proposal.result?.updatedAt)}
+				</div>
+			</Card.Footer>
+		</Card.Root>
+
+		<Card.Root class="flex h-full flex-col">
+			<Card.Header class="pt-4">
+				<Card.Title class="mb-2 p-0 text-lg">Participation</Card.Title>
+			</Card.Header>
+			<Card.Content class="flex-1 pt-1 text-sm">
+				<div class="mb-4 grid w-full grid-cols-2 gap-4">
+					<DonutChart
+						data={{
+							labels: ['Active', 'Inactive'],
+							datasets: [
+								{
+									data: [activeVoterPerc, (100 - activeVoterPerc).toFixed(2)],
+									backgroundColor: ['#f97316', '#e5e7eb'],
+									hoverBackgroundColor: ['#ea580c', '#d1d5db']
+								}
+							]
+						}}
+						title={'By Voter Count'}
+					/>
+					<DonutChart
+						data={{
+							labels: ['Active', 'Inactive'],
+							datasets: [
+								{
+									data: [activeVotingPowerPerc, (100 - activeVotingPowerPerc).toFixed(2)],
+									backgroundColor: ['#f97316', '#e5e7eb'],
+									hoverBackgroundColor: ['#ea580c', '#d1d5db']
+								}
+							]
+						}}
+						title={'By Voting Power'}
+					/>
+				</div>
+			</Card.Content>
+		</Card.Root>
+	</div>
+</section>
+
+<section id="results" class="mt-8">
+	<h2>
+		{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
+	</h2>
+	<Card.Root class="mb-8 flex h-full flex-col">
+		<Card.Header>
+			<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
+		</Card.Header>
+		<Card.Content class="flex-1 pb-2 pt-1 text-sm">
 			<div class="border-t pt-3">
-				<h4 class="mb-2 text-[0.9rem] font-semibold">Vote Breakdown</h4>
 				{#each resultsSorted as result}
 					<div class="mb-4">
 						<div class="flex justify-between">
@@ -106,9 +172,6 @@
 					</div>
 				{/each}
 			</div>
-		</div>
-		<div class="pl-1 text-xs text-muted-foreground">
-			Last updated {convertTimestamp(proposal.result?.updatedAt)}
-		</div>
-	</Card.Content>
-</Card.Root>
+		</Card.Content>
+	</Card.Root>
+</section>
