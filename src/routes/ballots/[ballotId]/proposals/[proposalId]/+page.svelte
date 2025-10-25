@@ -40,8 +40,9 @@
 
 {#if proposal.data?.collapsible}
 	<section class="mt-6">
+		<h2 class="mb-1 text-lg">{proposal.data.collapsible.title}</h2>
 		<Accordion.Root type="multiple" class="w-full">
-			{#each proposal.data.collapsible as item, index}
+			{#each proposal.data.collapsible.items as item, index}
 				<Accordion.Item value={'item-' + index}>
 					<Accordion.Trigger>
 						{item.title}
