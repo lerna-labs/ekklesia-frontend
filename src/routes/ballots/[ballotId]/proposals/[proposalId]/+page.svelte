@@ -8,7 +8,6 @@
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import { convertTimestamp } from '$lib/utils';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import VoteDetails from '$lib/VoteDetails.svelte';
 	import Markdown from '$lib/base/Markdown.svelte';
 	let { data } = $props();
 	let { ballot, proposal } = data;
@@ -116,17 +115,6 @@
 				>
 					View {ballot.status == 'live' ? 'Preliminary' : 'Final'} Results
 				</Button>
-
-				<!-- <Card.Root class="flex h-full flex-col">
-					<Card.Header>
-						<Card.Title class="mb-2 p-0 text-lg">
-							{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
-						</Card.Title>
-					</Card.Header>
-					<Card.Content class="flex-1 pt-1">
-						<VoteDetails {ballot} {proposal} showall={true} />
-					</Card.Content>
-				</Card.Root> -->
 			</div>
 		</div>
 	</div>

@@ -1,7 +1,6 @@
 <script>
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
-	import VoteDetails from '$lib/VoteDetails.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { lovelaceToAda, convertTimestamp } from '$lib/utils.js';
 
