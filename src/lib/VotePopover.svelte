@@ -26,7 +26,7 @@
 		disabled={!totalVotes}
 	>
 		{totalVotes}
-		{totalVotes > 1 || 0 ? 'Votes' : 'Vote'}
+		{totalVotes > 1 || 0 || !totalVotes ? 'Votes' : 'Vote'}
 	</Popover.Trigger>
 	<Popover.Content>
 		<h1 class="text-sm font-semibold">Participation</h1>
