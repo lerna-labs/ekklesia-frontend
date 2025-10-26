@@ -11,7 +11,7 @@
 	let { children, data } = $props();
 	const NETWORK_ID = import.meta.env.VITE_NETWORK_ID;
 
-	let notice = $state();
+	let notice = $state(undefined);
 </script>
 
 <Toaster />
