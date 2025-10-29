@@ -93,18 +93,4 @@
 			{/each}
 		</div>
 	{/if}
-
-	{#if proposal.thresholdReached}
-		<div class="mt-2">
-			<div class="inline rounded-xl bg-green-400 p-3 font-semibold text-green-800">
-				Threshold Reached
-			</div>
-		</div>
-	{:else if proposal.thresholdReached == false}
-		<div class="mt-2">
-			<div class="inline rounded-xl bg-red-400 px-3 py-2 font-semibold text-red-800">
-				Threshold Not Reached
-			</div>
-		</div>
-	{/if}
 </section>
