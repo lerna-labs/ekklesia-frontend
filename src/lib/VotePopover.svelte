@@ -91,8 +91,10 @@
 				</Button>
 			</div>
 		</div>
-		<div class="mt-2 pl-1 text-xs text-muted-foreground">
-			Last Updated {convertTimestamp(proposal.result?.updatedAt)}
-		</div>
+		{#if proposal.updatedAt}
+			<div class="mt-2 pl-1 text-xs text-muted-foreground">
+				Last Updated {convertTimestamp(proposal.updatedAt)}
+			</div>
+		{/if}
 	</Popover.Content>
 </Popover.Root>

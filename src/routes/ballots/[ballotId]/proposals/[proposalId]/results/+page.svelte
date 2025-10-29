@@ -8,6 +8,7 @@
 
 	let { data } = $props();
 	let { ballot, proposal } = data;
+	console.log(proposal);
 	let proposalData = proposal.data;
 	let hasWeight = ballot.voteWeighted;
 	let totalVotes = $derived(proposal.voteCount);
@@ -78,9 +79,11 @@
 				{/if}
 			</Card.Content>
 			<Card.Footer>
-				<div class="pl-1 text-xs text-muted-foreground">
-					Last updated {convertTimestamp(proposal.result?.updatedAt)}
-				</div>
+				{#if proposal.updatedAt}
+					<div class="pl-1 text-xs text-muted-foreground">
+						Last updated {convertTimestamp(proposal.result?.updatedAt)}
+					</div>
+				{/if}
 			</Card.Footer>
 		</Card.Root>
 
@@ -122,43 +125,23 @@
 	</div>
 </section>
 
-<section id="results" class="mt-8">
-	<h2>
-		{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
-	</h2>
-	<Card.Root class="mb-8 flex h-full flex-col">
-		<Card.Header>
-			<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
-		</Card.Header>
-		<Card.Content class="flex-1 pb-2 pt-1 text-sm">
-			<div class="border-t pt-3">
-				{#each resultsSorted as result}
-					<div class="mb-4">
-						<div class="flex justify-between">
-							<span class="font-semibold">{result.label}:</span>
-							<span class="text-nowrap font-semibold">
-								{#if ballot.voteWeighted}
-									{lovelaceToAda(result.votingPower)} ({(
-										(result.votingPower / proposal.votingPower) *
-										100
-									).toFixed(1)}%)
-								{:else}
-									{result.count} ({((result.count / totalVotes) * 100).toFixed(1) || 0}%)
-								{/if}
-							</span>
-						</div>
-
-						{#if hasWeight}
-							<div class="mt-1 flex justify-between text-muted-foreground">
-								<span class="whitespace-nowrap font-semibold">
-									{#if !ballot.voteWeighted}
-										Voting Power:
-									{:else}
-										Total Votes:
-									{/if}
-								</span>
-								<span class="text-right">
-									{#if !ballot.voteWeighted}
+{#if proposal.result}
+	<section id="results" class="mt-8">
+		<h2>
+			{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
+		</h2>
+		<Card.Root class="mb-8 flex h-full flex-col">
+			<Card.Header>
+				<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
+			</Card.Header>
+			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
+				<div class="border-t pt-3">
+					{#each resultsSorted as result}
+						<div class="mb-4">
+							<div class="flex justify-between">
+								<span class="font-semibold">{result.label}:</span>
+								<span class="text-nowrap font-semibold">
+									{#if ballot.voteWeighted}
 										{lovelaceToAda(result.votingPower)} ({(
 											(result.votingPower / proposal.votingPower) *
 											100
@@ -168,10 +151,32 @@
 									{/if}
 								</span>
 							</div>
-						{/if}
-					</div>
-				{/each}
-			</div>
-		</Card.Content>
-	</Card.Root>
-</section>
+
+							{#if hasWeight}
+								<div class="mt-1 flex justify-between text-muted-foreground">
+									<span class="whitespace-nowrap font-semibold">
+										{#if !ballot.voteWeighted}
+											Voting Power:
+										{:else}
+											Total Votes:
+										{/if}
+									</span>
+									<span class="text-right">
+										{#if !ballot.voteWeighted}
+											{lovelaceToAda(result.votingPower)} ({(
+												(result.votingPower / proposal.votingPower) *
+												100
+											).toFixed(1)}%)
+										{:else}
+											{result.count} ({((result.count / totalVotes) * 100).toFixed(1) || 0}%)
+										{/if}
+									</span>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			</Card.Content>
+		</Card.Root>
+	</section>
+{/if}
