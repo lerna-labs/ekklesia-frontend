@@ -50,7 +50,7 @@
 	</Button>
 </section>
 
-<section id="participation" class="mt-8">
+<section id="participation" class="mb-8 mt-8">
 	<h2>Vote Statistics</h2>
 	<div class="grid gap-4 md:grid-cols-2">
 		<Card.Root class="flex h-full flex-col">
@@ -81,7 +81,7 @@
 			<Card.Footer>
 				{#if proposal.updatedAt}
 					<div class="pl-1 text-xs text-muted-foreground">
-						Last updated {convertTimestamp(proposal.result?.updatedAt)}
+						Updated {convertTimestamp(proposal.result?.updatedAt)}
 					</div>
 				{/if}
 			</Card.Footer>

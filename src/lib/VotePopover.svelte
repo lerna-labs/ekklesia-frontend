@@ -92,8 +92,8 @@
 			</div>
 		</div>
 		{#if proposal.updatedAt}
-			<div class="mt-2 pl-1 text-xs text-muted-foreground">
-				Last Updated {convertTimestamp(proposal.updatedAt)}
+			<div class="mt-2 text-nowrap pl-1 text-xs text-muted-foreground">
+				Updated {convertTimestamp(proposal.updatedAt)}
 			</div>
 		{/if}
 	</Popover.Content>
