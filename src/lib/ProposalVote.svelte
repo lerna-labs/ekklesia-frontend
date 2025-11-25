@@ -43,7 +43,7 @@
 			</Card.Content>
 		</Card.Root>
 	{/if}
-	{#if $loggedIn && ballot.status != 'live'}
+	{#if ballot.status != 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Voting is closed</Card.Title>
@@ -51,7 +51,7 @@
 			</Card.Header>
 		</Card.Root>
 	{/if}
-	{#if !$loggedIn}
+	{#if !$loggedIn && ballot.status == 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Login required</Card.Title>
