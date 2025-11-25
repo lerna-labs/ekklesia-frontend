@@ -47,7 +47,7 @@
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Voting is closed</Card.Title>
-				<Card.Description>The voting for this proposal has ended.</Card.Description>
+				<Card.Description class="pb-5">The voting for this proposal has ended.</Card.Description>
 			</Card.Header>
 		</Card.Root>
 	{/if}
