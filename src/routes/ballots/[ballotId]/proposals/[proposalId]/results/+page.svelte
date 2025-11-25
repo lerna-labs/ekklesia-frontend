@@ -58,23 +58,20 @@
 				<Card.Title class="mb-2  p-0 text-lg">Participation</Card.Title>
 			</Card.Header>
 			<Card.Content class="h-full pt-0 text-sm">
-				<div class="mb-2 flex justify-between">
-					<span class="font-semibold">Active Voters:</span>
-					<span>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%) </span>
+				<div class="mb-3">
+					<div class="text-nowrap font-semibold">Active Voters</div>
+					<div>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%)</div>
 				</div>
 
 				{#if hasWeight}
-					<div class="mb-2 flex justify-between">
-						<span class="font-semibold">Total Voting Power:</span>
-						<span>{lovelaceToAda(ballot.totalVotingPower)}</span>
+					<div class="mb-3">
+						<div class="text-nowrap font-semibold">Total Voting Power</div>
+						<div>{lovelaceToAda(ballot.totalVotingPower)}</div>
 					</div>
 
-					<div class="flex justify-between">
-						<span class="font-semibold">Active Voting Power:</span>
-						<span>
-							{lovelaceToAda(proposal.votingPower)}
-							({activeVotingPowerPerc}%)
-						</span>
+					<div>
+						<div class="text-nowrap font-semibold">Active Voting Power</div>
+						<div>{lovelaceToAda(proposal.votingPower)} ({activeVotingPowerPerc}%)</div>
 					</div>
 				{/if}
 			</Card.Content>
