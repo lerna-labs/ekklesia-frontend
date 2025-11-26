@@ -75,13 +75,6 @@
 					</div>
 				{/if}
 			</Card.Content>
-			<Card.Footer>
-				{#if proposal.result?.updatedAt}
-					<div class="pl-1 text-xs text-muted-foreground">
-						Updated {convertTimestamp(proposal.result?.updatedAt)}
-					</div>
-				{/if}
-			</Card.Footer>
 		</Card.Root>
 
 		<Card.Root class="flex h-full flex-col">
@@ -124,9 +117,16 @@
 
 {#if proposal.result}
 	<section id="results" class="mt-8">
-		<h2>
-			{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
-		</h2>
+		<div class="flex items-end justify-between">
+			<h2>
+				{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
+			</h2>
+			{#if proposal.result?.updatedAt}
+				<div class="mb-4 text-xs text-muted-foreground">
+					Last Updated {convertTimestamp(proposal.result?.updatedAt)}
+				</div>
+			{/if}
+		</div>
 		<Card.Root class="mb-8 flex h-full flex-col">
 			<Card.Header>
 				<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>

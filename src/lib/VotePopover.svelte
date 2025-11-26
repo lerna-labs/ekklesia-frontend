@@ -73,7 +73,7 @@
 
 				<div class="flex justify-between">
 					<span class="font-semibold">Active Voting Power:</span>
-					<span>
+					<span class="text-nowrap">
 						{lovelaceToAda(proposal.votingPower)}
 						({activeVotingPowerPerc}%)
 					</span>
@@ -91,10 +91,10 @@
 				</Button>
 			</div>
 		</div>
-		{#if proposal.updatedAt}
+		<!-- {#if proposal.updatedAt}
 			<div class="mt-2 text-nowrap pl-1 text-xs text-muted-foreground">
 				Updated {convertTimestamp(proposal.updatedAt)}
 			</div>
-		{/if}
+		{/if} -->
 	</Popover.Content>
 </Popover.Root>
