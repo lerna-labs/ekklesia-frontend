@@ -76,7 +76,7 @@
 				{/if}
 			</Card.Content>
 			<Card.Footer>
-				{#if proposal.updatedAt}
+				{#if proposal.result?.updatedAt}
 					<div class="pl-1 text-xs text-muted-foreground">
 						Updated {convertTimestamp(proposal.result?.updatedAt)}
 					</div>

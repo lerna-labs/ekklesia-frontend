@@ -32,7 +32,7 @@
 			<Sort
 				showCost={ballot.voteFilters}
 				sortOptions={[
-					{ value: 'name', label: 'Name' },
+					{ value: 'title', label: 'Name' },
 					{ value: 'commentCount', label: 'Comment Count' },
 					{ value: 'voteCount', label: 'Vote Count' }
 				]}
