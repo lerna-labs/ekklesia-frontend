@@ -3,7 +3,7 @@
 	import { api } from '$stores/sessionManager.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { buttonVariants } from '$lib/components/ui/button';
-	import DownloadJson from '$lib/WalletSigner/DownloadJson.svelte';
+	import DownloadJson from '$lib/DownloadJson.svelte';
 	let { transaction } = $props();
 	const transactionData = $derived.by(() => transaction);
 	let ballotData = $state(undefined);

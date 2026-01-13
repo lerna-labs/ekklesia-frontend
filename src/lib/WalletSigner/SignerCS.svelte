@@ -15,12 +15,16 @@
 	let signatureJSON = $state('');
 	let loading = $state(false);
 	let placeholder = $derived.by(() => {
-		if (signType === 'addr') {
-			return 'Please enter your payment address';
-		} else if (signType === 'drep') {
-			return 'Please enter your CIP-129 DRep-ID';
+		switch (signType) {
+			case 'addr':
+				return 'Please enter your payment address';
+			case 'drep':
+				return 'Please enter your CIP-129 DRep-ID';
+			case 'pool':
+				return 'Please enter your Pool ID';
+			case 'stake':
+				return 'Please enter your stake address';
 		}
-		return '';
 	});
 
 	if ($loggedIn && !multiSig) {
@@ -133,7 +137,12 @@
 {/if}
 
 {#if receivedPayload}
-	<SignerCommand {signerAddress} {signType} dataHex={receivedPayload.dataHex} />
+	<SignerCommand
+		{signerAddress}
+		{signType}
+		dataHex={receivedPayload.dataHex}
+		payload={receivedPayload}
+	/>
 
 	<Textarea
 		placeholder="Paste the JSON payload here"

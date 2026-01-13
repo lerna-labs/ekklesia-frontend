@@ -6,7 +6,7 @@
 	import { getPayload, signData, submitSignature } from '$lib/WalletSigner/WalletSigner.js';
 
 	const dispatch = createEventDispatcher();
-	let { signType = '', mode, ballot = false, scriptAddress, multiSig, tx } = $props();
+	let { signType = '', mode, ballot = false, scriptAddress, multiSig, tx, poolId } = $props();
 	let loading = $state(false);
 	let connectedWallet = $state(undefined);
 	let payload = $state(undefined);
@@ -21,6 +21,11 @@
 		}
 		if (tx) {
 			url += '/' + tx;
+		}
+
+		// replace connected wallet address with pool id
+		if (signType === 'pool' && poolId) {
+			connectedWallet.address = poolId;
 		}
 
 		const payload = await getPayload(url, connectedWallet.address, signType, scriptAddress);
@@ -42,6 +47,11 @@
 		let url = '/session';
 		if (multiSigCheck) {
 			url = '/session/multisig';
+		}
+
+		// replace connected wallet address with pool id
+		if (signType === 'pool' && poolId) {
+			connectedWallet.address = poolId;
 		}
 		try {
 			payload = await getPayload(url, connectedWallet.address, signType, scriptAddress);
@@ -65,11 +75,11 @@
 	async function signAndSubmit(payload) {
 		loading = true;
 
-		const signature = await signData(
-			connectedWallet,
-			payload.voterIdHex || payload.signerAddressHex,
-			payload.dataHex
-		);
+		let signer = payload.voterIdHex || payload.signerAddressHex;
+		if (signType === 'pool' && poolId) {
+			signer = payload.calidusID;
+		}
+		const signature = await signData(connectedWallet, signer, payload.dataHex);
 		if (signature?.error) {
 			toast.error(signature.error);
 			loading = false;
@@ -124,7 +134,11 @@
 />
 <Button
 	class="w-full"
-	disabled={!signType || !connectedWallet || loading || (multiSigCheck === true && !scriptAddress)}
+	disabled={!signType ||
+		!connectedWallet ||
+		loading ||
+		(multiSigCheck === true && !scriptAddress) ||
+		(signType === 'pool' && !poolId)}
 	onclick={mode == 'login' ? login : checkout}
 >
 	{#if loading}

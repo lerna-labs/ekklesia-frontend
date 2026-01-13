@@ -9,18 +9,29 @@
 	// console.log('Network ID:', NETWORK_ID);
 
 	let { signType = 'stake' } = $props();
-	let wallets = $state([]);
+	let allWallets = $state([]);
+	let wallets = $derived.by(() => {
+		if (signType === 'pool') {
+			return allWallets.filter((wallet) => wallet.includes('eternl'));
+		}
+		return allWallets;
+	});
 	let selectedWallet = $state(undefined);
 	let connectedWallet = $state(undefined);
 	let walletApi = $state(undefined);
 	let loading = $state(false);
 
 	onMount(async () => {
-		wallets = await getWallets();
-		if (wallets.error) {
+		const walletList = await getWallets();
+
+		// if no wallets available, show error
+		if (walletList.error) {
 			toast.error('No wallets available');
-			dispatch('nowallets', wallets.error);
+			dispatch('nowallets', walletList.error);
+			return;
 		}
+
+		allWallets = walletList;
 	});
 
 	async function connectWallet(walletName) {

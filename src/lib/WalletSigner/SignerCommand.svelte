@@ -1,19 +1,38 @@
 <script>
 	import { toast } from 'svelte-sonner';
 	import { Copy } from 'lucide-svelte';
-	let { signType, signerAddress, dataHex } = $props();
+	import { Button } from '$lib/components/ui/button/index.js';
+	let { signType, signerAddress, payload } = $props();
 	const NETWORK = import.meta.env.VITE_NETWORK_ID;
-	console.log(NETWORK);
 	const testNetMagic = NETWORK == 1 ? '' : '--testnet-magic xxx';
 
-	function copyCommand() {
-		// Create the complete command text with proper substitutions
-		const command = `./cardano-signer sign --cip30 --data-hex "${dataHex}" --address ${signerAddress} --secret-key ${signType}.skey --json ${testNetMagic}`;
+	// Create the complete command text with proper substitutions
+	let command = $state(undefined);
 
+	switch (signType) {
+		case 'drep':
+			command = `cardano-signer sign --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} --secret-key ${signType}.skey`;
+			break;
+		case 'pool':
+			command = `cardano-signer sign --json --cip30 --data-hex  "${payload.dataHex}" --address ${payload.calidusID} --secret-key ${signType}.skey`;
+			break;
+		case 'addr':
+			command = `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
+			break;
+		case 'stake':
+			command = `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
+			break;
+	}
+
+	function copyCommand() {
 		// Copy the formatted command
 		navigator.clipboard.writeText(command);
-
 		toast.success('Command copied to clipboard');
+	}
+
+	function copyDataHex() {
+		navigator.clipboard.writeText(payload.dataHex);
+		toast.success('Data hex copied to clipboard');
 	}
 </script>
 
@@ -37,12 +56,12 @@
 	</div>
 
 	<pre class="w-full overflow-y-hidden bg-slate-100 text-xs">
-./cardano-signer sign --cip30 --data-hex "{dataHex}" \
---address {signerAddress} \
---secret-key {signType}.skey \
---json {testNetMagic}
+{command}
 </pre>
 </button>
+<Button class="mt-2 w-full" variant="secondary" size="sm" onclick={copyDataHex}
+	>Copy Data Hex</Button
+>
 
 <style>
 	.copyPayload {

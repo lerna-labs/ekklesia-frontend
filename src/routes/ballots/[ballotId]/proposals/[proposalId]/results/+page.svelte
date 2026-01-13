@@ -8,7 +8,6 @@
 
 	let { data } = $props();
 	let { ballot, proposal } = data;
-	console.log(proposal);
 	let proposalData = proposal.data;
 	let hasWeight = ballot.voteWeighted;
 	let totalVotes = $derived(proposal.voteCount);

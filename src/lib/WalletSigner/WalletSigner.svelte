@@ -17,6 +17,7 @@
 	let noWallets = $state(false);
 	let signType = $state('drep');
 	let multiSig = $state($voter?.multiSig || '');
+	let poolId = $state($voter?.voterId || '');
 	let scriptAddress = $derived.by(() => {
 		if (multiSig && $loggedIn) {
 			return $voter.voterId;
@@ -132,6 +133,10 @@
 						mode={selected}
 						on:change={(e) => (signType = e.detail)}
 					/>
+					<!-- ENTER POOL ID -->
+					{#if signType === 'pool'}
+						<Input type="text" placeholder="Enter Pool ID" class="mb-2" bind:value={poolId} />
+					{/if}
 				{:else}
 					<!-- display VoterId -->
 					<Input type="text" value={$voter.voterId} disabled />
@@ -147,6 +152,7 @@
 					{multiSig}
 					{scriptAddress}
 					{tx}
+					{poolId}
 					on:success={submitSuccess}
 					on:login={storeToken}
 					on:nowallets={() => {
