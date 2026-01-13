@@ -104,6 +104,8 @@ export async function getSignerAddress(walletApi, signType) {
 			return drepKey;
 		case 'addr':
 			return paymentAddresses[0];
+		case 'pool':
+			return paymentAddresses[0];
 		default:
 			return {
 				error: 'Invalid sign type'
