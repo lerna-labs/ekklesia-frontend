@@ -1,10 +1,7 @@
 <script>
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { ThumbsUp, ThumbsDown, CircleSlash } from 'lucide-svelte';
-	import VoterStake from '$lib/VoterStake.svelte';
-	import VoterPool from '$lib/VoterPool.svelte';
-	import VoterDrep from '$lib/VoterDrep.svelte';
-	import VoterBadge from '$lib/VoterBadge.svelte';
+	import VoterInfo from '$lib/VoterInfo.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 
@@ -20,18 +17,8 @@
 
 	{#if voterData.error}
 		<p>The requested Voter Profile couldn't be found.</p>
-	{/if}
-
-	{#if voterData.voterType === 'stake'}
-		<VoterStake {voterData} />
-	{/if}
-
-	{#if voterData.voterType === 'drep'}
-		<VoterDrep {voterData} />
-	{/if}
-
-	{#if voterData.voterType === 'pool'}
-		<VoterPool {voterData} />
+	{:else}
+		<VoterInfo {voterData} />
 	{/if}
 </section>
 
