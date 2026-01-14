@@ -40,7 +40,7 @@
 </Card.Root>
 
 <section class="mt-6" id="active-ballots">
-	<h2>Active Ballots</h2>
+	<h2>Your Active Ballots</h2>
 
 	{#if data.ballots.filter((b) => b.status == 'live').length > 0}
 		{#each data.ballots.filter((b) => b.status == 'live') as ballot}
@@ -48,8 +48,8 @@
 		{/each}
 	{:else}
 		<p class="text-muted-foreground">
-			No active ballots. If you expect an ongoing vote to show up here, make sure you're using the
-			correct wallet and are a registered voter on that ballot.
+			No active ballots found. If you expect an ongoing vote to show up here, make sure you're using
+			the correct wallet and are a registered voter on that ballot.
 		</p>
 	{/if}
 </section>
@@ -60,7 +60,7 @@
 
 {#if pendingTransactions.length > 0}
 	<section class="mt-6" id="transaction-history">
-		<h2>Pending MultiSig Transactions</h2>
+		<h2>Your Pending MultiSig Transactions</h2>
 		{#each pendingTransactions as transaction, i}
 			<div id="transaction-{transaction._id}">
 				<Card.Root class="mb-4">
@@ -103,7 +103,7 @@
 
 {#if submittedTransactions.length > 0}
 	<section class="mt-6" id="transaction-history">
-		<h2>Transaction History</h2>
+		<h2>Your Transaction History</h2>
 		{#each submittedTransactions as transaction}
 			<div>
 				<Card.Root class="mb-4">

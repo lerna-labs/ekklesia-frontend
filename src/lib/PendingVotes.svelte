@@ -11,11 +11,11 @@
 </script>
 
 <section class="mt-6" id="pending-votes">
-	<h2>Pending Votes</h2>
+	<h2>Your Pending Votes</h2>
 	{#if pendingVotes.length > 0}
 		<p class="mb-4">
-			You have pending votes that still need to be signed & submitted. Please review and submit them
-			by using your Cardano Wallet or the CardanoSigner.
+			You have pending votes that still need to be signed and submitted. Please review and submit
+			them by using your Cardano wallet or the CardanoSigner.
 		</p>
 
 		{#each pendingVotes as ballot}
