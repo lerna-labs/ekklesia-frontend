@@ -135,11 +135,18 @@
 					/>
 					<!-- ENTER POOL ID -->
 					{#if signType === 'pool' && selected === 'wallet'}
-						<Input type="text" placeholder="Enter Pool ID" class="mb-2" bind:value={poolId} />
+						<Input
+							type="text"
+							placeholder="Please enter your Pool ID"
+							class="mb-2"
+							bind:value={poolId}
+						/>
 					{/if}
 				{:else}
 					<!-- display VoterId -->
-					<Input type="text" value={$voter.voterId} disabled />
+					{#if selected === 'wallet'}
+						<Input type="text" value={$voter.voterId} disabled />
+					{/if}
 				{/if}
 			{/if}
 

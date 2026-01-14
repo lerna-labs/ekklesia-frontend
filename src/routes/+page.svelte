@@ -2,8 +2,10 @@
 	import BallotCard from '$lib/BallotCard.svelte';
 	import FAQs from '$lib/FAQs.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { page } from '$app/stores';
 	import Page from './ballots/+page.svelte';
 	let { data } = $props();
+	console.log($page.data);
 </script>
 
 <section class="mb-8">

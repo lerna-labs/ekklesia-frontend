@@ -111,13 +111,7 @@
 </script>
 
 {#if !receivedPayload}
-	<Input
-		type="text"
-		{placeholder}
-		class="mt-2 w-full"
-		bind:value={signerAddress}
-		disabled={!signType}
-	/>
+	<Input type="text" {placeholder} class="mt-2 w-full" bind:value={signerAddress} />
 
 	<Button
 		class="mt-2 w-full"

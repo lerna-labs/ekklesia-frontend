@@ -5,7 +5,7 @@
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	const dispatch = createEventDispatcher();
-	const NETWORK_ID = $state($page.data.serverStatus.networkId);
+	const NETWORK_ID = $derived.by(() => $page.data.serverStatus.networkId);
 
 	let { signType = 'stake' } = $props();
 	let allWallets = $state([]);
