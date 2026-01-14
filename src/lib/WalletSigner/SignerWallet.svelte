@@ -126,7 +126,6 @@
 	{signType}
 	on:connected={(e) => {
 		connectedWallet = e.detail;
-		console.log('connectedWallet', connectedWallet);
 	}}
 	on:nowallets={(e) => {
 		dispatch('nowallets', e.detail);

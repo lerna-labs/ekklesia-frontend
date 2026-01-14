@@ -134,7 +134,7 @@
 						on:change={(e) => (signType = e.detail)}
 					/>
 					<!-- ENTER POOL ID -->
-					{#if signType === 'pool'}
+					{#if signType === 'pool' && selected === 'wallet'}
 						<Input type="text" placeholder="Enter Pool ID" class="mb-2" bind:value={poolId} />
 					{/if}
 				{:else}
