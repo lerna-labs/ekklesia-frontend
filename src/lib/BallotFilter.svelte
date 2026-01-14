@@ -10,8 +10,16 @@
 	const { data } = $props();
 
 	// Initialize status and voterType from URL or default to 'All'
+	// svelte-ignore state_referenced_locally
 	let status = $state(data.status ? capitalizeFirstLetter(data.status) : 'All');
+	// svelte-ignore state_referenced_locally
 	let voterType = $state(data.voterType || 'All');
+
+	// Sync state when data prop changes (e.g., URL changes)
+	$effect(() => {
+		status = data.status ? capitalizeFirstLetter(data.status) : 'All';
+		voterType = data.voterType || 'All';
+	});
 
 	// Helper function to capitalize first letter
 	function capitalizeFirstLetter(string) {

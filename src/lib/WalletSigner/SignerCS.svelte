@@ -27,9 +27,11 @@
 		}
 	});
 
-	if ($loggedIn && !multiSig) {
-		signerAddress = $voter?.voterId;
-	}
+	$effect(() => {
+		if ($loggedIn && !multiSig) {
+			signerAddress = $voter?.voterId;
+		}
+	});
 
 	// Request payload for signing
 	async function requestPayload() {
@@ -80,7 +82,6 @@
 				receivedPayload?.merkleRoot,
 				scriptAddress
 			);
-			console.log('submitResponse', submitResponse);
 			if (submitResponse?.error) {
 				toast.error(submitResponse.error);
 				loading = false;

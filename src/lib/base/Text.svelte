@@ -3,7 +3,8 @@
 
 	let { text, expanded = false } = $props();
 	let textData = $derived(text);
-	let isExpanded = $state(expanded); // Initialize with the prop value
+	// svelte-ignore state_referenced_locally
+	let isExpanded = $state(expanded); // Initialize with the prop value, synced via $effect below
 	let isLongText = $derived(text.length > 300);
 	let textConverted = $derived(
 		// svelte-ignore state_referenced_locally

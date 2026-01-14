@@ -7,22 +7,20 @@
 	const testNetMagic = NETWORK == 1 ? '' : '--testnet-magic xxx';
 
 	// Create the complete command text with proper substitutions
-	let command = $state(undefined);
-
-	switch (signType) {
-		case 'drep':
-			command = `cardano-signer sign --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} --secret-key ${signType}.skey`;
-			break;
-		case 'pool':
-			command = `cardano-signer sign --json --cip30 --data-hex  "${payload.dataHex}" --address ${payload.calidusID} --secret-key ${signType}.skey`;
-			break;
-		case 'addr':
-			command = `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
-			break;
-		case 'stake':
-			command = `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
-			break;
-	}
+	const command = $derived.by(() => {
+		switch (signType) {
+			case 'drep':
+				return `cardano-signer sign --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} --secret-key ${signType}.skey`;
+			case 'pool':
+				return `cardano-signer sign --json --cip30 --data-hex  "${payload.dataHex}" --address ${payload.calidusID} --secret-key ${signType}.skey`;
+			case 'addr':
+				return `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
+			case 'stake':
+				return `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
+			default:
+				return undefined;
+		}
+	});
 
 	function copyCommand() {
 		// Copy the formatted command
