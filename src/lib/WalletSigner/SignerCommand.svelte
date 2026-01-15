@@ -12,7 +12,7 @@
 			case 'drep':
 				return `cardano-signer sign --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} --secret-key ${signType}.skey`;
 			case 'pool':
-				return `cardano-signer sign --json --cip30 --data-hex  "${payload.dataHex}" --address ${payload.calidusID} --secret-key ${signType}.skey`;
+				return `cardano-signer sign --json --cip30 --data-hex  "${payload.dataHex}" --address ${payload.calidusID} --secret-key calidus.skey`;
 			case 'addr':
 				return `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
 			case 'stake':
