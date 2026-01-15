@@ -71,19 +71,19 @@
 
 	.copyButton {
 		position: absolute;
-		top: 1rem;
+		top: 0.75rem;
 		right: 0.5rem;
 	}
 
 	pre {
-		padding: 1rem;
+		padding: 0.75rem 2rem 0.75rem 1rem;
 		border-radius: 0.5rem;
 		box-sizing: border-box;
 		width: 100%;
-		overflow-x: auto; /* Allow horizontal scrolling */
-		white-space: pre-wrap; /* Wrap text when needed */
-		word-break: break-word; /* Break words to prevent overflow */
-		font-size: 0.6rem; /* Slightly smaller font */
-		line-height: 1.5; /* Better line spacing */
+		overflow-x: auto;
+		white-space: pre-wrap;
+		word-break: break-all;
+		font-size: 0.6rem;
+		line-height: 1.6;
 	}
 </style>
