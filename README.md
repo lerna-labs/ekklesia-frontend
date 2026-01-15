@@ -155,8 +155,8 @@ The application uses SvelteKit's file-based routing:
 
 ## License
 
-[Add your license information here]
+Apache 2.0
 
 ## Support
 
-For issues and questions, please refer to the project repository or contact the development team.
+For issues and questions, please refer to [the main Ekklesia repository](https://github.com/Lerna-Labs/ekklesia/issues)
