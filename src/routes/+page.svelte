@@ -5,7 +5,6 @@
 	import { page } from '$app/stores';
 	import Page from './ballots/+page.svelte';
 	let { data } = $props();
-	console.log($page.data);
 </script>
 
 <section class="mb-8">
