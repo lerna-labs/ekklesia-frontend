@@ -42,11 +42,15 @@
 			reset();
 			return;
 		}
-		const signerAddress = await getSignerAddress(walletApi, signType);
-		if (signerAddress.error) {
-			toast.error(signerAddress.error);
-			reset();
-			return;
+
+		let signerAddress;
+		if(signType !== 'pool') {
+			signerAddress = await getSignerAddress(walletApi, signType);
+			if (signerAddress.error) {
+				toast.error(signerAddress.error);
+				reset();
+				return;
+			}
 		}
 
 		loading = false;

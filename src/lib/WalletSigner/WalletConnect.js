@@ -73,42 +73,62 @@ export async function checkNetwork(walletApi, expectedNetwork) {
 }
 
 export async function getSignerAddress(walletApi, signType) {
-	let rewardAddresses = await walletApi.getRewardAddresses();
-	let paymentAddresses = await walletApi.getUnusedAddresses();
-	let drepKey = await walletApi.cip95.getPubDRepKey();
 
-	if (signType === 'stake' && rewardAddresses.length === 0) {
-		logError('No reward addresses found');
-		return {
-			error: 'No reward addresses found'
-		};
-	}
-	if (signType === 'drep' && !drepKey) {
-		logError('No drep key found');
-		return {
-			error: 'No drep key found'
-		};
-	}
-
-	if (signType === 'addr' && paymentAddresses.length === 0) {
-		logError('No payment key found');
-		return {
-			error: 'No payment key found'
-		};
-	}
-
-	switch (signType) {
-		case 'stake':
+	if (signType === 'stake') {
+		try {
+			let rewardAddresses = await walletApi.getRewardAddresses();
+			if (rewardAddresses.length === 0) {
+				logError('No reward addresses found');
+				return {
+					error: 'No reward addresses found'
+				};
+			}
 			return rewardAddresses[0];
-		case 'drep':
-			return drepKey;
-		case 'addr':
-			return paymentAddresses[0];
-		case 'pool':
-			return paymentAddresses[0];
-		default:
+		} catch (error) {
+			logError('Error getting reward addresses:', error);
 			return {
-				error: 'Invalid sign type'
+				error: 'Error getting reward addresses: ' + error.info
 			};
+		}
 	}
+
+	if (signType === 'drep') {
+		try {
+			let drepKey = await walletApi.cip95.getPubDRepKey();
+			if (!drepKey) {
+				logError('No drep key found');
+				return {
+					error: 'No drep key found'
+				};
+			}
+			return drepKey;
+		} catch (error) {
+			logError('Error getting drep key:', error);
+			return {
+				error: 'Error getting drep key: ' + error.info
+			};
+		}
+	}
+
+	if (signType === 'addr') {
+		try {
+			let paymentAddresses = await walletApi.getUnusedAddresses();
+			if (paymentAddresses.length === 0) {
+				logError('No payment key found');
+				return {
+					error: 'No payment key found'
+				};
+			}
+			return paymentAddresses[0];
+		} catch (error) {
+			logError('Error getting payment addresses:', error);
+			return {
+				error: 'Error getting payment addresses: ' + error.info
+			};
+		}
+	}
+
+	return {
+		error: 'Invalid sign type'
+	};
 }
