@@ -12,6 +12,7 @@
 	let { proposal, ballot } = $props();
 	let options = $derived(proposal.voteOptions);
 	let value = $derived(proposal.voterVote ? proposal.voterVote[0] : null);
+    let sliderValue =  $derived(proposal.voterVote ? proposal.voterVote[0] : null);
 	let loading = $state(true);
 	let error = $state(null);
 	let componentId = Math.random().toString(36).substring(2, 15);
@@ -132,26 +133,26 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content>
-
-
         <div class="mb-5 mt-5">
             <Slider.Root
     step={proposal.voteIncrement}
     min={proposal.voteOptions[0].id}
-    max={proposal.voteOptions[1].id}
+    max={proposal.voteOptions[proposal.voteOptions.length - 1].id}
+    bind:value={sliderValue}
     type="single"
     trackPadding={1}
-    thumbPositioning="contain"
-    bind:value
-    class="relative flex touch-none select-none items-center w-full"
+    class="relative flex touch-none select-none items-center w-full {value === 'abstain' ? 'opacity-50' : ''}"
     onValueCommit={(e) => {
-        storeVote(e, value);
+        const prevValue = value;
+        const newValue = sliderValue;
+        value = newValue;
+        storeVote(newValue, prevValue);
     }}
 
   >
     {#snippet children({ tickItems })}
     <span
-    class="bg-slate-500 relative grow overflow-hidden rounded-full h-1.5 w-full"
+    class="bg-slate-900 relative grow overflow-hidden rounded-full h-1.5 w-full"
 >
         <Slider.Range class="bg-primary absolute w-full" />
       </span>
@@ -161,9 +162,9 @@
       />
       <Slider.ThumbLabel
         index={0}
-        class="bg-muted text-foreground mb-4 text-nowrap rounded-md px-2 py-1 text-xs font-medium"
+        class="bg-slate-900 mb-4 text-nowrap rounded-md px-2 py-1 text-xs font-medium text-white"
       >
-        {value}
+        {sliderValue}
       </Slider.ThumbLabel>
     
       {#each tickItems as { index, value } (index)}
@@ -190,16 +191,19 @@
         	<!-- new abstain logic -->
 			{#if proposal.abstainAllowed}
             <div
-                class="mb-1 flex items-center space-x-2"
-                class:revert-flash={reverted.includes("abstain")}
+                class="mb-1 flex items-center space-x-2 mt-10 {value === 'abstain' ? '' : 'opacity-50'}"
             >
-                <Checkbox id="abstain" value="abstain" disabled={loading} checked={value?.includes("abstain") || false} onCheckedChange={(e) => {
-                    let newValue = ["abstain"]
-                    const prevValue = value;
-                    value = newValue;
-                    storeVote(newValue, prevValue);
-                }}
-            />
+                <Checkbox id="abstain" value="abstain" disabled={loading} checked={value === "abstain"} onCheckedChange={(e) => {
+if(e) {
+    const newValue = "abstain";
+    const prevValue = value;
+    sliderValue = null;
+    value = newValue;
+    storeVote(newValue, prevValue);
+} 
+}}
+class={value === "abstain" ? "pointer-events-none" : ""}
+          />
             <Label for="abstain" class="truncate leading-4">Abstain</Label>
         </div>
         {/if}
