@@ -2,6 +2,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import BallotDetails from './BallotDetails.svelte';
 	import Badge from '$lib/BallotBadge.svelte';
+	import VoteLabels from './VoteLabels.svelte';
 
 	let { ballot } = $props();
 	let proposals = $derived(ballot.proposals);
@@ -25,8 +26,10 @@
 		<div class="mb-2 flex items-center justify-between text-sm font-semibold text-muted-foreground">
 			<div>Proposal</div>
 			<div>
-				{#if ballot.status === 'live'}Current vote
-				{:else}Final vote
+				{#if ballot.status === 'live'}
+				Current vote
+				{:else}
+				Final vote
 				{/if}
 			</div>
 		</div>
@@ -44,22 +47,7 @@
 						</div>
 					</div>
 
-					<div
-						class="flex flex-col items-end gap-0.5 md:max-w-[30vw] md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-0.5"
-					>
-						{#each proposal.vote as label}
-							<div
-								class="mb-0.5 w-full overflow-hidden whitespace-nowrap rounded-md px-3 py-1 text-center text-xs md:inline-flex md:w-auto {label ===
-								'Yes'
-									? 'bg-green-500 text-green-100'
-									: label === 'No'
-										? 'bg-red-500 text-red-100'
-										: 'bg-slate-500 text-slate-100'}"
-							>
-								{label}
-							</div>
-						{/each}
-					</div>
+					<VoteLabels vote={proposal.vote} />
 				</div>
 				<div class="mt-1 text-sm">{proposal.description}</div>
 			</div>

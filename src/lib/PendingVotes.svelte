@@ -1,12 +1,12 @@
 <script>
-	import { voter } from '$stores/sessionManager.js';
-	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
 	import Badge from '$lib/BallotBadge.svelte';
-	import { convertTimestamp } from '$lib/utils.js';
 	import BallotDetails from './BallotDetails.svelte';
-
+	import VoteLabels from './VoteLabels.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { voter } from '$stores/sessionManager.js';
+	import { convertTimestamp } from '$lib/utils.js';
 	let { pendingVotes, pendingTransactions } = $props();
 </script>
 
@@ -47,23 +47,7 @@
 									</div>
 								</a>
 							</div>
-							<!-- DUPLICATE FROM BallotCardVotes -->
-							<div
-								class="flex flex-col items-end gap-0.5 md:max-w-[30vw] md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-0.5"
-							>
-								{#each proposal.vote as label}
-									<div
-										class="mb-0.5 w-full overflow-hidden whitespace-nowrap rounded-md px-3 py-1 text-center text-xs md:inline-flex md:w-auto {label ===
-										'Yes'
-											? 'bg-green-500 text-green-100'
-											: label === 'No'
-												? 'bg-red-500 text-red-100'
-												: 'bg-slate-500 text-slate-100'}"
-									>
-										{isNaN(Number(label)) ? label.charAt(0).toUpperCase() + label.slice(1) : label}
-									</div>
-								{/each}
-							</div>
+							<VoteLabels vote={proposal.vote} />
 						</div>
 					{/each}
 				</Card.Content>
