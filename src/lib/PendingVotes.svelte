@@ -60,7 +60,7 @@
 												? 'bg-red-500 text-red-100'
 												: 'bg-slate-500 text-slate-100'}"
 									>
-										{label}
+										{label.charAt(0).toUpperCase() + label.slice(1)}
 									</div>
 								{/each}
 							</div>

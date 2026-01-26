@@ -1,12 +1,14 @@
 <script>
 	import { onMount } from 'svelte';
-	import * as RadioGroup from '$lib/components/ui/radio-group/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { toast } from 'svelte-sonner';
 	import { loggedIn, voter } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
 	import { api } from '$stores/sessionManager.js';
+    import { Checkbox } from '$lib/components/ui/checkbox/index.js';
+    import { Slider } from "bits-ui";
+
 	let { proposal, ballot } = $props();
 	let options = $derived(proposal.voteOptions);
 	let value = $derived(proposal.voterVote ? proposal.voterVote[0] : null);
@@ -130,76 +132,77 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content>
-		<RadioGroup.Root
-			bind:value
-			onValueChange={(nv) => {
-				const prevValue = value;
-				// optimistic update — set the new value immediately
-				value = nv;
-				storeVote(nv, prevValue);
-			}}
-		>
-			{#each options as option, i}
-				<div
-					class="mb-1 flex items-start space-x-2"
-					class:revert-flash={reverted.map(String).includes(String(option.id))}
-				>
-					<RadioGroup.Item
-						value={option.id}
-						id={'voteOption' + option.id}
-						disabled={loading}
-						class={reverted.map(String).includes(String(option.id)) ? 'revert-flash' : ''}
-					/>
-					<Label for={'voteOption' + option.id} class="leading-4">{option.label}</Label>
-				</div>
-			{/each}
 
-			<!-- new abstain logic -->
-			 {#if proposal.abstainAllowed}
-			 <div
-			 class="mb-1 flex items-start space-x-2"
-			 class:revert-flash={reverted.map(String).includes(String("abstain"))}
-		 >
-			 <RadioGroup.Item
-				 value="abstain"
-				 id='abstain'
-				 disabled={loading}
-				 class={reverted.map(String).includes(String("abstain")) ? 'revert-flash' : ''}
-			 />
-			 <Label for="abstain" class="leading-4">Abstain</Label>
-		 </div>
-		 {/if}
 
-		</RadioGroup.Root>
+        <div class="mb-5 mt-5">
+            <Slider.Root
+    step={proposal.voteIncrement}
+    min={proposal.voteOptions[0].id}
+    max={proposal.voteOptions[1].id}
+    type="single"
+    trackPadding={1}
+    thumbPositioning="contain"
+    bind:value
+    class="relative flex touch-none select-none items-center w-full"
+    onValueCommit={(e) => {
+        storeVote(e, value);
+    }}
+
+  >
+    {#snippet children({ tickItems })}
+    <span
+    class="bg-slate-500 relative grow overflow-hidden rounded-full h-1.5 w-full"
+>
+        <Slider.Range class="bg-primary absolute w-full" />
+      </span>
+      <Slider.Thumb
+        index={0}
+        class="border-primary/75 bg-background focus-visible:ring-ring block size-4 rounded-full border shadow transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50"
+      />
+      <Slider.ThumbLabel
+        index={0}
+        class="bg-muted text-foreground mb-4 text-nowrap rounded-md px-2 py-1 text-xs font-medium"
+      >
+        {value}
+      </Slider.ThumbLabel>
+    
+      {#each tickItems as { index, value } (index)}
+        <Slider.Tick
+          {index}
+          class="bg-background z-1 h-2 w-[0px]"
+        />
+        {#if proposal.voteOptions.find((option) => option.id === value)}
+        <Slider.TickLabel
+          {index}
+          class="text-slate-500 data-selected:text-black mt-4 text-xs font-medium leading-none"
+          position="bottom"
+        >
+          {value}
+        </Slider.TickLabel>
+        {/if}
+      {/each}
+    {/snippet}
+  </Slider.Root>
+
+
+    </div>
+
+        	<!-- new abstain logic -->
+			{#if proposal.abstainAllowed}
+            <div
+                class="mb-1 flex items-center space-x-2"
+                class:revert-flash={reverted.includes("abstain")}
+            >
+                <Checkbox id="abstain" value="abstain" disabled={loading} checked={value?.includes("abstain") || false} onCheckedChange={(e) => {
+                    let newValue = ["abstain"]
+                    const prevValue = value;
+                    value = newValue;
+                    storeVote(newValue, prevValue);
+                }}
+            />
+            <Label for="abstain" class="truncate leading-4">Abstain</Label>
+        </div>
+        {/if}
 	</Card.Content>
 </Card.Root>
 
-<style>
-	/* brief red flash + small shake to indicate the option was reverted */
-	.revert-flash {
-		animation: revertFlash 1.1s ease;
-	}
-
-	@keyframes revertFlash {
-		0% {
-			transform: translateX(0);
-			background-color: rgba(239, 68, 68, 0.12); /* red-500 @ 12% */
-		}
-		20% {
-			transform: translateX(-4px);
-		}
-		40% {
-			transform: translateX(4px);
-		}
-		60% {
-			transform: translateX(-2px);
-		}
-		80% {
-			transform: translateX(2px);
-		}
-		100% {
-			transform: translateX(0);
-			background-color: transparent;
-		}
-	}
-</style>

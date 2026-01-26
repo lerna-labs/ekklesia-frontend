@@ -10,6 +10,7 @@
 	import { onMount } from 'svelte';
 	import ProposalVoteDefault from './ProposalVoteDefault.svelte';
 	import ProposalVoteBudget from './ProposalVoteBudget.svelte';
+	import ProposalVoteScale from './ProposalVoteScale.svelte';
 	let { proposal, ballot } = $props();
 </script>
 
@@ -21,6 +22,9 @@
 		{#if proposal.voteType === 'budget'}
 			<ProposalVoteBudget {proposal} {ballot} />
 		{/if}
+		{#if proposal.voteType === 'scale'}
+		<ProposalVoteScale {proposal} {ballot} />
+	{/if}
 	{/if}
 	{#if $loggedIn && !ballot.voterValidated && ballot.status == 'live'}
 		<Card.Root class="h-full">

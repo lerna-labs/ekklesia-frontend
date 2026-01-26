@@ -189,6 +189,23 @@
 					<Label for={'voteOption' + option.id} class="truncate leading-4">{option.label}</Label>
 				</div>
 			{/each}
+
+			<!-- new abstain logic -->
+			{#if proposal.abstainAllowed}
+				<div
+					class="mb-1 flex items-center space-x-2"
+					class:revert-flash={reverted.includes("abstain")}
+				>
+					<Checkbox id="abstain" value="abstain" disabled={loading} checked={value?.includes("abstain") || false} onCheckedChange={(e) => {
+						let newValue = ["abstain"]
+						const prevValue = value;
+						value = newValue;
+						storeVote(newValue, prevValue);
+					}}
+				/>
+				<Label for="abstain" class="truncate leading-4">Abstain</Label>
+			</div>
+			{/if}
 		</div>
 	</Card.Content>
 </Card.Root>
