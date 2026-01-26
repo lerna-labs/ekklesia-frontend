@@ -27,7 +27,7 @@
 		"@tailwindcss/typography": "^0.5.16",
 		"autoprefixer": "^10.4.20",
 		"baseline-browser-mapping": "^2.9.14",
-		"bits-ui": "^1.8.0",
+		"bits-ui": "^2.15.4",
 		"clsx": "^2.1.1",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
