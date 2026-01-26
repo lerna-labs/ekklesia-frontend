@@ -23,8 +23,14 @@
 	</Card.Content>
 
 	<Card.Footer class="flex items-center justify-between">
-		<Button href={'/ballots/' + ballot._id + '/proposals'} variant="outline" size="sm">
-			View Ballot
-		</Button>
+		{#if ballot.singleProposal}
+			<Button href={'/ballots/' + ballot._id + '/proposals/' + ballot.singleProposal} variant="outline" size="sm">
+				View Proposal
+			</Button>
+		{:else}
+			<Button href={'/ballots/' + ballot._id + '/proposals'} variant="outline" size="sm">
+				View Ballot
+			</Button>
+		{/if}
 	</Card.Footer>
 </Card.Root>
