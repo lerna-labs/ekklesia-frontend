@@ -10,15 +10,7 @@
 	import { onMount } from 'svelte';
 	import ProposalVoteDefault from './ProposalVoteDefault.svelte';
 	import ProposalVoteBudget from './ProposalVoteBudget.svelte';
-
-	let loading = $state(true);
-	// Props for required data
-	// TODO remove inline if not used
-	let { proposal, ballot, inline } = $props();
-
-	onMount(async () => {
-		loading = false;
-	});
+	let { proposal, ballot } = $props();
 </script>
 
 <section id="vote" class="mt-6">
@@ -43,14 +35,14 @@
 			</Card.Content>
 		</Card.Root>
 	{/if}
-	{#if ballot.status != 'live'}
+	<!-- {#if ballot.status != 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Voting is closed</Card.Title>
 				<Card.Description class="pb-5">The voting for this proposal has ended.</Card.Description>
 			</Card.Header>
 		</Card.Root>
-	{/if}
+	{/if} -->
 	{#if !$loggedIn && ballot.status == 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
