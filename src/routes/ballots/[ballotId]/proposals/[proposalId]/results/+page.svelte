@@ -1,4 +1,5 @@
 <script>
+	import MedianScale from './../../../../../../lib/charts/MedianScale.svelte';
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -127,7 +128,7 @@
 			{/if}
 		</div>
 		<Card.Root class="mb-8 flex h-full flex-col">
-			<Card.Header>
+			<Card.Header class="pt-4">
 				<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
 			</Card.Header>
 			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
@@ -172,6 +173,32 @@
 						</div>
 					{/each}
 				</div>
+
+				{#if proposal.voteType === 'scale'}
+				<div class="mb-4">
+					<div class="flex justify-between text-black font-semibold mb-2">
+						<span class="whitespace-nowrap">
+							Median by Voting Power:
+						</span>
+						<span class="text-right">
+							{proposal.result.medianWeighted}
+						</span>
+					</div>
+
+					<MedianScale lowerBound={proposal.voteOptions[0].id} upperBound={proposal.voteOptions[proposal.voteOptions.length - 1].id} median={proposal.result.medianWeighted} />
+				</div>
+
+				<div class="mb-4">
+					<div class="flex justify-between text-black font-semibold mb-2">
+						<span class="whitespace-nowrap">
+							Median by Voters:
+						</span>
+						<span class="text-right">
+							{proposal.result.median}
+						</span>
+					</div>			<MedianScale lowerBound={proposal.voteOptions[0].id} upperBound={proposal.voteOptions[proposal.voteOptions.length - 1].id} median={proposal.result.median} />
+			</div>
+				{/if}
 			</Card.Content>
 		</Card.Root>
 	</section>
