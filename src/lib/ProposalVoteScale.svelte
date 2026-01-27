@@ -162,7 +162,7 @@
       />
       <Slider.ThumbLabel
         index={0}
-        class="bg-slate-900 mb-4 text-nowrap rounded-md px-2 py-1 text-xs font-medium text-white"
+        class="bg-slate-900 mb-3 text-nowrap rounded-md px-2 py-1 text-xs font-medium text-white"
       >
         {sliderValue}
       </Slider.ThumbLabel>
