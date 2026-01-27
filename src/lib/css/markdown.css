@@ -30,7 +30,8 @@
 .markdown-content p strong,
 .markdown-content div strong,
 .markdown-content li strong {
-	font-weight: 600;
+	font-weight: 550 !important;
+	letter-spacing: 0.01em;
 }
 
 .markdown-content p {

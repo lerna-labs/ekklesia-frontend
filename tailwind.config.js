@@ -5,7 +5,12 @@ import tailwindcssAnimate from "tailwindcss-animate";
 const config = {
 	darkMode: ["class"],
 	content: ["./src/**/*.{html,js,svelte,ts}"],
-	safelist: ["dark"],
+	safelist: [
+		"dark",
+		{
+			pattern: /^line-clamp-\d+$/,
+		},
+	],
 	theme: {
 		container: {
 			center: true,
