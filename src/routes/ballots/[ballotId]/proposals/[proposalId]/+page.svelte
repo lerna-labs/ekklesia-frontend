@@ -3,15 +3,16 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import BallotBadge from '$lib/BallotBadge.svelte';
+	import Markdown from '$lib/base/Markdown.svelte';
 	import Text from '$lib/base/Text.svelte';
 	import ProposalVote from '$lib/ProposalVote.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import { convertTimestamp } from '$lib/utils';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import Markdown from '$lib/base/Markdown.svelte';
 	let { data } = $props();
-	let { ballot, proposal } = data;
-	let proposalData = proposal.data;
+	let ballot = $derived(data.ballot);
+	let proposal = $derived(data.proposal);
+	
 </script>
 
 <div class="flex gap-2 text-xl">
@@ -26,7 +27,7 @@
 {#if proposal.description}
 	<div class="mt-6">
 		<h2 class="text-lg">Description</h2>
-		<Text text={proposal.description} />
+		<Markdown text={proposal.description} class="text-sm leading-relaxed" />
 	</div>
 {/if}
 
@@ -74,7 +75,7 @@
 		<h2 class="mb-2 text-lg">Additional Information</h2>
 		<ul class="square-list pl-4 text-sm">
 			{#each proposal.data.links as link}
-				<li>
+				<li class="mb-1">
 					<a
 						href={link.url}
 						target="_blank"

@@ -48,10 +48,7 @@
 				<Accordion.Item value={faq._id}>
 					<Accordion.Trigger class="text-left">{faq.title}</Accordion.Trigger>
 					<Accordion.Content>
-						<!-- <div class="faq-content">
-							{@html md.render(faq.answer)}
-						</div> -->
-						<Markdown markdown={faq.content} />
+						<Markdown text={faq.content} />
 					</Accordion.Content>
 				</Accordion.Item>
 			{/each}

@@ -1,5 +1,5 @@
 <script>
-	import Text from './base/Text.svelte';
+	import Markdown from './base/Markdown.svelte';
 	import Badge from '$lib/BallotBadge.svelte';
 	import BallotDetails from './BallotDetails.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -19,7 +19,7 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="pt-4 text-sm">
-		<Text text={ballot.description} expanded={true} />
+		<Markdown text={ballot.description} clamp={10} />
 	</Card.Content>
 
 	<Card.Footer class="flex items-center justify-between">

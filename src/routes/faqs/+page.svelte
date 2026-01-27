@@ -113,10 +113,10 @@
 					<Accordion.Trigger class="text-left">
 						{faq.title}
 					</Accordion.Trigger>
-					<Accordion.Content>
-                        <Markdown markdown={faq.content} />
-						{#if faq.tags && faq.tags.length > 0}
-							<div class="mb-3 flex flex-wrap gap-1">
+					<Accordion.Content class="pb-4">
+                        <Markdown text={faq.content} class="text-sm leading-relaxed" />
+						<!-- {#if faq.tags && faq.tags.length > 0}
+							<div class="mb-3 flex flex-wrap gap-1 mt-4">
 								{#each faq.tags as tag}
 									{#if tag === data.selectedTag}
 										<span class="text-xs rounded-full bg-white border border-border px-2 py-0.5 text-foreground transition-opacity hover:opacity-80"
@@ -141,7 +141,7 @@
 									{/if}
 								{/each}
 							</div>
-						{/if}
+						{/if} -->
 					</Accordion.Content>
 				</Accordion.Item>
 			{/each}

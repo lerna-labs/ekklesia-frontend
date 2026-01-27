@@ -1,77 +1,71 @@
 <script>
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import markdownit from 'markdown-it';
-
+	import { cn } from '$lib/utils.js';
+	import { tick } from 'svelte';
+	let { text, clamp, class: className } = $props();
 	const md = markdownit();
-	let { markdown } = $props();
-
-	const content = $derived.by(() => md.render(markdown));
-	let accordionSections = $state([]);
-	let pageTitle = $state('');
-
-	$effect(() => {
-		// Create a temporary div to hold rendered markdown
-		const tempDiv = document.createElement('div');
-		tempDiv.innerHTML = content;
-
-		// Check for h1 element first
-		const h1Element = tempDiv.querySelector('h1');
-		if (h1Element) {
-			pageTitle = h1Element.textContent;
-			// Remove the h1 from the content to avoid duplication
-			h1Element.remove();
+	md.linkify.set({ fuzzyEmail: false });
+	
+	// Configure link renderer to open external links in new window
+	const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+		return self.renderToken(tokens, idx, options);
+	};
+	
+	md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
+		const token = tokens[idx];
+		const hrefIndex = token.attrIndex('href');
+		
+		if (hrefIndex >= 0) {
+			const href = token.attrs[hrefIndex][1];
+			// Check if it's an external link (starts with http:// or https://)
+			if (href.startsWith('http://') || href.startsWith('https://')) {
+				// Add target="_blank" and rel="noopener noreferrer"
+				token.attrSet('target', '_blank');
+				token.attrSet('rel', 'noopener noreferrer');
+			}
 		}
+		
+		return defaultRender(tokens, idx, options, env, self);
+	};
+	
+	let el = $state(null);
+	const content = $derived.by(() => md.render(text));
 
-		// Find all h2 elements
-		const h2Elements = tempDiv.querySelectorAll('h2');
-
-		if (h2Elements.length > 0) {
-			let tempSections = [];
-			// Create sections based on h2 elements
-			h2Elements.forEach((h2, index) => {
-				// Get the header text
-				const title = h2.textContent;
-				let sectionContent = '';
-				let currentNode = h2.nextSibling;
-
-				// Collect all content until the next h2 or end
-				while (currentNode && currentNode.tagName !== 'H2') {
-					const tempDiv = document.createElement('div');
-					tempDiv.appendChild(currentNode.cloneNode(true));
-					sectionContent += tempDiv.innerHTML;
-					currentNode = currentNode.nextSibling;
-				}
-
-				tempSections.push({
-					id: `section-${index}`,
-					title: title,
-					content: sectionContent
-				});
-			});
-
-			// Update the reactive state variable with all sections at once
-			accordionSections = tempSections;
+	let isClamped = $state(false);
+	let isExpanded = $state(false);
+	
+	$effect(() => {
+		if (el && !isExpanded) {
+			isClamped = el.scrollHeight > el.clientHeight;
 		}
 	});
+
+	function showMore() {
+		if (el && clamp) {
+			el.classList.remove(`line-clamp-${clamp}`);
+			isExpanded = true;
+		}
+	}
+
+	async function showLess() {
+		if (el && clamp) {
+			el.classList.add(`line-clamp-${clamp}`);
+			isExpanded = false;
+			// Wait for DOM to update, then re-check clamped state
+			await tick();
+			if (el) {
+				isClamped = el.scrollHeight > el.clientHeight;
+			}
+		}
+	}
 </script>
 
-<section class="markdown-content">
-	{#if pageTitle}
-		<h1>{pageTitle}</h1>
-	{/if}
-
-	{#if accordionSections.length > 0}
-		<Accordion.Root type="multiple">
-			{#each accordionSections as section}
-				<Accordion.Item value={section.id}>
-					<Accordion.Trigger>{section.title}</Accordion.Trigger>
-					<Accordion.Content>
-						{@html section.content}
-					</Accordion.Content>
-				</Accordion.Item>
-			{/each}
-		</Accordion.Root>
-	{:else}
-		{@html content}
-	{/if}
-</section>
+<section bind:this={el} class={cn('markdown-content', className, clamp && !isExpanded && `line-clamp-${clamp}`)}>
+	{@html content}
+</section>	
+{#if clamp && isClamped && !isExpanded}
+	<button class="text-xs text-orange-600 hover:text-orange-700 p-0 m-0" onclick={showMore}>Show more</button>
+{:else if clamp && isExpanded}
+	<button class="text-xs text-orange-600 hover:text-orange-700 p-0 m-0" onclick={showLess}>Show less</button>
+{/if}

@@ -7,6 +7,7 @@
 	import VotePopover from './VotePopover.svelte';
 	import Comments from '$lib/Comments.svelte';
 	import ProposalDetails from './ProposalDetails.svelte';
+	import Markdown from './base/Markdown.svelte';
 	let { proposal, ballot } = $props();
 	let intersecting = $state(false);
 </script>
@@ -26,7 +27,7 @@
 	</Card.Header>
 	<Card.Content class="pb-0">
 		<div class="mb-4">
-			<Text text={proposal.description} />
+			<Markdown text={proposal.description} class="text-sm leading-relaxed" clamp={3} />
 		</div>
 		{#if $loggedIn && intersecting}
 			<Vote {proposal} {ballot} />
