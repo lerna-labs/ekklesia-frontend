@@ -1,5 +1,5 @@
 <script>
-	import { logout, voter } from '$stores/sessionManager.js';
+	import { logout, user } from '$stores/sessionManager.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
 	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -16,7 +16,7 @@
 	let pendingTransactions = $derived(data.transactions.filter((el) => el.status == 'pending'));
 
 	$effect(() => {
-		if ($voter?.lastTransaction) {
+		if ($user?.lastTransaction) {
 			invalidateAll();
 		}
 	});
@@ -26,11 +26,11 @@
 
 <Card.Root>
 	<Card.Header class="p-5">
-		<Card.Title>Voter-ID: {shortenString($voter?.voterId, 30, true)}</Card.Title>
+		<Card.Title>Voter-ID: {shortenString($user?.voterId, 30, true)}</Card.Title>
 		<Card.Description>
 			<div class="mt-2 text-xs">
 				<span class="font-semibold">Last Login:</span>
-				{convertTimestamp($voter?.lastLogin)}
+				{convertTimestamp($user?.lastLogin)}
 			</div>
 		</Card.Description>
 	</Card.Header>

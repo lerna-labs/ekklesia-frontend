@@ -7,7 +7,9 @@ const API_URL = import.meta.env.VITE_API_URL;
 // Create a writable store to manage the session
 export const loggedIn = writable(false);
 export const showLogin = writable(false);
-export const voter = writable(null);
+/** When set, Comments will open add/reply dialog after login. Shape: { replyTo: comment | null }. Cleared when dialog opens or login is closed. */
+export const pendingCommentAction = writable(null);
+export const user = writable(null);
 export const jwt = writable(null);
 
 // Set JWT in cookie and localStorage (if cookies are not available)
@@ -82,19 +84,19 @@ export const api = {
 			}
 
 			if (!response.ok) {
-				// Handle non-2xx responses
-				const errorData = await response.json();
-
-				// if (response.status === 403) {
-				// 	// Handle 403 Forbidden error
-				// 	throw error(403, 'Forbidden: You do not have permission to access this resource');
-				// }
-				if (response.status === 404) {
-					// Handle 404 Not Found error
-					throw error(404, 'Not Found: The requested resource could not be found');
+				// Parse error body safely (API may return non-JSON, e.g. HTML or plain text)
+				const text = await response.text();
+				let message = 'An error occurred';
+				let errors = undefined;
+				try {
+					const data = text ? JSON.parse(text) : {};
+					message = data.message ?? message;
+					if (data.errors != null) errors = data.errors;
+				} catch {
+					if (text) message = text;
 				}
-				// Throw the error instead of calling the error function
-				throw error(response.status, errorData.message || 'An error occurred');
+				const body = errors != null ? { message, errors } : { message };
+				throw error(response.status, body);
 			}
 
 			return response;
@@ -153,7 +155,7 @@ export const logout = async () => {
 		// Clear the session
 		jwt.set(null);
 		loggedIn.set(false);
-		voter.set(null);
+		user.set(null);
 
 		// Redirect to the home page after logout
 		goto('/');
