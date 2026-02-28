@@ -3,7 +3,7 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { toast } from 'svelte-sonner';
-	import { loggedIn, voter } from '$stores/sessionManager';
+	import { loggedIn, user } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
 	import { api } from '$stores/sessionManager.js';
     import { Checkbox } from '$lib/components/ui/checkbox/index.js';
@@ -36,7 +36,7 @@
 
 			if (voteStoreRequest.status === 200) {
 				const voteStored = await voteStoreRequest.json();
-				if (voteStored.changes) $voter.pendingVotesCount = true;
+				if (voteStored.changes) $user.pendingVotesCount = true;
 				toast.success('Vote updated successfully (not submitted!)');
 				// value already set optimistically; keep it
 			} else {
