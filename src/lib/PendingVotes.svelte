@@ -5,7 +5,7 @@
 	import BallotDetails from './BallotDetails.svelte';
 	import VoteLabels from './VoteLabels.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { voter } from '$stores/sessionManager.js';
+	import { user } from '$stores/sessionManager.js';
 	import { convertTimestamp } from '$lib/utils.js';
 	let { pendingVotes, pendingTransactions } = $props();
 </script>

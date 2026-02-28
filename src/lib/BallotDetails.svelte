@@ -1,6 +1,6 @@
 <script>
 	let { ballot } = $props();
-	import { loggedIn, voter } from '$stores/sessionManager.js';
+	import { loggedIn, user } from '$stores/sessionManager.js';
 	import { page } from '$app/stores.js';
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
 </script>

@@ -1,7 +1,7 @@
 <script>
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { loggedIn, voter } from '$stores/sessionManager';
+	import { loggedIn, user } from '$stores/sessionManager';
 	import { toast } from 'svelte-sonner';
 	import { api } from '$stores/sessionManager.js';
 	import * as RadioGroup from '$lib/components/ui/radio-group/index.js';
