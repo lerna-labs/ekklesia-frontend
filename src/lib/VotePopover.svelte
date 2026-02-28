@@ -33,30 +33,18 @@
 		<div class="max-h-100 space-y-2 text-xs">
 			<div class="mb-4 grid w-full grid-cols-2 gap-4">
 				<DonutChart
-					data={{
-						labels: ['Active', 'Inactive'],
-						datasets: [
-							{
-								data: [activeVoterPerc, (100 - activeVoterPerc).toFixed(2)],
-								backgroundColor: ['#f97316', '#e5e7eb'],
-								hoverBackgroundColor: ['#ea580c', '#d1d5db']
-							}
-						]
-					}}
-					title={'By Voter Count'}
+					segments={[
+						{ label: 'Active', value: Number(activeVoterPerc), color: '#f97316' },
+						{ label: 'Inactive', value: 100 - Number(activeVoterPerc), color: '#e5e7eb' }
+					]}
+					title="By Voter Count"
 				/>
 				<DonutChart
-					data={{
-						labels: ['Active', 'Inactive'],
-						datasets: [
-							{
-								data: [activeVotingPowerPerc, (100 - activeVotingPowerPerc).toFixed(2)],
-								backgroundColor: ['#f97316', '#e5e7eb'],
-								hoverBackgroundColor: ['#ea580c', '#d1d5db']
-							}
-						]
-					}}
-					title={'By Voting Power'}
+					segments={[
+						{ label: 'Active', value: Number(activeVotingPowerPerc), color: '#f97316' },
+						{ label: 'Inactive', value: 100 - Number(activeVotingPowerPerc), color: '#e5e7eb' }
+					]}
+					title="By Voting Power"
 				/>
 			</div>
 
