@@ -81,10 +81,10 @@
 						indicator === "dot" && "items-center"
 					)}
 				>
-					{#if formatter && item.value !== undefined && item.name}
+					{#if formatter && item.value !== undefined && (item.name != null || item.key != null)}
 						{@render formatter({
 							value: item.value,
-							name: item.name,
+							name: item.name ?? item.key,
 							item,
 							index: i,
 							payload: tooltipCtx.payload,

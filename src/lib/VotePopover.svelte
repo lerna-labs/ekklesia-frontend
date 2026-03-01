@@ -34,15 +34,16 @@
 			<div class="mb-4 grid w-full grid-cols-2 gap-4">
 				<DonutChart
 					segments={[
-						{ label: 'Active', value: Number(activeVoterPerc), color: '#f97316' },
-						{ label: 'Inactive', value: 100 - Number(activeVoterPerc), color: '#e5e7eb' }
+						{ label: 'Active', value: Number(activeVoterPerc), color: '#f97316', count: totalVotes },
+						{ label: 'Inactive', value: 100 - Number(activeVoterPerc), color: '#e5e7eb', count: totalAllowedVoterCount - totalVotes }
 					]}
 					title="By Voter Count"
+					valueUnit="Voters"
 				/>
 				<DonutChart
 					segments={[
-						{ label: 'Active', value: Number(activeVotingPowerPerc), color: '#f97316' },
-						{ label: 'Inactive', value: 100 - Number(activeVotingPowerPerc), color: '#e5e7eb' }
+						{ label: 'Active', value: Number(activeVotingPowerPerc), color: '#f97316', absoluteLabel: lovelaceToAda(proposal.votingPower) },
+						{ label: 'Inactive', value: 100 - Number(activeVotingPowerPerc), color: '#e5e7eb', absoluteLabel: lovelaceToAda(ballot.totalVotingPower - proposal.votingPower) }
 					]}
 					title="By Voting Power"
 				/>
