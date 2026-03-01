@@ -1,4 +1,5 @@
 <script>
+	import { tweened } from 'svelte/motion';
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { PieChart, Text } from 'layerchart';
 
@@ -9,11 +10,28 @@
 		return label.toLowerCase().replace(/\s+/g, '_');
 	}
 
+	const targetValues = $derived(segments.map((s) => Number(s.value) || 0));
+	const tweenOpts = {
+		duration: 400,
+		easing: (t) => t * (2 - t),
+		interpolate: (a, b) => (t) =>
+			Array.from(
+				{ length: Math.max(a.length, b.length) },
+				(_, i) => (a[i] ?? 0) + t * ((b[i] ?? 0) - (a[i] ?? 0))
+			)
+	};
+	const tweenedValues = tweened([], tweenOpts);
+
+	$effect(() => {
+		const next = segments.map((s) => Number(s.value) || 0);
+		tweenedValues.set(next, tweenOpts);
+	});
+
 	const chartData = $derived(
-		segments.map((s) => ({
+		segments.map((s, i) => ({
 			name: slug(s.label),
 			label: s.label,
-			value: Number(s.value) || 0,
+			value: $tweenedValues[i] ?? Number(s.value) ?? 0,
 			color: s.color || '#e5e7eb'
 		}))
 	);
@@ -27,15 +45,30 @@
 		return config;
 	});
 
-	const highestSegment = $derived(
-		segments.length
-			? segments.reduce((a, b) => (Number(b.value) > Number(a.value) ? b : a), segments[0])
-			: null
-	);
-	const highestPercent = $derived(
-		highestSegment ? Math.min(100, Number(highestSegment.value)).toFixed(1) : '0'
-	);
-	const highestLabel = $derived(highestSegment?.label ?? '');
+	// Use tweened values for center text so it animates with the chart
+	const highestIndex = $derived.by(() => {
+		const vals = $tweenedValues;
+		if (!vals.length && segments.length) {
+			let maxIdx = 0;
+			for (let i = 1; i < segments.length; i++) {
+				if (Number(segments[i].value) > Number(segments[maxIdx].value)) maxIdx = i;
+			}
+			return maxIdx;
+		}
+		if (!vals.length) return -1;
+		let maxIdx = 0;
+		for (let i = 1; i < vals.length; i++) {
+			if (vals[i] > vals[maxIdx]) maxIdx = i;
+		}
+		return maxIdx;
+	});
+	const highestPercent = $derived.by(() => {
+		if (highestIndex < 0 || !segments[highestIndex]) return '0';
+		const val = $tweenedValues[highestIndex];
+		const num = val != null ? val : Number(segments[highestIndex].value) || 0;
+		return Math.min(100, num).toFixed(1);
+	});
+	const highestLabel = $derived(highestIndex >= 0 && segments[highestIndex] ? segments[highestIndex].label : '');
 </script>
 
 <section class="donut-chart-section flex flex-col rounded-xl bg-muted/40 px-3 pt-3 pb-0" data-donut-chart>

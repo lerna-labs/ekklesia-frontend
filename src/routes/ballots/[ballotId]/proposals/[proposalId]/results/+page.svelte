@@ -1,4 +1,5 @@
 <script>
+	import { tweened } from 'svelte/motion';
 	import MedianScale from './../../../../../../lib/charts/MedianScale.svelte';
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
@@ -83,6 +84,38 @@
 			absoluteLabel: lovelaceToAda(r.votingPower),
 		}))
 	);
+
+	// Tweened breakdown values for animation when voter group changes
+	const targetBreakdown = $derived(
+		resultsSorted.map((r) => ({
+			votingPower: Number(r.votingPower) || 0,
+			count: Number(r.count) || 0,
+			pctPower: activeTotalVotingPower ? ((r.votingPower ?? 0) / activeTotalVotingPower) * 100 : 0,
+			pctCount: activeTotalVotes ? ((r.count ?? 0) / activeTotalVotes) * 100 : 0
+		}))
+	);
+	const breakdownTweenOpts = {
+		duration: 400,
+		easing: (t) => t * (2 - t),
+		interpolate: (a, b) => (t) =>
+			Array.from(
+				{ length: Math.max(a.length, b.length) },
+				(_, i) => {
+					const pa = a[i] ?? { votingPower: 0, count: 0, pctPower: 0, pctCount: 0 };
+					const pb = b[i] ?? { votingPower: 0, count: 0, pctPower: 0, pctCount: 0 };
+					return {
+						votingPower: pa.votingPower + t * (pb.votingPower - pa.votingPower),
+						count: pa.count + t * (pb.count - pa.count),
+						pctPower: pa.pctPower + t * (pb.pctPower - pa.pctPower),
+						pctCount: pa.pctCount + t * (pb.pctCount - pa.pctCount)
+					};
+				}
+			)
+	};
+	const tweenedBreakdown = tweened([], breakdownTweenOpts);
+	$effect(() => {
+		tweenedBreakdown.set(targetBreakdown, breakdownTweenOpts);
+	});
 </script>
 
 <div class="flex gap-2 text-xl">
@@ -197,17 +230,16 @@
 			</Card.Header>
 			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
 				<div class="border-t pt-3">
-					{#each resultsSorted as result}
+					{#each resultsSorted as result, i}
+						{@const d = $tweenedBreakdown[i] ?? targetBreakdown[i]}
 						<div class="mb-4">
 							<div class="flex justify-between">
 								<span class="font-semibold">{result.label}:</span>
 								<span class="text-nowrap font-semibold">
 									{#if ballot.voteWeighted}
-										{lovelaceToAda(result.votingPower)} ({activeTotalVotingPower ? (
-											(result.votingPower / activeTotalVotingPower) * 100
-										).toFixed(1) : 0}%)
+										{lovelaceToAda(d?.votingPower ?? result.votingPower)} ({(d?.pctPower ?? 0).toFixed(1)}%)
 									{:else}
-										{result.count} ({activeTotalVotes ? ((result.count / activeTotalVotes) * 100).toFixed(1) : 0}%)
+										{Math.round(d?.count ?? result.count)} ({(d?.pctCount ?? 0).toFixed(1)}%)
 									{/if}
 								</span>
 							</div>
@@ -223,18 +255,15 @@
 									</span>
 									<span class="text-right">
 										{#if !ballot.voteWeighted}
-											{lovelaceToAda(result.votingPower)} ({activeTotalVotingPower ? (
-												(result.votingPower / activeTotalVotingPower) * 100
-											).toFixed(1) : 0}%)
+											{lovelaceToAda(d?.votingPower ?? result.votingPower)} ({(d?.pctPower ?? 0).toFixed(1)}%)
 										{:else}
-											{result.count} ({activeTotalVotes ? ((result.count / activeTotalVotes) * 100).toFixed(1) : 0}%)
+											{Math.round(d?.count ?? result.count)} ({(d?.pctCount ?? 0).toFixed(1)}%)
 										{/if}
 									</span>
 								</div>
 							{/if}
 						</div>
 					{/each}
-				</div>
 
 				{#if proposal.voteType === 'scale'}
 				<div class="mb-4">
@@ -261,6 +290,7 @@
 					</div>			<MedianScale lowerBound={proposal.voteOptions[0].id} upperBound={proposal.voteOptions[proposal.voteOptions.length - 1].id} median={proposal.result.median} />
 			</div>
 				{/if}
+				</div>
 			</Card.Content>
 		</Card.Root>
 
@@ -283,7 +313,7 @@
 						valueUnit="Votes"
 					/>
 				</div>
-				</div><!-- end border-t wrapper -->
+				</div>
 			</Card.Content>
 		</Card.Root>
 
