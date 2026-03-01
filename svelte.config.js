@@ -31,11 +31,26 @@ fs.writeFileSync(
 
 console.log(`Created version.json with version ${appVersion}`);
 
+// Preprocess: for Svelte files in node_modules that use @layer in <style>, prepend Tailwind
+// directives so PostCSS/Tailwind does not error ("no matching @tailwind components").
+const tailwindLayerPreprocess = {
+	style: ({ content, filename }) => {
+		if (!filename || !filename.includes('node_modules') || !content.includes('@layer')) {
+			return;
+		}
+		if (content.includes('@tailwind')) {
+			return;
+		}
+		const tailwindDirectives = '@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n';
+		return { code: tailwindDirectives + content };
+	}
+};
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
 	// for more information about preprocessors
-	preprocess: vitePreprocess(),
+	preprocess: [tailwindLayerPreprocess, vitePreprocess()],
 
 	kit: {
 		// Using adapter-static since we're serving the app as static files from Express
