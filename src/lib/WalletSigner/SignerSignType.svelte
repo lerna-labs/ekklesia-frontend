@@ -5,8 +5,8 @@
 	const dispatch = createEventDispatcher();
 	let { value = undefined, disabled = false, mode = 'signer' } = $props();
 
-	const VOTER_TYPES = import.meta.env.VITE_VOTER_TYPES;
-	const voterTypes = VOTER_TYPES.split(',');
+	const USER_TYPES = import.meta.env.VITE_WALLETSIGNER_USER_TYPES || '';
+	const voterTypes = USER_TYPES.split(',');
 
 	function handleValueChange(newValue) {
 		dispatch('change', newValue);

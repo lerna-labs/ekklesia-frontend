@@ -1,13 +1,13 @@
 <script>
 	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { getWallets, enableWallet, checkNetwork, getSignerAddress } from './WalletConnect.js';
+	import { getWallets, enableWallet, getSignerAddress } from './WalletConnect.js';
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	const dispatch = createEventDispatcher();
 	const NETWORK_ID = $derived.by(() => $page.data.serverStatus.networkId);
 
-	let { signType = 'stake' } = $props();
+	let { signType = 'stake', loading = $bindable(false) } = $props();
 	let allWallets = $state([]);
 	let wallets = $derived.by(() => {
 		if (signType === 'pool') {
@@ -18,12 +18,10 @@
 	let selectedWallet = $state(undefined);
 	let connectedWallet = $state(undefined);
 	let walletApi = $state(undefined);
-	let loading = $state(false);
 
 	onMount(async () => {
 		const walletList = await getWallets();
 
-		// if no wallets available, show error
 		if (walletList.error) {
 			toast.error('No wallets available');
 			dispatch('nowallets', walletList.error);
@@ -42,11 +40,16 @@
 			reset();
 			return;
 		}
-		const signerAddress = await getSignerAddress(walletApi, signType);
-		if (signerAddress.error) {
-			toast.error(signerAddress.error);
-			reset();
-			return;
+
+		// Pool voters enter their pool ID by hand — we don't probe the wallet.
+		let signerAddress;
+		if (signType !== 'pool') {
+			signerAddress = await getSignerAddress(walletApi, signType);
+			if (signerAddress?.error) {
+				toast.error(signerAddress.error);
+				reset();
+				return;
+			}
 		}
 
 		loading = false;

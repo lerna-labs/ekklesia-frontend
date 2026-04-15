@@ -1,16 +1,53 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import WalletConnect from './WalletConnect.svelte';
+	import { getSignerAddress } from './WalletConnect.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
 	import { getPayload, signData, submitSignature } from '$lib/WalletSigner/WalletSigner.js';
 
 	const dispatch = createEventDispatcher();
-	let { signType = '', mode, ballot = false, scriptAddress, multiSig, tx, poolId } = $props();
+	let {
+		signType = '',
+		mode,
+		ballot = false,
+		scriptAddress,
+		multiSig,
+		tx,
+		poolId,
+		loading: loadingProp = $bindable(false)
+	} = $props();
 	let loading = $state(false);
+	let connecting = $state(false);
 	let connectedWallet = $state(undefined);
 	let payload = $state(undefined);
 	let multiSigCheck = $derived(multiSig);
+
+	// Surface combined busy state to the parent so it can disable tabs etc.
+	$effect(() => {
+		loadingProp = loading || connecting;
+	});
+
+	// When the user switches sign-type AFTER connecting a wallet, re-fetch the
+	// address for the new type so the backend gets a matching pair. Skip `pool`
+	// because that path uses a user-entered pool ID, not a wallet probe.
+	$effect(() => {
+		const st = signType;
+		const cw = connectedWallet;
+		if (!cw?.api || st === 'pool' || cw.signType === st) return;
+
+		(async () => {
+			const result = await getSignerAddress(cw.api, st);
+			if (result?.error) {
+				toast.error(result.error);
+				connectedWallet = undefined;
+				return;
+			}
+			// Bail if the user switched again while we were awaiting.
+			if (signType !== st) return;
+			connectedWallet = { ...cw, address: result, signType: st };
+		})();
+	});
 
 	// Request ballot payload for signing
 	async function checkout() {
@@ -124,6 +161,7 @@
 <!-- SELECT WALLET -->
 <WalletConnect
 	{signType}
+	bind:loading={connecting}
 	on:connected={(e) => {
 		connectedWallet = e.detail;
 	}}

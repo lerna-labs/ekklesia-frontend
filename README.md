@@ -59,8 +59,9 @@ A modern web application for verifiable on-chain voting on Cardano. This platfor
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-# Base API URL for the backend API
-# Example: http://localhost:3000/api or https://api.example.com
+# Base API URL for the backend API (the `/api` root; do NOT include `/v0` or `/v1`)
+# The frontend appends `/v0/...` or `/v1/...` per call site.
+# Example: http://localhost:3000/api or https://api.example.com/api
 VITE_API_URL=
 
 # Server status endpoint URL (external endpoint)
@@ -70,14 +71,22 @@ VITE_SERVER_STATUS=
 
 # Cardano Network ID
 # Used for wallet connection and signing operations
-# Example: 0 (mainnet) or 1 (testnet/preview)
+# Example: 0 (testnet/preview) or 1 (mainnet)
 VITE_NETWORK_ID=
 
-# Voter types configuration
-# Comma-separated list of allowed voter types
-# Available options: drep, stake, pool, addr
-# Example: drep,stake,pool,addr or stake,pool
-VITE_VOTER_TYPES=
+# Allowed sign-with types offered in the WalletSigner dialog.
+# Comma-separated subset of: drep, stake, pool, addr
+# Example: drep,stake,pool,addr
+VITE_WALLETSIGNER_USER_TYPES=
+
+# Default sign-with type used when the user has not yet made a choice.
+# Must be one of the values listed in VITE_WALLETSIGNER_USER_TYPES.
+# Example: stake
+VITE_WALLETSIGNER_USER_DEFAULT=
+
+# Enable the MultiSig toggle in the WalletSigner dialog.
+# Set to "true" to expose native-script multisig login + voting.
+VITE_WALLETSIGNER_MULTISIG=
 ```
 
 **Note**: `VITE_APP_VERSION` is automatically set from `package.json` during build and does not need to be configured.

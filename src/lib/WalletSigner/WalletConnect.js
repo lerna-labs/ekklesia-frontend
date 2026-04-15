@@ -72,43 +72,53 @@ export async function checkNetwork(walletApi, expectedNetwork) {
 	else return true;
 }
 
+// Resolve the identity address / key matching `signType` on a connected wallet.
+// Only calls the CIP-30 / CIP-95 methods relevant to the requested type so we
+// don't fail a `drep` flow on a wallet that lacks reward addresses, etc.
+// `pool` is handled upstream by asking the user for their pool ID — this helper
+// intentionally returns an error if called with `signType: 'pool'`.
 export async function getSignerAddress(walletApi, signType) {
-	let rewardAddresses = await walletApi.getRewardAddresses();
-	let paymentAddresses = await walletApi.getUnusedAddresses();
-	let drepKey = await walletApi.cip95.getPubDRepKey();
-
-	if (signType === 'stake' && rewardAddresses.length === 0) {
-		logError('No reward addresses found');
-		return {
-			error: 'No reward addresses found'
-		};
-	}
-	if (signType === 'drep' && !drepKey) {
-		logError('No drep key found');
-		return {
-			error: 'No drep key found'
-		};
-	}
-
-	if (signType === 'addr' && paymentAddresses.length === 0) {
-		logError('No payment key found');
-		return {
-			error: 'No payment key found'
-		};
-	}
-
-	switch (signType) {
-		case 'stake':
+	if (signType === 'stake') {
+		try {
+			const rewardAddresses = await walletApi.getRewardAddresses();
+			if (!rewardAddresses || rewardAddresses.length === 0) {
+				logError('No reward addresses found');
+				return { error: 'No reward addresses found' };
+			}
 			return rewardAddresses[0];
-		case 'drep':
-			return drepKey;
-		case 'addr':
-			return paymentAddresses[0];
-		case 'pool':
-			return paymentAddresses[0];
-		default:
-			return {
-				error: 'Invalid sign type'
-			};
+		} catch (error) {
+			logError('Error getting reward addresses:', error);
+			return { error: 'Error getting reward addresses: ' + (error?.info || error?.message) };
+		}
 	}
+
+	if (signType === 'drep') {
+		try {
+			const drepKey = await walletApi.cip95.getPubDRepKey();
+			if (!drepKey) {
+				logError('No drep key found');
+				return { error: 'No drep key found' };
+			}
+			return drepKey;
+		} catch (error) {
+			logError('Error getting drep key:', error);
+			return { error: 'Error getting drep key: ' + (error?.info || error?.message) };
+		}
+	}
+
+	if (signType === 'addr') {
+		try {
+			const paymentAddresses = await walletApi.getUnusedAddresses();
+			if (!paymentAddresses || paymentAddresses.length === 0) {
+				logError('No payment address found');
+				return { error: 'No payment address found' };
+			}
+			return paymentAddresses[0];
+		} catch (error) {
+			logError('Error getting payment addresses:', error);
+			return { error: 'Error getting payment addresses: ' + (error?.info || error?.message) };
+		}
+	}
+
+	return { error: 'Invalid sign type' };
 }

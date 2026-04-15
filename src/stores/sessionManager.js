@@ -15,6 +15,9 @@ const V1_BASE = `${API_BASE}/v1`;
 // with the shared-auth conventions used by the proposal module.
 export const loggedIn = writable(false);
 export const showLogin = writable(false);
+// Set by click interceptors on `[data-walletsigner-action="navigateAfterLogin"]`
+// so that after a successful login we can `goto()` the originally requested URL.
+export const redirectAfterLogin = writable(null);
 export const user = writable(null);
 export const jwt = writable(null);
 
