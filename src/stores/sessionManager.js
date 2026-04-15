@@ -11,10 +11,11 @@ const API_BASE = (API_URL || '').replace(/\/v0\/?$/, '').replace(/\/$/, '');
 const V0_BASE = `${API_BASE}/v0`;
 const V1_BASE = `${API_BASE}/v1`;
 
-// Create a writable store to manage the session
+// Create a writable store to manage the session. Named `user` for parity
+// with the shared-auth conventions used by the proposal module.
 export const loggedIn = writable(false);
 export const showLogin = writable(false);
-export const voter = writable(null);
+export const user = writable(null);
 export const jwt = writable(null);
 
 // Set JWT in cookie and localStorage (if cookies are not available)
@@ -148,7 +149,7 @@ export const logout = async () => {
 		// Clear the session
 		jwt.set(null);
 		loggedIn.set(false);
-		voter.set(null);
+		user.set(null);
 
 		// Redirect to the home page after logout
 		goto('/');

@@ -1,5 +1,5 @@
 <script>
-	import { voter } from '$stores/sessionManager.js';
+	import { user } from '$stores/sessionManager.js';
 	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';

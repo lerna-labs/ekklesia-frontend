@@ -1,6 +1,6 @@
 <script>
 	import * as Select from '$lib/components/ui/select/index.js';
-	import { voter } from '$stores/sessionManager';
+	import { user } from '$stores/sessionManager';
 	import { createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 	let { value = undefined, disabled = false, mode = 'signer' } = $props();

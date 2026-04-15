@@ -1,7 +1,7 @@
 <script>
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Switch } from '$lib/components/ui/switch/index.js';
-	import { api, loggedIn, voter, setJWT } from '$stores/sessionManager.js';
+	import { api, loggedIn, user, setJWT } from '$stores/sessionManager.js';
 	import Wallet from '$lib/WalletSigner/SignerWallet.svelte';
 	import CardanoSigner from '$lib/WalletSigner/SignerCS.svelte';
 	import SelectSignType from '$lib/WalletSigner/SignerSignType.svelte';
@@ -16,11 +16,11 @@
 	let selected = $state('wallet');
 	let noWallets = $state(false);
 	let signType = $state('drep');
-	let multiSig = $state($voter?.multiSig || '');
-	let poolId = $state($voter?.voterId || '');
+	let multiSig = $state($user?.multiSig || '');
+	let poolId = $state($user?.voterId || '');
 	let scriptAddress = $derived.by(() => {
 		if (multiSig && $loggedIn) {
-			return $voter.voterId;
+			return $user.voterId;
 		}
 		return '';
 	});
@@ -28,17 +28,17 @@
 	const VOTER_TYPES = import.meta.env.VITE_VOTER_TYPES;
 
 	$effect(() => {
-		if ($voter?.voterId.startsWith('stake')) signType = 'stake';
-		else if ($voter?.voterId.startsWith('pool')) signType = 'pool';
-		else if ($voter?.voterId.startsWith('drep')) signType = 'drep';
-		else if ($voter?.voterId.startsWith('addr')) signType = 'addr';
+		if ($user?.voterId.startsWith('stake')) signType = 'stake';
+		else if ($user?.voterId.startsWith('pool')) signType = 'pool';
+		else if ($user?.voterId.startsWith('drep')) signType = 'drep';
+		else if ($user?.voterId.startsWith('addr')) signType = 'addr';
 	});
 
 	// success
 	async function submitSuccess(event) {
 		toast.success(event.detail.message);
-		$voter.pendingVoteCount = -1;
-		$voter.lastTransaction = event.detail.transaction;
+		$user.pendingVoteCount = -1;
+		$user.lastTransaction = event.detail.transaction;
 		await invalidateAll();
 		open = false;
 	}
@@ -49,10 +49,10 @@
 		setJWT(token, expiresIn);
 		loggedIn.set(true);
 		toast.success('Login successful');
-		// get voter data
-		const getVoter = await api.fetch(fetch, '/dashboard/');
-		const voterData = await getVoter.json();
-		voter.set(voterData);
+		// get user data
+		const getUser = await api.fetch(fetch, '/dashboard/');
+		const userData = await getUser.json();
+		user.set(userData);
 		goto('/');
 		open = false;
 	}
@@ -115,7 +115,7 @@
 					/>
 				{:else}
 					<!-- display VoterId -->
-					<Input type="text" value={$voter.voterId} disabled class="mb-2" />
+					<Input type="text" value={$user.voterId} disabled class="mb-2" />
 					<!-- SELECT SIGNTYPE -->
 					<SelectSignType
 						value={signType}
@@ -145,7 +145,7 @@
 				{:else}
 					<!-- display VoterId -->
 					{#if selected === 'wallet'}
-						<Input type="text" value={$voter.voterId} disabled />
+						<Input type="text" value={$user.voterId} disabled />
 					{/if}
 				{/if}
 			{/if}

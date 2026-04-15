@@ -4,7 +4,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { toast } from 'svelte-sonner';
-	import { loggedIn, voter } from '$stores/sessionManager';
+	import { loggedIn, user } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
 	import { api } from '$stores/sessionManager.js';
 	let { proposal, ballot } = $props();
@@ -41,7 +41,7 @@
 
 			if (voteStoreRequest.status === 200) {
 				const voteStored = await voteStoreRequest.json();
-				if (voteStored.changes) $voter.pendingVotesCount = true;
+				if (voteStored.changes) $user.pendingVotesCount = true;
 				toast.success('Vote updated successfully (not submitted!)');
 				// value already set optimistically; keep it
 			} else {

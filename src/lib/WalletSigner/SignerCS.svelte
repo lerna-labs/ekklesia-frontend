@@ -1,5 +1,5 @@
 <script>
-	import { loggedIn, voter } from '$stores/sessionManager.js';
+	import { loggedIn, user } from '$stores/sessionManager.js';
 	import { createEventDispatcher } from 'svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { Textarea } from '$lib/components/ui/textarea/index.js';
@@ -29,7 +29,7 @@
 
 	$effect(() => {
 		if ($loggedIn && !multiSig) {
-			signerAddress = $voter?.voterId;
+			signerAddress = $user?.voterId;
 		}
 	});
 
