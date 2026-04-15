@@ -1,4 +1,5 @@
 import { api } from '$stores/sessionManager.js';
+import { normalizeBallot } from '$lib/utils.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, params, url }) {
@@ -28,14 +29,11 @@ export async function load({ fetch, params, url }) {
 	queryParams.push(`limit=${encodeURIComponent(limit)}`);
 	const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
-	// Fetch ballot data
-	const ballotResponse = await api.fetch(fetch, '/ballots/' + params.ballotId);
-
-	// Fetch proposals with pagination parameters
-	const proposalsResponse = await api.fetch(
-		fetch,
-		`/ballots/${params.ballotId}/proposals${queryString}`
-	);
+	// Fetch ballot data via unified v1 dispatcher (handles both legacy + hydra)
+	const [ballotResponse, proposalsResponse] = await Promise.all([
+		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
+		api.fetch(fetch, `/ballots/${params.ballotId}/proposals${queryString}`)
+	]);
 
 	if (ballotResponse.status !== 200) {
 		throw error(ballotResponse.status, 'Ballot not found');
@@ -45,13 +43,17 @@ export async function load({ fetch, params, url }) {
 		throw error(proposalsResponse.status, 'Proposals not found');
 	}
 
-	// Parse the response data
-	const ballot = await ballotResponse.json();
+	// v1 wraps the ballot in `{ data }`; unwrap + normalize so `_id` stays available.
+	const ballotPayload = await ballotResponse.json();
+	const ballot = normalizeBallot(ballotPayload?.data ?? ballotPayload);
 	const proposalsData = await proposalsResponse.json();
 
 	// Fetch filter options
 	const tagsFilterResponse = await api.fetch(fetch, '/ballots/' + params.ballotId + '/tags');
-	const categoriesFilterResponse = await api.fetch(fetch, '/ballots/' + params.ballotId + '/categories');
+	const categoriesFilterResponse = await api.fetch(
+		fetch,
+		'/ballots/' + params.ballotId + '/categories'
+	);
 
 	// Process filter responses
 	let tagsOptions = [];

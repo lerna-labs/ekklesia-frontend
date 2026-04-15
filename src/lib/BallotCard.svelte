@@ -1,6 +1,7 @@
 <script>
 	import Text from './base/Text.svelte';
 	import Badge from '$lib/BallotBadge.svelte';
+	import SourceBadge from '$lib/BallotSourceBadge.svelte';
 	import BallotDetails from './BallotDetails.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -13,6 +14,7 @@
 		<Card.Title class="flex gap-2 text-xl">
 			{ballot.title}
 			<Badge status={ballot.status} />
+			<SourceBadge source={ballot.source} />
 		</Card.Title>
 		<Card.Description>
 			<BallotDetails {ballot} />

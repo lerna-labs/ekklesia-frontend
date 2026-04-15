@@ -1,5 +1,5 @@
 <script>
-	import { convertTimestamp, shortenString } from '$lib/utils.js';
+	import { convertTimestamp, normalizeBallot, shortenString } from '$lib/utils.js';
 	import { api } from '$stores/sessionManager.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { buttonVariants } from '$lib/components/ui/button';
@@ -10,9 +10,10 @@
 
 	async function fetchBallotData() {
 		console.log('Fetching ballot data for transaction:', transactionData._id);
-		const response = await api.fetch(fetch, '/ballots/' + transactionData.ballotId);
+		const response = await api.v1.fetch(fetch, '/ballots/' + transactionData.ballotId);
 		if (response.ok) {
-			ballotData = await response.json();
+			const payload = await response.json();
+			ballotData = normalizeBallot(payload?.data ?? payload);
 		} else {
 			console.error('Error fetching ballot data:', response.statusText);
 			return null;

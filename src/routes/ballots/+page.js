@@ -1,4 +1,5 @@
 import { api } from '$stores/sessionManager.js';
+import { normalizeBallots } from '$lib/utils.js';
 
 export async function load({ fetch, url }) {
 	// Extract query parameters from the URL
@@ -17,12 +18,15 @@ export async function load({ fetch, url }) {
 	queryParams.push(`limit=${encodeURIComponent(limit)}`);
 	const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
-	// Fetch ballots with query parameters
-	const ballots = await api.fetch(fetch, `/ballots${queryString}`);
-	const voterTypes = await api.fetch(fetch, '/ballots/voterTypes');
+	// Fetch ballots via the unified v1 listing; voterTypes still comes from
+	// v0 as no equivalent aggregate endpoint exists in v1 yet.
+	const [ballots, voterTypes] = await Promise.all([
+		api.v1.fetch(fetch, `/ballots${queryString}`),
+		api.fetch(fetch, '/ballots/voterTypes')
+	]);
 
-	// Parse the response data
 	const ballotsData = await ballots.json();
+	normalizeBallots(ballotsData.data);
 
 	return {
 		// Extract the ballots array from the response

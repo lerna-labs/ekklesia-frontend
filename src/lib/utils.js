@@ -23,6 +23,20 @@ export function convertTimestamp(dateString) {
 	return dayjs(dateString).format('MMMM D, YYYY [at] h:mm A');
 }
 
+// v1 ballots expose `id`; legacy consumers read `_id`. Alias so downstream
+// components that reference `_id` keep working against v1 responses.
+export function normalizeBallot(ballot) {
+	if (!ballot) return ballot;
+	if (ballot._id == null && ballot.id != null) ballot._id = ballot.id;
+	return ballot;
+}
+
+export function normalizeBallots(list) {
+	if (!Array.isArray(list)) return list;
+	for (const b of list) normalizeBallot(b);
+	return list;
+}
+
 // convert lovelace to ada
 export function lovelaceToAda(lovelace) {
 	if (!lovelace) return '0 ADA';
