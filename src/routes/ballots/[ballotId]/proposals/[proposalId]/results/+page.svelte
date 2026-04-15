@@ -1,32 +1,45 @@
 <script>
+	import { onMount } from 'svelte';
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
+	import ResultsStatus from '$lib/ResultsStatus.svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { lovelaceToAda, convertTimestamp } from '$lib/utils.js';
+	import { lovelaceToAda } from '$lib/utils.js';
 	import DonutChart from '$lib/charts/DonutChart.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { fetchProposalResult, startResultsPoller } from '$lib/results.js';
 
 	let { data } = $props();
-	let { ballot, proposal } = data;
-	let proposalData = proposal.data;
+	let { ballot, proposal, initialResult } = data;
 	let hasWeight = ballot.voteWeighted;
 	let totalVotes = $derived(proposal.voteCount);
 
-	let resultsSorted = $state([]);
-	const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
+	// Live-updating result. Seeded from the load fn, refreshed by the poller.
+	let result = $state(initialResult);
 
+	const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
 	const activeVoterPerc = totalAllowedVoterCount
 		? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
 		: '0.00';
-
 	const activeVotingPowerPerc = ballot.totalVotingPower
 		? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
 		: '0.00';
 
-	if (ballot.voteWeighted) {
-		// sort result by voting power descending
-		resultsSorted = proposal.result?.results.sort((a, b) => b.votingPower - a.votingPower);
-	}
+	// Sort the vote breakdown by voting power when the ballot is weighted.
+	const resultsSorted = $derived.by(() => {
+		const rows = result?.results ?? [];
+		if (!hasWeight) return rows;
+		return [...rows].sort((a, b) => b.votingPower - a.votingPower);
+	});
+
+	// Final results are authoritative; no need to keep polling once they land.
+	onMount(() => {
+		if (ballot.status === 'closed' && result?.source === 'final') return;
+		return startResultsPoller(async () => {
+			const next = await fetchProposalResult(fetch, proposal._id);
+			if (next) result = next;
+		});
+	});
 </script>
 
 <div class="flex gap-2 text-xl">
@@ -114,36 +127,28 @@
 	</div>
 </section>
 
-{#if proposal.result}
-	<section id="results" class="mt-8">
-		<div class="flex items-end justify-between">
-			<h2>
-				{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}
-			</h2>
-			{#if proposal.result?.updatedAt}
-				<div class="mb-4 text-xs text-muted-foreground">
-					Last Updated {convertTimestamp(proposal.result?.updatedAt)}
-				</div>
-			{/if}
-		</div>
+<section id="results" class="mt-8">
+	<ResultsStatus {result} />
+
+	{#if result && resultsSorted.length > 0}
 		<Card.Root class="mb-8 flex h-full flex-col">
 			<Card.Header>
 				<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
 			</Card.Header>
 			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
 				<div class="border-t pt-3">
-					{#each resultsSorted as result}
+					{#each resultsSorted as row}
 						<div class="mb-4">
 							<div class="flex justify-between">
-								<span class="font-semibold">{result.label}:</span>
+								<span class="font-semibold">{row.label}:</span>
 								<span class="text-nowrap font-semibold">
 									{#if ballot.voteWeighted}
-										{lovelaceToAda(result.votingPower)} ({(
-											(result.votingPower / proposal.votingPower) *
+										{lovelaceToAda(row.votingPower)} ({(
+											(row.votingPower / proposal.votingPower) *
 											100
 										).toFixed(1)}%)
 									{:else}
-										{result.count} ({((result.count / totalVotes) * 100).toFixed(1) || 0}%)
+										{row.count} ({((row.count / totalVotes) * 100).toFixed(1) || 0}%)
 									{/if}
 								</span>
 							</div>
@@ -159,12 +164,12 @@
 									</span>
 									<span class="text-right">
 										{#if !ballot.voteWeighted}
-											{lovelaceToAda(result.votingPower)} ({(
-												(result.votingPower / proposal.votingPower) *
+											{lovelaceToAda(row.votingPower)} ({(
+												(row.votingPower / proposal.votingPower) *
 												100
 											).toFixed(1)}%)
 										{:else}
-											{result.count} ({((result.count / totalVotes) * 100).toFixed(1) || 0}%)
+											{row.count} ({((row.count / totalVotes) * 100).toFixed(1) || 0}%)
 										{/if}
 									</span>
 								</div>
@@ -174,5 +179,9 @@
 				</div>
 			</Card.Content>
 		</Card.Root>
-	</section>
-{/if}
+	{:else if !result}
+		<p class="text-sm text-muted-foreground">
+			No results available yet. They'll appear here once the first tally runs.
+		</p>
+	{/if}
+</section>
