@@ -1,6 +1,7 @@
 <script>
 	import { user } from '$stores/sessionManager.js';
 	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
+	import BrokerVoteFlow from '$lib/BrokerVoteFlow.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import Badge from '$lib/BallotBadge.svelte';
@@ -69,7 +70,16 @@
 				</Card.Content>
 				<Card.Footer class="block">
 					<div class=" flex gap-1">
-						{#if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
+						{#if ballot.source === 'hydra'}
+							<BrokerVoteFlow
+								{ballot}
+								buttonText={pendingTransactions
+									.map((tx) => tx.ballotId)
+									.includes(ballot._id)
+									? 'Re-Submit Votes'
+									: 'Submit Votes'}
+							/>
+						{:else if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
 							<Checkout {ballot} mode="checkout" buttonText="Re-Submit Votes" />
 						{:else}
 							<Checkout {ballot} mode="checkout" />
