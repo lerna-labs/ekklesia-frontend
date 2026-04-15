@@ -2,7 +2,14 @@ import { goto } from '$app/navigation';
 import { error } from '@sveltejs/kit';
 import { writable, get } from 'svelte/store';
 import Cookies from 'js-cookie';
+
 const API_URL = import.meta.env.VITE_API_URL;
+
+// Normalize to the root `/api` base so we can prefix `/v0` or `/v1` explicitly.
+// Accepts either `<origin>/api` or `<origin>/api/v0` in VITE_API_URL.
+const API_BASE = (API_URL || '').replace(/\/v0\/?$/, '').replace(/\/$/, '');
+const V0_BASE = `${API_BASE}/v0`;
+const V1_BASE = `${API_BASE}/v1`;
 
 // Create a writable store to manage the session
 export const loggedIn = writable(false);
@@ -52,70 +59,58 @@ export function getJWT() {
 	return token;
 }
 
+async function apiFetch(base, fetch, url, options = {}) {
+	try {
+		const token = get(jwt) || getJWT();
+
+		const headers = new Headers(options.headers || {});
+		headers.set('Content-Type', 'application/json');
+
+		if (token) {
+			headers.set('Authorization', `Bearer ${token}`);
+		}
+
+		const response = await fetch(base + url, {
+			...options,
+			headers,
+			credentials: 'include'
+		});
+
+		if (response.status === 401) {
+			logout();
+			throw error(401, 'Token expired, please log in again');
+		}
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			if (response.status === 404) {
+				throw error(404, 'Not Found: The requested resource could not be found');
+			}
+			throw error(response.status, errorData.message || 'An error occurred');
+		}
+
+		return response;
+	} catch (err) {
+		if (err.status && err.body?.message) {
+			console.log('Re-throwing error:', err);
+			throw err;
+		}
+		throw error(500, err.message || 'An error occurred connecting to the API');
+	}
+}
+
 // Handle connection failures gracefully
 export const api = {
-	fetch: async (fetch, url, options = {}) => {
-		try {
-			// Get the current JWT token
-			const token = get(jwt) || getJWT();
-
-			// Set up headers
-			const headers = new Headers(options.headers || {});
-			headers.set('Content-Type', 'application/json');
-
-			// Add Authorization header if we have a token
-			if (token) {
-				headers.set('Authorization', `Bearer ${token}`);
-			}
-
-			const response = await fetch(API_URL + url, {
-				...options,
-				headers,
-				credentials: 'include'
-			});
-
-			// Check if the token has expired
-			if (response.status === 401) {
-				// Token has expired, log out the user
-				logout();
-				throw error(401, 'Token expired, please log in again');
-			}
-
-			if (!response.ok) {
-				// Handle non-2xx responses
-				const errorData = await response.json();
-
-				// if (response.status === 403) {
-				// 	// Handle 403 Forbidden error
-				// 	throw error(403, 'Forbidden: You do not have permission to access this resource');
-				// }
-				if (response.status === 404) {
-					// Handle 404 Not Found error
-					throw error(404, 'Not Found: The requested resource could not be found');
-				}
-				// Throw the error instead of calling the error function
-				throw error(response.status, errorData.message || 'An error occurred');
-			}
-
-			return response;
-		} catch (err) {
-			// Properly handle the error to display the SvelteKit error page
-			if (err.status && err.body.message) {
-				// If it's already a properly formatted error, just re-throw it
-				console.log('Re-throwing error:', err);
-				throw err;
-			} else {
-				// Create a proper SvelteKit error
-				throw error(500, err.message || 'An error occurred connecting to the API');
-			}
-		}
+	fetch: (fetch, url, options = {}) => apiFetch(V0_BASE, fetch, url, options),
+	v1: {
+		fetch: (fetch, url, options = {}) => apiFetch(V1_BASE, fetch, url, options)
 	}
 };
 
 export const logout = async () => {
 	try {
 		// Call the backend logout endpoint to clear server-side session
-		const response = await fetch(`${API_URL}/session`, {
+		const response = await fetch(`${V0_BASE}/session`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
