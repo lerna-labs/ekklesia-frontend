@@ -1,8 +1,7 @@
 <script>
 	let { ballot } = $props();
-	import { loggedIn, user } from '$stores/sessionManager.js';
-	import { page } from '$app/stores.js';
-	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
+	import { config } from '$stores/sessionManager.js';
+	import { convertTimestamp } from '$lib/utils.js';
 </script>
 
 <section class="text-xs *:mb-1">
@@ -40,8 +39,9 @@
 			<span class="font-semibold">On-Chain Results:</span>
 			{#if ballot.resultTxHash}
 				<a
-					href={'https://adastat.net/transactions/' + ballot.resultTxHash}
+					href={$config.explorerTxBase + ballot.resultTxHash}
 					target="_blank"
+					rel="noopener noreferrer"
 					class="link inline-block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
 				>
 					{ballot.resultTxHash}
