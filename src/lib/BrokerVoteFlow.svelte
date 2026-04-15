@@ -7,7 +7,7 @@
 	import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
 	import { TriangleAlert } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
-	import { loggedIn, user } from '$stores/sessionManager.js';
+	import { user } from '$stores/sessionManager.js';
 	import { invalidateAll } from '$app/navigation';
 
 	import WalletConnect from '$lib/WalletSigner/WalletConnect.svelte';
@@ -23,7 +23,25 @@
 	} from '$lib/broker.js';
 	import ConfirmationModal from '$lib/ConfirmationModal.svelte';
 
-	let { ballot, buttonText = 'Submit Votes' } = $props();
+	/**
+	 * @type {{
+	 *   ballot: any,
+	 *   buttonText?: string,
+	 *   existingPackage?: any,
+	 *   triggerVariant?: 'default' | 'outline'
+	 * }}
+	 */
+	let {
+		ballot,
+		buttonText = 'Submit Votes',
+		existingPackage = null,
+		triggerVariant = 'default'
+	} = $props();
+
+	// Cosigner mode = caller handed us an in-flight package (typically surfaced
+	// by ballot-detail auto-discovery via /v1/votes/:ballotId/packages). We
+	// skip the /draft round-trip and go straight to the signing step on open.
+	const isCosigner = $derived(!!existingPackage);
 
 	let open = $state(false);
 	let phase = $state('idle');
@@ -47,14 +65,7 @@
 	/** @type {any} */ let connectedWallet = $state(undefined);
 	let cardanoSignerJSON = $state('');
 
-	const signType = $derived.by(() => {
-		const id = $user?.voterId ?? '';
-		if (id.startsWith('stake')) return 'stake';
-		if (id.startsWith('pool')) return 'pool';
-		if (id.startsWith('drep')) return 'drep';
-		if (id.startsWith('addr')) return 'addr';
-		return 'stake';
-	});
+	const signType = $derived.by(() => detectSignType());
 
 	// Signer address for wallet.signData(). Matches the current v0 convention
 	// used by SignerWallet.svelte: bech32 for the connected identity, except
@@ -79,7 +90,27 @@
 		resetFlow();
 	}
 
+	function seedFromExistingPackage() {
+		if (!existingPackage) return;
+		pkg = {
+			id: existingPackage.id || existingPackage._id?.toString(),
+			status: existingPackage.status,
+			nonce: existingPackage.nonce
+		};
+		merkleRoot = existingPackage.merkleRoot ?? null;
+		multisigState = existingPackage.multisig ?? null;
+		phase = merkleRoot ? 'awaiting-signature' : 'failed';
+		if (!merkleRoot) {
+			errorMessage = 'Package is missing its signing payload — please re-draft.';
+		}
+	}
+
 	async function startDraft() {
+		if (isCosigner) {
+			seedFromExistingPackage();
+			return;
+		}
+
 		errorMessage = null;
 		phase = 'drafting';
 
@@ -99,12 +130,20 @@
 			return;
 		}
 
-		// `nativeScript` on the user is populated by the backend on multisig
-		// login (see BACKEND_PREREQS.md §2). Until that lands it will be
-		// undefined for multisig users and the backend will return a helpful
-		// error telling them to update.
+		// `nativeScript` and `calidusDeclaration` are belt-and-suspenders. The
+		// backend can auto-pull the cached nativeScript from the User doc
+		// (see BACKEND_PREREQS.md §2) so either path works; sending it
+		// explicitly is still correct and keeps the client honest if the
+		// multisig state on the server is somehow stale.
 		const body = { votes };
 		if ($user?.multiSig && $user?.nativeScript) body.nativeScript = $user.nativeScript;
+		// Pool voters using a CIP-151 Calidus hot key declare it on draft so
+		// the broker knows which subordinate key it's about to see as the
+		// witness signer.
+		const signType_ = detectSignType();
+		if (signType_ === 'pool' && $user?.calidusID) {
+			body.calidusDeclaration = { calidusId: $user.calidusID };
+		}
 
 		let draft;
 		try {
@@ -126,6 +165,15 @@
 		merkleRoot = draft.merkleRoot;
 		multisigState = draft.multisig ?? null;
 		phase = 'awaiting-signature';
+	}
+
+	function detectSignType() {
+		const id = $user?.voterId ?? '';
+		if (id.startsWith('stake')) return 'stake';
+		if (id.startsWith('pool')) return 'pool';
+		if (id.startsWith('drep')) return 'drep';
+		if (id.startsWith('addr')) return 'addr';
+		return 'stake';
 	}
 
 	async function submitWitness(coseSign1Hex, coseKeyHex) {
@@ -231,7 +279,7 @@
 
 <AlertDialog.Root bind:open onOpenChange={(o) => { if (!o) resetFlow(); }}>
 	<AlertDialog.Trigger>
-		<Button size="sm" onclick={startDraft}>
+		<Button size="sm" variant={triggerVariant} onclick={startDraft}>
 			<WalletMinimalIcon class="size-4 shrink-0" aria-hidden="true" />
 			{buttonText}
 		</Button>
@@ -239,10 +287,18 @@
 
 	<AlertDialog.Content class="flex max-h-[85vh] max-w-[440px] flex-col overflow-hidden p-5">
 		<AlertDialog.Header class="shrink-0">
-			<AlertDialog.Title>Submit votes on-chain</AlertDialog.Title>
+			<AlertDialog.Title>
+				{isCosigner ? 'Add your cosigner signature' : 'Submit votes on-chain'}
+			</AlertDialog.Title>
 			<AlertDialog.Description class="text-sm">
-				Your selections for <span class="font-semibold">{ballot.title}</span> will be packaged,
-				signed with your wallet, and committed to the Hydra voting head.
+				{#if isCosigner}
+					A vote package for <span class="font-semibold">{ballot.title}</span> is already
+					waiting for your signature. Sign the same Merkle root as the other cosigners to
+					satisfy the multisig threshold.
+				{:else}
+					Your selections for <span class="font-semibold">{ballot.title}</span> will be
+					packaged, signed with your wallet, and committed to the Hydra voting head.
+				{/if}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 

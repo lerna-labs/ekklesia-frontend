@@ -5,6 +5,7 @@
 	import Breadcrumbs from '$lib/base/Breadcrumbs.svelte';
 	import VersionCheck from '$lib/base/VersionCheck.svelte';
 	import Footer from '$lib/base/Footer.svelte';
+	import PendingPackagesAlert from '$lib/PendingPackagesAlert.svelte';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import PageHead from '$lib/base/PageHead.svelte';
 
@@ -39,6 +40,7 @@
 
 	<!-- Main content with flex-grow to push footer down -->
 	<main class="m-auto w-full max-w-3xl flex-grow p-4 pb-0 pt-6">
+		<PendingPackagesAlert />
 		<!-- Main content area -->
 		{@render children()}
 	</main>

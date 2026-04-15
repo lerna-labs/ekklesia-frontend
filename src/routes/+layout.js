@@ -1,4 +1,5 @@
-import { api, loggedIn, user, getJWT } from '$stores/sessionManager.js';
+import { loggedIn, user, getJWT } from '$stores/sessionManager.js';
+import { loadFrontendConfig, refreshUserSession } from '$lib/config.js';
 export const csr = true; // Client-side rendering only
 export const ssr = false; // Disable server-side rendering
 const VITE_SERVER_STATUS = import.meta.env.VITE_SERVER_STATUS;
@@ -24,14 +25,16 @@ export async function load({ fetch }) {
 		});
 	}
 
+	// Pull runtime config (IPFS gateway, explorer bases) once per page load.
+	// Failures are non-fatal; defaults stay in place.
+	await loadFrontendConfig(fetch);
 
 	// TOKEN CHECKS
 	const jwt = getJWT();
 	if (jwt) {
 		try {
-			const validate = await api.fetch(fetch, '/dashboard/');
-			if (validate.status === 200) {
-				const sessionData = await validate.json();
+			const sessionData = await refreshUserSession(fetch);
+			if (sessionData?.userId) {
 				user.set(sessionData);
 				loggedIn.set(true);
 			} else {

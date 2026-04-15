@@ -11,6 +11,7 @@
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
 	import { goto } from '$app/navigation';
 	import BallotDetails from '$lib/BallotDetails.svelte';
+	import BallotCosignerPrompt from '$lib/BallotCosignerPrompt.svelte';
 	let view = $state('grid');
 
 	let { data } = $props();
@@ -23,6 +24,8 @@
 	<Badge status={ballot.status} />
 </div>
 <BallotDetails {ballot} class="mt-2" />
+
+<BallotCosignerPrompt {ballot} />
 
 <section class="mt-6">
 	<header class="mb-4 items-center justify-between sm:flex">

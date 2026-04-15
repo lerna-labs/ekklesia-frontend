@@ -66,6 +66,20 @@ export async function getPackage(fetch, ballotId, packageId) {
 	return res.json();
 }
 
+// GET /v1/votes/:ballotId/packages — list this user's packages on a ballot.
+// Default returns only active states (draft / awaiting-signatures /
+// awaiting-submission) so callers can cheaply check "is there something to
+// resume / cosign?" on this ballot.
+export async function listPackages(fetch, ballotId, { includeTerminal = false, limit } = {}) {
+	const params = new URLSearchParams();
+	if (includeTerminal) params.set('includeTerminal', 'true');
+	if (limit) params.set('limit', String(limit));
+	const qs = params.toString();
+	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/packages' + (qs ? '?' + qs : ''));
+	const payload = await res.json();
+	return payload?.data ?? [];
+}
+
 /**
  * Pull the current user's pending vote selections for a specific ballot from
  * the v0 per-proposal draft store and shape them into the `votes[]` array

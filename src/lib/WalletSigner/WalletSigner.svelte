@@ -2,13 +2,13 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import {
-		api,
 		loggedIn,
 		user,
 		setJWT,
 		showLogin,
 		redirectAfterLogin
 	} from '$stores/sessionManager.js';
+	import { refreshUserSession } from '$lib/config.js';
 	import { get } from 'svelte/store';
 	import Wallet from '$lib/WalletSigner/SignerWallet.svelte';
 	import CardanoSigner from '$lib/WalletSigner/SignerCS.svelte';
@@ -107,9 +107,9 @@
 		setJWT(token, expiresIn);
 		loggedIn.set(true);
 		toast.success('Login successful');
-		// get user data
-		const getUser = await api.fetch(fetch, '/dashboard/');
-		const userData = await getUser.json();
+		// Merged /dashboard/ + /session/ read so the store picks up
+		// nativeScript, pendingPackages, and isAdmin in one go.
+		const userData = await refreshUserSession(fetch);
 		user.set(userData);
 		open = false;
 		showLogin.set(false);

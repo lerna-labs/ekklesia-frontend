@@ -2,7 +2,8 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { CircleCheck, Copy } from 'lucide-svelte';
-	import { convertTimestamp, shortenString } from '$lib/utils.js';
+	import { convertTimestamp } from '$lib/utils.js';
+	import { config } from '$stores/sessionManager.js';
 	import { toast } from 'svelte-sonner';
 
 	/**
@@ -18,8 +19,6 @@
 		ipfsCid = undefined,
 		confirmedAt = undefined
 	} = $props();
-
-	const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
 
 	async function copy(text, label) {
 		try {
@@ -93,7 +92,7 @@
 						</Button>
 					</div>
 					<a
-						href={IPFS_GATEWAY + ipfsCid}
+						href={$config.ipfsGatewayBase + ipfsCid}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="link mt-1 inline-block text-xs"
