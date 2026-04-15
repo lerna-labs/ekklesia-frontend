@@ -1,6 +1,5 @@
 <script>
 	import { user } from '$stores/sessionManager.js';
-	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
 	import BrokerVoteFlow from '$lib/BrokerVoteFlow.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -79,14 +78,14 @@
 									? 'Re-Submit Votes'
 									: 'Submit Votes'}
 							/>
-						{:else if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
-							<Checkout {ballot} mode="checkout" buttonText="Re-Submit Votes" />
-						{:else}
-							<Checkout {ballot} mode="checkout" />
 						{/if}
 						<Button href={'/ballots/' + ballot._id + '/proposals'} size="sm">View Ballot</Button>
 					</div>
-					{#if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
+					{#if ballot.source === 'legacy'}
+						<div class="mt-4 block w-full text-sm text-muted-foreground">
+							This ballot has been archived. Its selections can no longer be submitted on-chain.
+						</div>
+					{:else if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
 						<div class="mt-4 block w-full text-sm text-red-500">
 							You have a pending multisig transaction for this ballot. If you re-submit the votes on
 							this ballot - changed or unchanged - the pending transaction will be released and all

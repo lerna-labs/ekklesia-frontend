@@ -16,21 +16,33 @@
 	// TODO remove inline if not used
 	let { proposal, ballot, inline } = $props();
 
+	// Legacy ballots are read-only archives — the backend 410s all v0
+	// write endpoints, so never surface a vote CTA for them.
+	const isLegacy = $derived(ballot?.source === 'legacy');
+
 	onMount(async () => {
 		loading = false;
 	});
 </script>
 
 <section id="vote" class="mt-6">
-	{#if $loggedIn && ballot.voterValidated && ballot.status == 'live'}
+	{#if isLegacy}
+		<Card.Root class="h-full">
+			<Card.Header>
+				<Card.Title>Archived ballot</Card.Title>
+				<Card.Description class="pb-5">
+					This ballot is a read-only archive. Voting has ended and results are final.
+				</Card.Description>
+			</Card.Header>
+		</Card.Root>
+	{:else if $loggedIn && ballot.voterValidated && ballot.status == 'live'}
 		{#if proposal.voteType === 'default'}
 			<ProposalVoteDefault {proposal} {ballot} />
 		{/if}
 		{#if proposal.voteType === 'budget'}
 			<ProposalVoteBudget {proposal} {ballot} />
 		{/if}
-	{/if}
-	{#if $loggedIn && !ballot.voterValidated && ballot.status == 'live'}
+	{:else if $loggedIn && !ballot.voterValidated && ballot.status == 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Vote not possible</Card.Title>
@@ -42,16 +54,14 @@
 				</p>
 			</Card.Content>
 		</Card.Root>
-	{/if}
-	{#if ballot.status != 'live'}
+	{:else if ballot.status != 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Voting is closed</Card.Title>
 				<Card.Description class="pb-5">The voting for this proposal has ended.</Card.Description>
 			</Card.Header>
 		</Card.Root>
-	{/if}
-	{#if !$loggedIn && ballot.status == 'live'}
+	{:else if !$loggedIn && ballot.status == 'live'}
 		<Card.Root class="h-full">
 			<Card.Header>
 				<Card.Title>Login required</Card.Title>
