@@ -14,28 +14,9 @@
 		<h1 class="mb-3">Ballots ({data.pagination.total})</h1>
 		<div class="flex justify-between gap-1">
 			<Search />
-			<!-- <Sort
-				showCost={ballot.voteFilters}
-				sortOptions={[
-					{ value: 'name', label: 'Name' },
-					{ value: 'commentCount', label: 'Comment Count' },
-					{ value: 'voteCount', label: 'Vote Count' }
-				]}
-			/>
-			<Filter filterOptions={data.filterOptions} voteFilters={ballot.voteFilters} /> -->
-			<!-- <ViewSwitch
-				onChange={(newView) => {
-					view = newView;
-				}}
-			/> -->
+			<BallotFilter {data} />
 		</div>
 	</header>
-
-	<!-- <div class="flex items-start gap-2">
-	<h1 class="text-3xl">Ballots</h1>
-	<Search placeholder="Search ballots..." />
-	<BallotFilter {data} />
-</div> -->
 
 	{#if data && data.ballots && data.ballots.length > 0}
 		{#each data.ballots as ballot}

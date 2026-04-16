@@ -3,95 +3,75 @@ import { normalizeBallot } from '$lib/utils.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, params, url }) {
-	// Extract query parameters from the URL
-	const search = url.searchParams.get('search');
 	const page = url.searchParams.get('page') || '1';
-	const limit = url.searchParams.get('limit') || '10';
-	const tags = url.searchParams.get('tags');
-	const categories = url.searchParams.get('categories');
+	const limit = url.searchParams.get('limit') || '25';
 	const sort = url.searchParams.get('sort');
-	const direction = url.searchParams.get('direction') || 'desc';
-	const hasVoted = url.searchParams.get('hasVoted');
-	const thresholdReached = url.searchParams.get('thresholdReached');
+	const dir = url.searchParams.get('dir') || 'desc';
+	const search = url.searchParams.get('search') || '';
 
-	// Build query string
-	let queryParams = [];
-	if (search) queryParams.push(`search=${encodeURIComponent(search)}`);
-	if (tags) queryParams.push(`tags=${encodeURIComponent(tags)}`);
-	if (categories) queryParams.push(`categories=${encodeURIComponent(categories)}`);
-
-	if (sort) queryParams.push(`sort=${encodeURIComponent(sort)}`);
-	if (direction) queryParams.push(`direction=${encodeURIComponent(direction)}`);
-	if (hasVoted) queryParams.push(`hasVoted=${encodeURIComponent(hasVoted)}`);
-	if (thresholdReached)
-		queryParams.push(`thresholdReached=${encodeURIComponent(thresholdReached)}`);
-	queryParams.push(`page=${encodeURIComponent(page)}`);
-	queryParams.push(`limit=${encodeURIComponent(limit)}`);
-	const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
-
-	// Fetch ballot data via unified v1 dispatcher (handles both legacy + hydra)
-	const [ballotResponse, proposalsResponse] = await Promise.all([
-		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
-		api.fetch(fetch, `/ballots/${params.ballotId}/proposals${queryString}`)
-	]);
-
-	if (ballotResponse.status !== 200) {
-		throw error(ballotResponse.status, 'Ballot not found');
+	// Build the v1 facet query string. The endpoint accepts:
+	//   ?page, ?limit, ?sort, ?dir
+	//   ?filter[<facetKey>]=<csv>
+	//   ?search=<text> (free-text across title + summary + authors.name)
+	const qp = new URLSearchParams();
+	qp.set('page', page);
+	qp.set('limit', limit);
+	if (sort) {
+		qp.set('sort', sort);
+		qp.set('dir', dir);
+	}
+	if (search.trim()) {
+		qp.set('search', search.trim());
+	}
+	for (const [key, val] of url.searchParams.entries()) {
+		if (key.startsWith('filter[') && val) {
+			qp.set(key, val);
+		}
 	}
 
+	// Fetch ballot + proposals via v1 in parallel. Also fetch v0 ballot
+	// detail for the auth-dependent voterValidated field until the backend
+	// surfaces it on v1.
+	const [ballotV1, ballotV0, proposalsResponse] = await Promise.all([
+		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
+		api.fetch(fetch, '/ballots/' + params.ballotId),
+		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?' + qp.toString())
+	]);
+
+	if (ballotV1.status !== 200) {
+		throw error(ballotV1.status, 'Ballot not found');
+	}
 	if (proposalsResponse.status !== 200) {
 		throw error(proposalsResponse.status, 'Proposals not found');
 	}
 
-	// v1 wraps the ballot in `{ data }`; unwrap + normalize so `_id` stays available.
-	const ballotPayload = await ballotResponse.json();
-	const ballot = normalizeBallot(ballotPayload?.data ?? ballotPayload);
+	const ballotV1Payload = await ballotV1.json();
+	const ballotV0Payload = ballotV0.ok ? await ballotV0.json() : {};
+	const ballot = normalizeBallot(ballotV1Payload?.data ?? ballotV1Payload);
+
+	// Merge auth-dependent + aggregate fields from v0 until v1 carries them.
+	if (ballotV0Payload?.voterValidated != null) ballot.voterValidated = ballotV0Payload.voterValidated;
+	if (ballotV0Payload?.totalAllowedVoterCount != null) ballot.totalAllowedVoterCount = ballotV0Payload.totalAllowedVoterCount;
+	if (ballotV0Payload?.totalVotingPower != null) ballot.totalVotingPower = ballotV0Payload.totalVotingPower;
+
 	const proposalsData = await proposalsResponse.json();
 
-	// Fetch filter options
-	const tagsFilterResponse = await api.fetch(fetch, '/ballots/' + params.ballotId + '/tags');
-	const categoriesFilterResponse = await api.fetch(
-		fetch,
-		'/ballots/' + params.ballotId + '/categories'
-	);
-
-	// Process filter responses
-	let tagsOptions = [];
-	let categoriesOptions = [];
-
-	if (tagsFilterResponse.status === 200) {
-		tagsOptions = await tagsFilterResponse.json();
-	}
-
-	if (categoriesFilterResponse.status === 200) {
-		categoriesOptions = await categoriesFilterResponse.json();
+	// Normalize _id on each proposal for downstream components.
+	for (const p of proposalsData.data || []) {
+		if (p._id == null && p.id != null) p._id = p.id;
 	}
 
 	return {
 		ballot,
-		// Extract the proposals array from the response
 		proposals: proposalsData.data || [],
-		// Include pagination metadata
 		pagination: proposalsData.pagination || {
 			total: 0,
 			page: parseInt(page, 10),
-			limit: parseInt(limit, 10),
-			totalPages: 0
+			limit: parseInt(limit, 10)
 		},
-		search,
-		tags,
-		categories,
-		sort,
-		direction,
-		hasVoted,
-		thresholdReached,
-		// Pass current page and limit for pagination controls
+		// Echo back the applied filters/sort so the UI can reflect active state.
+		applied: proposalsData.applied || { filters: {}, sort: null },
 		currentPage: parseInt(page, 10),
-		perPage: parseInt(limit, 10),
-		filterOptions: {
-			tags: tagsOptions,
-			categories: categoriesOptions,
-			thresholdReached: ballot.voteThreshold != 0 ? true : false
-		}
+		perPage: parseInt(limit, 10)
 	};
 }

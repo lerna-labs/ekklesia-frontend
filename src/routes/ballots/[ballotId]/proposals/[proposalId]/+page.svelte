@@ -6,6 +6,7 @@
 	import Text from '$lib/base/Text.svelte';
 	import ProposalVote from '$lib/ProposalVote.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
+	import BallotDetails from '$lib/BallotDetails.svelte';
 	import { convertTimestamp } from '$lib/utils';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Markdown from '$lib/base/Markdown.svelte';
@@ -20,14 +21,27 @@
 </div>
 
 <section class="text-sm text-muted-foreground">
+	<BallotDetails {ballot} />
 	<ProposalDetails {proposal} {ballot} />
 </section>
 
-{#if proposal.description}
+{#if proposal.summary}
+	<div class="mt-6">
+		<h2 class="text-lg">Summary</h2>
+		<Text text={proposal.summary} />
+	</div>
+{:else if proposal.description}
 	<div class="mt-6">
 		<h2 class="text-lg">Description</h2>
 		<Text text={proposal.description} />
 	</div>
+{/if}
+
+{#if proposal.rationale}
+	<section class="mt-6">
+		<h2 class="mb-1 text-lg">Rationale</h2>
+		<Markdown markdown={proposal.rationale} />
+	</section>
 {/if}
 
 {#if proposal.data?.details}
@@ -96,13 +110,7 @@
 		<div class="relative left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] w-screen bg-slate-900">
 			<div class="m-auto grid max-w-3xl grid-cols-1 gap-6 p-4 pb-12 pt-8 text-white md:grid-cols-1">
 				<Card.Root class="flex h-full flex-col">
-					<Card.Header>
-						<Card.Title class="mb-2 p-0 text-lg">
-							{ballot.status == 'live' ? 'Vote now!' : 'Voting'}
-						</Card.Title>
-					</Card.Header>
-					<Card.Content class="flex-1 pt-0 text-muted-foreground">
-						<ProposalDetails {proposal} {ballot} />
+					<Card.Content class="flex-1 pt-6 text-muted-foreground">
 						<ProposalVote {ballot} {proposal} />
 					</Card.Content>
 				</Card.Root>

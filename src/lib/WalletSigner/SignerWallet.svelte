@@ -112,7 +112,7 @@
 	async function signAndSubmit(payload) {
 		loading = true;
 
-		let signer = payload.voterIdHex || payload.signerAddressHex;
+		let signer = payload.userIdHex || payload.signerAddressHex;
 		if (signType === 'pool' && poolId) {
 			signer = payload.calidusID;
 		}
@@ -128,7 +128,7 @@
 		}
 		const submitResponse = await submitSignature(
 			url,
-			payload.voterId,
+			payload.userId,
 			signType,
 			signature,
 			payload.merkleRoot,

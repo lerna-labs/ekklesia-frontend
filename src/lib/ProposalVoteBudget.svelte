@@ -1,5 +1,4 @@
 <script>
-	import * as Card from '$lib/components/ui/card/index.js';
 	import { onMount } from 'svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -7,9 +6,19 @@
 	import { loggedIn, user } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
 	import { api } from '$stores/sessionManager.js';
-	let { proposal, ballot } = $props();
+	let { proposal, ballot, disabled = false } = $props();
+
+	// Budget proposals split their UI in two: the grid of budget options
+	// (checkboxes) plus a separate Abstain toggle that is mutually
+	// exclusive with any picked option. Backend signals availability via
+	// `proposal.abstainAllowed` (default true).
 	let options = $state(proposal.voteOptions);
+	const abstainAllowed = $derived(proposal.abstainAllowed !== false);
+
 	let value = $derived(proposal.voterVote ?? []);
+	const isAbstaining = $derived(
+		Array.isArray(value) && value.length === 1 && value[0] === 'abstain'
+	);
 	let loading = $state(true);
 	let error = $state(null);
 	let componentId = Math.random().toString(36).substring(2, 15);
@@ -127,32 +136,30 @@
 	});
 </script>
 
-<Card.Root class="relative h-full">
-	<Card.Header>
-		<Card.Title>{value ? 'Your Vote' : 'Vote now!'}</Card.Title>
-		<Card.Description>
-			<div class="mt-2 flex flex-col gap-1 text-xs">
-				{#if ballot.voteWeighted}
-					<div>
-						<span class="font-semibold">Voting Power:</span>
-						{lovelaceToAda(ballot.votingPower)}
-					</div>
-				{/if}
-				{#if actualBudgetVote}
-					<div>
-						<span class="font-semibold">Budget left:</span>
-						{proposal.voteOptions.length - (value?.length || 0)}
-					</div>
-				{:else}
-					<div>
-						<span class="font-semibold"> Options selected:</span>
-						{value?.length || 0} of {proposal.voterBudget}
-					</div>
-				{/if}
-			</div>
-		</Card.Description>
-	</Card.Header>
-	<Card.Content>
+<div class="relative">
+	<div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+		<h3 class="text-base font-semibold">
+			{value && value.length > 0 ? 'Your Vote' : 'Vote Options'}
+		</h3>
+		<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
+			{#if ballot.voteWeighted && !disabled && ballot.votingPower}
+				<span class="font-mono tabular-nums">
+					Voting Power: {lovelaceToAda(ballot.votingPower)}
+				</span>
+			{/if}
+			{#if actualBudgetVote}
+				<span class="font-mono tabular-nums">
+					Budget left: {proposal.voteOptions.length - (value?.length || 0)}
+				</span>
+			{:else}
+				<span class="font-mono tabular-nums">
+					Options selected: {value?.length || 0} of {proposal.voterBudget}
+				</span>
+			{/if}
+		</div>
+	</div>
+
+	<div class={disabled ? 'opacity-60' : ''}>
 		<div class="grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
 			{#each options as option, i}
 				<div
@@ -166,9 +173,12 @@
 						id={'voteOption' + option.id}
 						value={option.id}
 						disabled={loading ||
+							disabled ||
+							isAbstaining ||
 							(value.length >= proposal.voterBudget && !value?.includes(option.id))}
 						checked={value?.includes(option.id) || false}
 						onCheckedChange={(e) => {
+							if (disabled) return;
 							const prevValue = value ? [...value] : [];
 							let newValue;
 							if (e) {
@@ -190,8 +200,38 @@
 				</div>
 			{/each}
 		</div>
-	</Card.Content>
-</Card.Root>
+
+		{#if abstainAllowed}
+			<div class="mt-3 border-t pt-3">
+				<div
+					class="flex items-center space-x-2"
+					class:revert-flash={reverted.includes('abstain')}
+					title="Abstain from this proposal. Clears any options you've already picked."
+				>
+					<Checkbox
+						id="voteOptionAbstain"
+						value="abstain"
+						disabled={loading || disabled}
+						checked={isAbstaining}
+						onCheckedChange={(checked) => {
+							if (disabled) return;
+							const prevValue = Array.isArray(value) ? [...value] : [];
+							const newValue = checked ? ['abstain'] : [];
+							value = newValue;
+							storeVote(newValue, prevValue);
+						}}
+					/>
+					<Label for="voteOptionAbstain" class="leading-4">
+						Abstain from this proposal
+					</Label>
+				</div>
+				<p class="mt-1 pl-6 text-xs text-muted-foreground">
+					Abstaining is mutually exclusive — it clears any options you've picked.
+				</p>
+			</div>
+		{/if}
+	</div>
+</div>
 
 <style>
 	/* small shake to indicate the option was reverted */

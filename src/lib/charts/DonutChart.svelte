@@ -138,6 +138,8 @@
 </script>
 
 <section class="">
-	<header class="align-left mb-4 text-xs font-semibold">{title}</header>
+	{#if title}
+		<header class="align-left mb-4 text-xs font-semibold">{title}</header>
+	{/if}
 	<canvas bind:this={canvas} style="display:block; max-width:100%;"></canvas>
 </section>

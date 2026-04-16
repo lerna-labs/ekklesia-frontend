@@ -31,11 +31,12 @@
 
 	<PageHead />
 
-	<!-- Header area - outside the main content -->
-	<!-- <Breadcrumbs {data} /> -->
+	<!-- Header + breadcrumbs stick together so navigation context stays
+	     visible while scrolling through long results / proposal pages. -->
 	<div class="sticky top-0 z-[10] bg-[#1E1E2F] pt-4">
 		<div class="scrollWatcher bg-orange-500"></div>
 		<Header />
+		<Breadcrumbs />
 	</div>
 
 	<!-- Main content with flex-grow to push footer down -->

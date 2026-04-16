@@ -114,15 +114,14 @@
 		open = false;
 		showLogin.set(false);
 		// Redirect target is picked up from the click interceptor (if any).
-		// Resolved in the callback rather than an $effect so SvelteKit's goto()
-		// isn't swallowed by the effect lifecycle.
+		// When no explicit target was captured, stay on the current page and
+		// just re-run loads so protected content populates.
 		const path = get(redirectAfterLogin);
 		if (path) {
 			redirectAfterLogin.set(null);
 			await goto(path);
 		} else {
 			await invalidateAll();
-			await goto('/');
 		}
 	}
 

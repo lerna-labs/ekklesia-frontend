@@ -25,9 +25,15 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="pb-0">
-		<div class="mb-4">
-			<Text text={proposal.description} />
-		</div>
+		{#if proposal.summary}
+			<div class="mb-4">
+				<Text text={proposal.summary} />
+			</div>
+		{:else if proposal.description}
+			<div class="mb-4">
+				<Text text={proposal.description} />
+			</div>
+		{/if}
 		{#if $loggedIn && intersecting}
 			<Vote {proposal} {ballot} />
 		{/if}

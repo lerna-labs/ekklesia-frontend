@@ -3,33 +3,111 @@
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import ResultsStatus from '$lib/ResultsStatus.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { lovelaceToAda } from '$lib/utils.js';
-	import DonutChart from '$lib/charts/DonutChart.svelte';
+	import GroupResultCard from '$lib/results/GroupResultCard.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { fetchProposalResult, startResultsPoller } from '$lib/results.js';
 
 	let { data } = $props();
 	let { ballot, proposal, initialResult } = data;
 	let hasWeight = ballot.voteWeighted;
-	let totalVotes = $derived(proposal.voteCount);
 
 	// Live-updating result. Seeded from the load fn, refreshed by the poller.
 	let result = $state(initialResult);
 
-	const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
-	const activeVoterPerc = totalAllowedVoterCount
-		? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
-		: '0.00';
-	const activeVotingPowerPerc = ballot.totalVotingPower
-		? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
-		: '0.00';
+	// Canonical display names for the voter-group keys the backend emits.
+	// Anything not listed here falls back to a simple capitalization so a
+	// new group type still renders, just without the custom label.
+	const GROUP_LABELS = {
+		drep: 'DRep',
+		pool: 'SPO',
+		spo: 'SPO',
+		stake: 'Stakeholder',
+		stakeholder: 'Stakeholder',
+		addr: 'Payment Address',
+		default: 'Other'
+	};
 
-	// Sort the vote breakdown by voting power when the ballot is weighted.
-	const resultsSorted = $derived.by(() => {
-		const rows = result?.results ?? [];
-		if (!hasWeight) return rows;
-		return [...rows].sort((a, b) => b.votingPower - a.votingPower);
+	function groupLabel(key) {
+		const k = String(key || '').toLowerCase();
+		return GROUP_LABELS[k] ?? key.charAt(0).toUpperCase() + key.slice(1);
+	}
+
+	const voteType = $derived(String(proposal?.voteType ?? 'default').toLowerCase());
+
+	// Sum the active voting count + power for a group based on vote type:
+	//   - discrete (default/preference/budget): sum `results[].votingPower`
+	//   - scale: numeric voters live in `scale.histogram[]`; fold in abstain row
+	//   - ranked: every voter appears once at rank-1 across rows; sum
+	//     `ranked.rows[i].power[0]`; fold in abstain row
+	function activeTotals(group, type) {
+		const rows = Array.isArray(group?.results) ? group.results : [];
+		let voters = 0;
+		let power = 0;
+
+		if (type === 'scale' && group?.scale) {
+			for (const b of group.scale.histogram ?? []) {
+				voters += b.count || 0;
+				power += b.power || 0;
+			}
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
+		} else if (type === 'ranked' && group?.ranked) {
+			for (const r of group.ranked.rows ?? []) {
+				voters += r.counts?.[0] || 0;
+				power += r.power?.[0] || 0;
+			}
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
+		} else {
+			for (const r of rows) {
+				voters += r.count || 0;
+				power += r.votingPower || 0;
+			}
+		}
+
+		return { voters, power };
+	}
+
+	const groups = $derived.by(() => {
+		const raw = result?.resultsByGroup;
+		if (!raw || typeof raw !== 'object') return [];
+		const participation = result?.ballotParticipation ?? null;
+		return Object.entries(raw).map(([key, group]) => {
+			const rows = Array.isArray(group?.results) ? group.results : [];
+			const sorted = hasWeight ? [...rows].sort((a, b) => b.votingPower - a.votingPower) : rows;
+			const { voters: derivedVoters, power: activePower } = activeTotals(group, voteType);
+			// `totalVotes` from the backend is reliable for discrete vote
+			// types (includes abstainers). For ranked + scale it's not — the
+			// cron `$unwind`s rank arrays / numeric values and over-counts.
+			// Our derived count is correct for all types.
+			const activeVoters =
+				voteType === 'ranked' || voteType === 'scale'
+					? derivedVoters
+					: group.totalVotes ?? derivedVoters;
+			const totalAllowedVoterCount =
+				group.totalAllowedVoterCount ?? participation?.voterCount?.[key] ?? null;
+			const totalVotingPower =
+				group.totalVotingPower ?? participation?.totalVotingPower?.[key] ?? null;
+			return {
+				key,
+				label: groupLabel(key),
+				activeVoters,
+				activePower,
+				totalAllowedVoterCount,
+				totalVotingPower,
+				rows: sorted,
+				scale: group.scale ?? null,
+				ranked: group.ranked ?? null
+			};
+		});
 	});
 
 	// Final results are authoritative; no need to keep polling once they land.
@@ -62,126 +140,19 @@
 	</Button>
 </section>
 
-<section id="participation" class="mb-8 mt-8">
-	<h2>Vote Statistics</h2>
-	<div class="grid gap-4 md:grid-cols-2">
-		<Card.Root class="flex h-full flex-col">
-			<Card.Header class="pt-4">
-				<Card.Title class="mb-2  p-0 text-lg">Participation</Card.Title>
-			</Card.Header>
-			<Card.Content class="h-full pt-0 text-sm">
-				<div class="mb-3">
-					<div class="text-nowrap font-semibold">Active Voters</div>
-					<div>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%)</div>
-				</div>
-
-				{#if hasWeight}
-					<div class="mb-3">
-						<div class="text-nowrap font-semibold">Total Voting Power</div>
-						<div>{lovelaceToAda(ballot.totalVotingPower)}</div>
-					</div>
-
-					<div>
-						<div class="text-nowrap font-semibold">Active Voting Power</div>
-						<div>{lovelaceToAda(proposal.votingPower)} ({activeVotingPowerPerc}%)</div>
-					</div>
-				{/if}
-			</Card.Content>
-		</Card.Root>
-
-		<Card.Root class="flex h-full flex-col">
-			<Card.Header class="pt-4">
-				<Card.Title class="mb-2 p-0 text-lg">Participation</Card.Title>
-			</Card.Header>
-			<Card.Content class="flex-1 pt-1 text-sm">
-				<div class="mb-4 grid w-full grid-cols-2 gap-4">
-					<DonutChart
-						data={{
-							labels: ['Active', 'Inactive'],
-							datasets: [
-								{
-									data: [activeVoterPerc, (100 - activeVoterPerc).toFixed(2)],
-									backgroundColor: ['#f97316', '#e5e7eb'],
-									hoverBackgroundColor: ['#ea580c', '#d1d5db']
-								}
-							]
-						}}
-						title={'By Voter Count'}
-					/>
-					<DonutChart
-						data={{
-							labels: ['Active', 'Inactive'],
-							datasets: [
-								{
-									data: [activeVotingPowerPerc, (100 - activeVotingPowerPerc).toFixed(2)],
-									backgroundColor: ['#f97316', '#e5e7eb'],
-									hoverBackgroundColor: ['#ea580c', '#d1d5db']
-								}
-							]
-						}}
-						title={'By Voting Power'}
-					/>
-				</div>
-			</Card.Content>
-		</Card.Root>
-	</div>
-</section>
-
 <section id="results" class="mt-8">
 	<ResultsStatus {result} />
 
-	{#if result && resultsSorted.length > 0}
-		<Card.Root class="mb-8 flex h-full flex-col">
-			<Card.Header>
-				<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
-			</Card.Header>
-			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
-				<div class="border-t pt-3">
-					{#each resultsSorted as row}
-						<div class="mb-4">
-							<div class="flex justify-between">
-								<span class="font-semibold">{row.label}:</span>
-								<span class="text-nowrap font-semibold">
-									{#if ballot.voteWeighted}
-										{lovelaceToAda(row.votingPower)} ({(
-											(row.votingPower / proposal.votingPower) *
-											100
-										).toFixed(1)}%)
-									{:else}
-										{row.count} ({((row.count / totalVotes) * 100).toFixed(1) || 0}%)
-									{/if}
-								</span>
-							</div>
-
-							{#if hasWeight}
-								<div class="mt-1 flex justify-between text-muted-foreground">
-									<span class="whitespace-nowrap font-semibold">
-										{#if !ballot.voteWeighted}
-											Voting Power:
-										{:else}
-											Total Votes:
-										{/if}
-									</span>
-									<span class="text-right">
-										{#if !ballot.voteWeighted}
-											{lovelaceToAda(row.votingPower)} ({(
-												(row.votingPower / proposal.votingPower) *
-												100
-											).toFixed(1)}%)
-										{:else}
-											{row.count} ({((row.count / totalVotes) * 100).toFixed(1) || 0}%)
-										{/if}
-									</span>
-								</div>
-							{/if}
-						</div>
-					{/each}
-				</div>
-			</Card.Content>
-		</Card.Root>
-	{:else if !result}
+	{#if !result}
 		<p class="text-sm text-muted-foreground">
 			No results available yet. They'll appear here once the first tally runs.
 		</p>
+	{:else if groups.length > 0}
+		<div class="mb-8 space-y-4">
+			<h3 class="text-lg">Results by voter group</h3>
+			{#each groups as group}
+				<GroupResultCard {group} {ballot} {proposal} {result} />
+			{/each}
+		</div>
 	{/if}
 </section>

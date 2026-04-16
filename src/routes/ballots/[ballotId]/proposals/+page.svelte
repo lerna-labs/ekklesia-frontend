@@ -1,15 +1,10 @@
 <script>
-	import { onMount } from 'svelte';
 	import Badge from '$lib/BallotBadge.svelte';
 	import ProposalCard from '$lib/ProposalCard.svelte';
 	import ProposalTable from '$lib/ProposalTable.svelte';
 	import Pagination from '$lib/base/Pagination.svelte';
-	import Filter from '$lib/base/Filter.svelte';
-	import Sort from '$lib/base/Sort.svelte';
+	import FacetControls from '$lib/FacetControls.svelte';
 	import Search from '$lib/base/Search.svelte';
-	import ViewSwitch from '$lib/ViewSwitch.svelte';
-	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
-	import { goto } from '$app/navigation';
 	import BallotDetails from '$lib/BallotDetails.svelte';
 	import BallotCosignerPrompt from '$lib/BallotCosignerPrompt.svelte';
 	import BallotProvenance from '$lib/BallotProvenance.svelte';
@@ -18,7 +13,6 @@
 
 	let { data } = $props();
 	let ballot = $state(data.ballot);
-	let proposals = $derived(data.proposals);
 </script>
 
 <div class="flex items-start gap-2">
@@ -27,6 +21,10 @@
 </div>
 <BallotDetails {ballot} class="mt-2" />
 
+{#if ballot.description}
+	<p class="mt-3 text-sm text-muted-foreground">{ballot.description}</p>
+{/if}
+
 <BallotCosignerPrompt {ballot} />
 <BallotProvenance {ballot} />
 <AuditMyVote {ballot} />
@@ -34,22 +32,11 @@
 <section class="mt-6">
 	<header class="mb-4 items-center justify-between sm:flex">
 		<h2 class="mb-3">Proposals ({data.pagination.total})</h2>
-		<div class="flex justify-between gap-1">
-			<Search />
-			<Sort
-				showCost={ballot.voteFilters}
-				sortOptions={[
-					{ value: 'title', label: 'Name' },
-					{ value: 'commentCount', label: 'Comment Count' },
-					{ value: 'voteCount', label: 'Vote Count' }
-				]}
-			/>
-			<Filter filterOptions={data.filterOptions} voteFilters={ballot.voteFilters} />
-			<!-- <ViewSwitch
-				onChange={(newView) => {
-					view = newView;
-				}}
-			/> -->
+		<div class="flex items-center justify-between gap-2">
+			<div class="min-w-0 max-w-xs flex-1">
+				<Search />
+			</div>
+			<FacetControls facets={ballot.facets} applied={data.applied} />
 		</div>
 	</header>
 
@@ -64,11 +51,11 @@
 			<ProposalTable {ballot} proposalList={data.proposals} />
 		{/if}
 	{:else}
-		<p>No proposals found :(</p>
+		<p>No proposals found.</p>
 	{/if}
 </section>
 
-{#if data.pagination.totalPages > 1}
+{#if data.pagination.total > data.perPage}
 	<div class="mt-4 flex justify-center">
 		<Pagination
 			count={data.pagination.total}
