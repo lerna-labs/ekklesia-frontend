@@ -46,7 +46,7 @@
 		"tailwindcss": "^4.2.1",
 		"tailwindcss-animate": "^1.0.7",
 		"vaul-svelte": "^1.0.0-next.7",
-		"vite": "^6.0.0"
+		"vite": "^7.3.1"
 	},
 	"dependencies": {
 		"dayjs": "^1.11.13",
