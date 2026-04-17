@@ -1,8 +1,8 @@
 <script>
 	import DonutChart from '$lib/charts/DonutChart.svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
-	import { optionColor } from './groupResults.js';
-	import { formatPercent, lovelaceToAda } from '$lib/utils.js';
+	import { optionColor, GROUP_ACCENTS, groupIdentity } from './groupResults.js';
+	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
 
 	/**
 	 * Per-group visualization for discrete-choice vote types: `default`,
@@ -19,6 +19,14 @@
 	const totalGroupPower = $derived(group.rows.reduce((s, r) => s + (r.votingPower || 0), 0));
 
 	const optionColors = $derived(group.rows.map((r, i) => optionColor(r.label, i)));
+
+	const abstainRow = $derived(group.rows.find((r) => String(r.id).toLowerCase() === 'abstain') ?? null);
+	const abstainCount = $derived(abstainRow?.count ?? 0);
+	const abstainPower = $derived(abstainRow?.votingPower ?? 0);
+	const expressedCount = $derived(totalGroupCount - abstainCount);
+	const expressedPower = $derived(totalGroupPower - abstainPower);
+	const SLATE_600 = '#475569';
+	const expressedColor = $derived(GROUP_ACCENTS[groupIdentity(group.key, group.label).accent].stroke);
 
 	// Leading option uses the authoritative dimension for this ballot
 	const leadingId = $derived.by(() => {
@@ -58,6 +66,64 @@
 <GroupCardShell {group} {ballot}>
 	{#snippet visualization()}
 		{#if hasVotes}
+			{#if abstainCount > 0}
+				{@const countTotal = expressedCount + abstainCount}
+				{@const expressedPct = countTotal ? (expressedCount / countTotal) * 100 : 0}
+				{@const abstainPct = countTotal ? (abstainCount / countTotal) * 100 : 0}
+				<div class="mb-4">
+					<div
+						class="relative flex h-2 w-full overflow-hidden rounded ring-1 ring-inset ring-slate-200"
+						role="img"
+						aria-label="Expressed vs abstained split"
+					>
+						{#if expressedCount > 0}
+							<div
+								class="h-full"
+								style="width: {expressedPct}%; background-color: {expressedColor};"
+							></div>
+						{/if}
+						{#if abstainCount > 0}
+							<div class="h-full" style="width: {abstainPct}%; background-color: {SLATE_600};"></div>
+						{/if}
+					</div>
+					<div class="mt-1 flex flex-col gap-y-1 text-[10px]">
+						<span
+							class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-muted-foreground"
+						>
+							<span
+								class="inline-block h-2 w-2 rounded-sm"
+								style="background-color: {expressedColor};"
+								aria-hidden="true"
+							></span>
+							<span class="font-mono tabular-nums">{expressedCount}</span>
+							expressed
+							<span class="font-mono tabular-nums">({formatPercent(expressedPct, 1)})</span>
+							{#if hasWeight}
+								<span class="ml-1 font-mono tabular-nums text-muted-foreground/60">
+									{lovelaceToAdaCompact(expressedPower)}
+								</span>
+							{/if}
+						</span>
+						<span
+							class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-muted-foreground"
+						>
+							<span
+								class="inline-block h-2 w-2 rounded-sm"
+								style="background-color: {SLATE_600};"
+								aria-hidden="true"
+							></span>
+							<span class="font-mono tabular-nums">{abstainCount}</span>
+							abstained
+							<span class="font-mono tabular-nums">({formatPercent(abstainPct, 1)})</span>
+							{#if hasWeight}
+								<span class="ml-1 font-mono tabular-nums text-muted-foreground/60">
+									{lovelaceToAdaCompact(abstainPower)}
+								</span>
+							{/if}
+						</span>
+					</div>
+				</div>
+			{/if}
 			<div class="grid grid-cols-2 gap-4 md:gap-6">
 				<div class="flex flex-col items-center">
 					<div

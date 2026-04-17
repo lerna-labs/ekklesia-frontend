@@ -7,7 +7,7 @@
 	import ProposalVoteBudget from './ProposalVoteBudget.svelte';
 	import ProposalVoteScale from './ProposalVoteScale.svelte';
 	import ProposalVoteRanked from './ProposalVoteRanked.svelte';
-	import { Archive, UserX, TriangleAlert } from 'lucide-svelte';
+	import { Archive, Clock, UserX, TriangleAlert } from 'lucide-svelte';
 	import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
 	import {
 		acceptedCredentialsOf,
@@ -16,20 +16,13 @@
 	} from '$lib/utils.js';
 
 	let loading = $state(true);
-	// Props for required data
-	// TODO remove inline if not used
 	let { proposal, ballot, inline } = $props();
 
-	// Legacy ballots are read-only archives — the backend 410s all v0
-	// write endpoints, so never surface a vote CTA for them.
 	const isLegacy = $derived(ballot?.source === 'legacy');
+	const isLive = $derived(ballot?.status === 'live');
+	const isClosed = $derived(ballot?.status === 'closed' || ballot?.status === 'archived');
+	const isUpcoming = $derived(ballot?.status === 'upcoming');
 
-	// Type-level eligibility gate — cheap, frontend-only. Compares the
-	// authenticated voter's credential kind (derived from their userId /
-	// bech32 prefix) against the ballot's accepted credential list. When
-	// the ballot doesn't declare accepted credentials (legacy or older
-	// data), we skip this gate and let the snapshot-level
-	// `ballot.voterValidated` check run as before.
 	const acceptedCredentials = $derived(acceptedCredentialsOf(ballot));
 	const voterCredential = $derived(voterCredentialFromId($user?.voterId));
 	const hasTypeMismatch = $derived(
@@ -39,19 +32,12 @@
 			!acceptedCredentials.includes(voterCredential)
 	);
 
-	// Snapshot-level ineligibility: logged in, credential type matches
-	// (or the ballot doesn't gate by type), but the authoritative
-	// UserCache check rejects this voter for this specific ballot.
 	const hasSnapshotIneligibility = $derived(
 		$loggedIn && !hasTypeMismatch && !ballot?.voterValidated
 	);
 
-	// Composite "show the form but lock it" flag. When true, we render
-	// the normal Default / Budget vote forms with their interactive
-	// bits disabled, and pair them with an explanation banner so the
-	// voter (or potential voter) can see what the options are without
-	// being able to pick.
-	const locked = $derived(!$loggedIn || hasTypeMismatch || hasSnapshotIneligibility);
+	// Disabled when not live, not logged in, or ineligible.
+	const locked = $derived(!isLive || !$loggedIn || hasTypeMismatch || hasSnapshotIneligibility);
 
 	onMount(async () => {
 		loading = false;
@@ -59,30 +45,38 @@
 </script>
 
 <section id="vote" class="mt-6">
-	{#if isLegacy}
-		<Card.Root class="h-full border-slate-300 bg-slate-100 text-slate-700">
-			<Card.Header>
-				<Card.Title class="flex items-center gap-2 text-slate-800">
-					<Archive class="h-5 w-5" />
-					Archived ballot
-				</Card.Title>
-				<Card.Description class="pb-5 text-slate-700">
-					This ballot is a read-only archive. Voting has ended and results are final.
-				</Card.Description>
-			</Card.Header>
-		</Card.Root>
-	{:else if ballot.status != 'live'}
-		<Card.Root class="h-full">
-			<Card.Header>
-				<Card.Title>Voting is closed</Card.Title>
-				<Card.Description class="pb-5">The voting for this proposal has ended.</Card.Description>
-			</Card.Header>
-		</Card.Root>
-	{:else}
+	<!-- Status banners for non-live states -->
+	{#if isClosed}
+		<div
+			class="mb-3 flex items-start gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"
+		>
+			<Archive class="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+			<div class="flex-1">
+				<div class="font-semibold text-slate-800">Voting has ended</div>
+				<p class="mt-0.5 text-xs">
+					{#if isLegacy}
+						This ballot is a read-only archive. Results are final.
+					{:else}
+						The voting period for this ballot has closed. The options below show what
+						voters were asked.
+					{/if}
+				</p>
+			</div>
+		</div>
+	{:else if isUpcoming}
+		<div
+			class="mb-3 flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"
+		>
+			<Clock class="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />
+			<div class="flex-1">
+				<div class="font-semibold">Voting hasn't started yet</div>
+				<p class="mt-0.5 text-xs">
+					The options below preview what you'll be asked to vote on once the ballot opens.
+				</p>
+			</div>
+		</div>
+	{:else if isLive}
 		{#if !$loggedIn}
-			<!-- Logged-out: prominent, brand-accented call to connect a wallet.
-			     Clicking "Connect Wallet" pops the global WalletSigner dialog
-			     via the showLogin store. -->
 			<div
 				class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
 			>
@@ -145,15 +139,16 @@
 				</div>
 			</div>
 		{/if}
+	{/if}
 
-		{#if proposal.voteType === 'default'}
-			<ProposalVoteDefault {proposal} {ballot} disabled={locked} />
-		{:else if proposal.voteType === 'budget' || proposal.voteType === 'preference'}
-			<ProposalVoteBudget {proposal} {ballot} disabled={locked} />
-		{:else if proposal.voteType === 'scale'}
-			<ProposalVoteScale {proposal} {ballot} disabled={locked} />
-		{:else if proposal.voteType === 'ranked'}
-			<ProposalVoteRanked {proposal} {ballot} disabled={locked} />
-		{/if}
+	<!-- Vote form — always rendered, locked when not live/eligible -->
+	{#if proposal.voteType === 'default'}
+		<ProposalVoteDefault {proposal} {ballot} disabled={locked} />
+	{:else if proposal.voteType === 'budget' || proposal.voteType === 'preference'}
+		<ProposalVoteBudget {proposal} {ballot} disabled={locked} />
+	{:else if proposal.voteType === 'scale'}
+		<ProposalVoteScale {proposal} {ballot} disabled={locked} />
+	{:else if proposal.voteType === 'ranked'}
+		<ProposalVoteRanked {proposal} {ballot} disabled={locked} />
 	{/if}
 </section>

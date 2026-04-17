@@ -79,8 +79,8 @@
 
 <style>
 	:global(.markdown-content) {
-		font-size: 0.9rem;
-		line-height: 1.6;
+		font-size: 0.875rem;
+		line-height: 1.4;
 
 		font-family: 'Geist', sans-serif;
 	}
@@ -108,7 +108,7 @@
 
 	:global(.markdown-content p) {
 		margin-bottom: 1rem;
-		line-height: 1.6rem;
+		line-height: 1.4;
 	}
 
 	:global(.markdown-content ul),

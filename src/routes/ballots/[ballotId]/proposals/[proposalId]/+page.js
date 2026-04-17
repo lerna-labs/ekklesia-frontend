@@ -3,10 +3,11 @@ import { normalizeBallot } from '$lib/utils.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, params }) {
-	const [ballotV1, ballotV0, proposalResponse] = await Promise.all([
+	const [ballotV1, ballotV0, proposalResponse, siblingsResponse] = await Promise.all([
 		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
 		api.fetch(fetch, '/ballots/' + params.ballotId),
-		api.v1.fetch(fetch, '/proposals/' + params.proposalId)
+		api.v1.fetch(fetch, '/proposals/' + params.proposalId),
+		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?limit=500')
 	]);
 
 	if (ballotV1.status !== 200) {
@@ -28,5 +29,19 @@ export async function load({ fetch, params }) {
 	const proposal = proposalPayload?.data ?? proposalPayload;
 	if (proposal._id == null && proposal.id != null) proposal._id = proposal.id;
 
-	return { ballot, proposal };
+	// Build prev/next sibling links from the ballot's full proposal list.
+	let prev = null;
+	let next = null;
+	if (siblingsResponse.ok) {
+		const siblingsPayload = await siblingsResponse.json();
+		const siblings = (siblingsPayload?.data ?? []).map((p) => ({
+			_id: p._id ?? p.id,
+			title: p.title
+		}));
+		const idx = siblings.findIndex((s) => String(s._id) === String(proposal._id));
+		if (idx > 0) prev = siblings[idx - 1];
+		if (idx >= 0 && idx < siblings.length - 1) next = siblings[idx + 1];
+	}
+
+	return { ballot, proposal, prev, next };
 }

@@ -1,6 +1,6 @@
 <script>
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { formatPercent, lovelaceToAda } from '$lib/utils.js';
+	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
 	import { GROUP_ACCENTS, groupIdentity } from './groupResults.js';
 
 	/**
@@ -84,7 +84,7 @@
 		<Card.Content class="pt-0">
 			<div class="grid gap-6 pb-5 md:grid-cols-[auto_1fr] md:items-center">
 				<!-- Participation ring + stats -->
-				<div class="flex items-center gap-4">
+				<div class="flex items-center gap-4 min-w-0">
 					<div class="relative shrink-0" style="width: {RING.size}px; height: {RING.size}px;">
 						<svg viewBox="0 0 {RING.size} {RING.size}" class="block">
 							<circle
@@ -135,10 +135,8 @@
 							>
 								Voters
 							</div>
-							<div class="font-mono text-sm tabular-nums">
-								{group.activeVoters}{#if hasTurnoutDenom}<span class="text-muted-foreground">
-										/ {group.totalAllowedVoterCount}</span
-									>{/if}
+							<div class="whitespace-nowrap font-mono text-sm tabular-nums">
+								{group.activeVoters}{#if hasTurnoutDenom}<span class="text-muted-foreground">{' / '}{group.totalAllowedVoterCount}</span>{/if}
 							</div>
 						</div>
 
@@ -149,11 +147,8 @@
 								>
 									Voting power
 								</div>
-								<div class="font-mono text-sm tabular-nums">
-									{lovelaceToAda(group.activePower)}{#if hasPowerDenom}<span
-											class="text-muted-foreground">
-											/ {lovelaceToAda(group.totalVotingPower)}</span
-										>{/if}
+								<div class="whitespace-nowrap font-mono text-sm tabular-nums">
+									{lovelaceToAdaCompact(group.activePower)}{#if hasPowerDenom}<span class="text-muted-foreground">{' / '}{lovelaceToAdaCompact(group.totalVotingPower)}</span>{/if}
 								</div>
 								{#if hasPowerDenom}
 									<div class="font-mono text-[10px] tabular-nums text-muted-foreground">

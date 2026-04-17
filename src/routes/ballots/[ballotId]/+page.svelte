@@ -2,16 +2,20 @@
 	import Badge from '$lib/BallotBadge.svelte';
 	import SourceBadge from '$lib/BallotSourceBadge.svelte';
 	import BallotDetails from '$lib/BallotDetails.svelte';
+	import BallotProvenance from '$lib/BallotProvenance.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { convertTimestamp } from '$lib/utils.js';
-	import { loggedIn } from '$stores/sessionManager.js';
-	import { CalendarClock, FileText, Vote } from 'lucide-svelte';
+	import { loggedIn, user } from '$stores/sessionManager.js';
+	import {
+		acceptedCredentialsOf,
+		credentialLabel,
+		voterCredentialFromId
+	} from '$lib/utils.js';
+	import { CalendarClock, FileText, Vote, ShieldCheck, ShieldAlert } from 'lucide-svelte';
 
 	let { data } = $props();
 	let { ballot } = data;
 
-	// Status-aware CTA label + variant so a live ballot actively invites
-	// voting instead of hiding behind a neutral "View Proposals" link.
 	const cta = $derived.by(() => {
 		switch (ballot?.status) {
 			case 'live':
@@ -35,6 +39,16 @@
 			return 'Voting has closed. Results are final (or pending finalization on-chain).';
 		return '';
 	});
+
+	const acceptedCredentials = $derived(acceptedCredentialsOf(ballot));
+	const voterCredential = $derived(voterCredentialFromId($user?.voterId));
+	const hasTypeMismatch = $derived(
+		$loggedIn &&
+			!!acceptedCredentials &&
+			voterCredential != null &&
+			!acceptedCredentials.includes(voterCredential)
+	);
+	const isEligible = $derived($loggedIn && !hasTypeMismatch && ballot?.voterValidated);
 </script>
 
 {#if ballot}
@@ -74,6 +88,27 @@
 			{#if ballot.voterType}
 				<div>Eligible voter groups: <span class="font-medium">{ballot.voterType}</span></div>
 			{/if}
+
+			{#if $loggedIn}
+				{#if isEligible}
+					<div class="inline-flex items-center gap-1 text-emerald-700">
+						<ShieldCheck class="h-3 w-3" aria-hidden="true" />
+						You are eligible to vote on this ballot
+					</div>
+				{:else if hasTypeMismatch}
+					<div class="inline-flex items-center gap-1 text-amber-700">
+						<ShieldAlert class="h-3 w-3" aria-hidden="true" />
+						Your credential ({credentialLabel(voterCredential)}) is not accepted
+						— this ballot requires
+						{acceptedCredentials.map(credentialLabel).join(' or ')}
+					</div>
+				{:else if ballot.voterValidated === false}
+					<div class="inline-flex items-center gap-1 text-amber-700">
+						<ShieldAlert class="h-3 w-3" aria-hidden="true" />
+						Your identity is not in this ballot's voter snapshot
+					</div>
+				{/if}
+			{/if}
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
@@ -92,6 +127,8 @@
 			{/if}
 		</div>
 	</div>
+
+	<BallotProvenance {ballot} />
 {:else}
 	<p>Ballot not found.</p>
 {/if}

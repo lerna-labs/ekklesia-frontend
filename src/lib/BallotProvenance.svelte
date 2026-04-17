@@ -8,25 +8,27 @@
 	import { convertTimestamp } from '$lib/utils.js';
 	import { fetchBallotResults } from '$lib/results.js';
 
-	/**
-	 * Surfaces the Hydra-head provenance metadata on a hydra-sourced ballot:
-	 *   - head identifier + status, instance policy ID, ballot CID (IPFS)
-	 *   - `prepareTxHash` linked through to the configured Cardano explorer
-	 *     (this one IS an L1 tx hash, so cardanoscan/cexplorer works)
-	 *   - close-receipt artifacts once the ballot has been finalized:
-	 *     `hydraFinalizeTxHash` (L1, explorer-linked),
-	 *     `hydraResultsHash` / `hydraEvidenceMerkleRoot` (hex digests — show
-	 *     copyable, no link), `hydraEvidenceCid` / `hydraResultsCid` (IPFS).
-	 *
-	 * Close-receipt fields live on the Result docs (one per proposal) rather
-	 * than on the ballot, so we poll /v1/results/ballot/:id once and use the
-	 * first `final`-source row we find.
-	 */
 	let { ballot } = $props();
 
 	/** @type {any} */ let closeReceipt = $state(null);
 
-	const enabled = $derived(ballot?.source === 'hydra' && ballot?.hydra);
+	const enabled = $derived(ballot?.source === 'hydra' && ballot?.hydra && ballot?.status !== 'upcoming');
+
+	// Resolved values — top-level fields are populated as the head
+	// lifecycle progresses; until then fall back to the nested objects
+	// that are available from ballot creation.
+	const h = $derived(ballot?.hydra ?? {});
+	const headInfo = $derived(h.headInfo ?? {});
+	const ekklesia = $derived(h.ballot?.ekklesia ?? {});
+
+	const headStatus = $derived(h.headStatus || headInfo.headStatus || null);
+	const headId = $derived(h.headId || headInfo.headId || null);
+	const merkleRoot = $derived(ekklesia.merkleRoot || null);
+	const votingAuthority = $derived(ekklesia.votingAuthority || null);
+	const namespace = $derived(ekklesia.namespace || null);
+	const ballotCid = $derived(
+		h.ballotCid || (ekklesia.ballotIpfsCid && ekklesia.ballotIpfsCid !== 'self' ? ekklesia.ballotIpfsCid : null)
+	);
 
 	async function copy(text, label) {
 		try {
@@ -41,8 +43,6 @@
 		if (!enabled || ballot?.status !== 'closed') return;
 		try {
 			const rows = await fetchBallotResults(fetch, ballot._id);
-			// Every proposal in a finalized ballot carries the same hydra* close
-			// artifacts — pick the first row that has them populated.
 			closeReceipt =
 				rows.find(
 					(r) =>
@@ -70,28 +70,28 @@
 			</Card.Description>
 		</Card.Header>
 		<Card.Content class="space-y-3 text-xs">
-			{#if ballot.hydra.headStatus}
+			{#if headStatus}
 				<div>
 					<span class="font-semibold">Hydra head status:</span>
 					<span
 						class="ml-1 inline-block rounded bg-muted px-2 py-0.5 text-[11px] uppercase tracking-wide"
 					>
-						{ballot.hydra.headStatus}
+						{headStatus}
 					</span>
 				</div>
 			{/if}
 
-			{#if ballot.hydra.headId}
+			{#if headId}
 				<div>
 					<div class="font-semibold">Head ID</div>
 					<div class="flex items-center gap-1">
 						<code class="flex-1 break-all rounded bg-muted px-2 py-1 font-mono text-[11px]">
-							{ballot.hydra.headId}
+							{headId}
 						</code>
 						<Button
 							variant="outline"
 							size="sm"
-							onclick={() => copy(ballot.hydra.headId, 'Head ID')}
+							onclick={() => copy(headId, 'Head ID')}
 							aria-label="Copy Hydra head ID"
 						>
 							<Copy class="h-3 w-3" />
@@ -100,17 +100,17 @@
 				</div>
 			{/if}
 
-			{#if ballot.hydra.instancePolicyId}
+			{#if h.instancePolicyId}
 				<div>
 					<div class="font-semibold">Instance policy ID</div>
 					<div class="flex items-center gap-1">
 						<code class="flex-1 break-all rounded bg-muted px-2 py-1 font-mono text-[11px]">
-							{ballot.hydra.instancePolicyId}
+							{h.instancePolicyId}
 						</code>
 						<Button
 							variant="outline"
 							size="sm"
-							onclick={() => copy(ballot.hydra.instancePolicyId, 'Policy ID')}
+							onclick={() => copy(h.instancePolicyId, 'Policy ID')}
 							aria-label="Copy instance policy ID"
 						>
 							<Copy class="h-3 w-3" />
@@ -119,38 +119,71 @@
 				</div>
 			{/if}
 
-			{#if ballot.hydra.prepareTxHash}
+			{#if votingAuthority}
+				<div>
+					<span class="font-semibold">Voting authority:</span>
+					<span class="ml-1 font-mono text-[11px]">{votingAuthority}</span>
+				</div>
+			{/if}
+
+			{#if namespace}
+				<div>
+					<span class="font-semibold">Namespace:</span>
+					<span class="ml-1 font-mono text-[11px]">{namespace}</span>
+				</div>
+			{/if}
+
+			{#if merkleRoot}
+				<div>
+					<div class="font-semibold">Voter snapshot Merkle root</div>
+					<div class="flex items-center gap-1">
+						<code class="flex-1 break-all rounded bg-muted px-2 py-1 font-mono text-[11px]">
+							{merkleRoot}
+						</code>
+						<Button
+							variant="outline"
+							size="sm"
+							onclick={() => copy(merkleRoot, 'Merkle root')}
+							aria-label="Copy Merkle root"
+						>
+							<Copy class="h-3 w-3" />
+						</Button>
+					</div>
+				</div>
+			{/if}
+
+			{#if h.prepareTxHash}
 				<div>
 					<div class="font-semibold">
 						Prepare transaction
-						{#if ballot.hydra.prepareTxSubmittedAt}
+						{#if h.prepareTxSubmittedAt}
 							<span class="ml-1 font-normal text-muted-foreground">
-								(submitted {convertTimestamp(ballot.hydra.prepareTxSubmittedAt)})
+								(submitted {convertTimestamp(h.prepareTxSubmittedAt)})
 							</span>
 						{/if}
 					</div>
 					<a
-						href={$config.explorerTxBase + ballot.hydra.prepareTxHash}
+						href={$config.explorerTxBase + h.prepareTxHash}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="link inline-flex items-center gap-1 break-all font-mono text-[11px]"
 					>
-						{ballot.hydra.prepareTxHash}
+						{h.prepareTxHash}
 						<ExternalLink class="h-3 w-3 shrink-0" />
 					</a>
 				</div>
 			{/if}
 
-			{#if ballot.hydra.ballotCid}
+			{#if ballotCid}
 				<div>
 					<div class="font-semibold">Ballot definition (IPFS)</div>
 					<a
-						href={$config.ipfsGatewayBase + ballot.hydra.ballotCid}
+						href={$config.ipfsGatewayBase + ballotCid}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="link inline-flex items-center gap-1 break-all font-mono text-[11px]"
 					>
-						{ballot.hydra.ballotCid}
+						{ballotCid}
 						<ExternalLink class="h-3 w-3 shrink-0" />
 					</a>
 				</div>

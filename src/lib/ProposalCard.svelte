@@ -57,12 +57,9 @@
 				<Text text={proposal.description} />
 			</div>
 		{/if}
-		{#if $loggedIn && intersecting}
-			<Vote {proposal} {ballot} />
-		{/if}
 	</Card.Content>
 	<Card.Footer class="block">
-		{#if $loggedIn}
+		{#if $loggedIn && ballot.status === 'live'}
 			<div class="mb-4">
 				<ProposalVote {proposal} {ballot} />
 			</div>

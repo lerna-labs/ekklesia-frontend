@@ -6,13 +6,17 @@
 	import GroupResultCard from '$lib/results/GroupResultCard.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { fetchProposalResult, startResultsPoller } from '$lib/results.js';
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
 	let { data } = $props();
-	let { ballot, proposal, initialResult } = data;
-	let hasWeight = ballot.voteWeighted;
+	const ballot = $derived(data.ballot);
+	const proposal = $derived(data.proposal);
+	const basePath = $derived(`/ballots/${ballot._id}/proposals`);
+	const hasWeight = $derived(ballot.voteWeighted);
 
 	// Live-updating result. Seeded from the load fn, refreshed by the poller.
-	let result = $state(initialResult);
+	let result = $state(data.initialResult);
+	$effect(() => { result = data.initialResult; });
 
 	// Canonical display names for the voter-group keys the backend emits.
 	// Anything not listed here falls back to a simple capitalization so a
@@ -128,6 +132,50 @@
 <section class="text-sm text-muted-foreground">
 	<ProposalDetails {proposal} {ballot} />
 </section>
+
+{#if data.prev || data.next}
+	<nav
+		class="mt-5 flex items-stretch gap-2 rounded-lg border border-slate-200 bg-slate-50/60 p-1.5"
+		aria-label="Proposal navigation"
+	>
+		{#if data.prev}
+			<a
+				href="{basePath}/{data.prev._id}/results"
+				class="group flex min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-white hover:shadow-sm"
+			>
+				<ChevronLeft class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-orange-600" />
+				<div class="min-w-0">
+					<div class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Previous</div>
+					<div class="truncate text-xs font-medium text-foreground">{data.prev.title}</div>
+				</div>
+			</a>
+		{:else}
+			<div class="flex-1"></div>
+		{/if}
+
+		<a
+			href="{basePath}"
+			class="flex shrink-0 items-center rounded-md px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-white hover:text-foreground hover:shadow-sm"
+		>
+			All
+		</a>
+
+		{#if data.next}
+			<a
+				href="{basePath}/{data.next._id}/results"
+				class="group flex min-w-0 flex-1 items-center justify-end gap-2 rounded-md px-3 py-2 text-right text-sm transition-colors hover:bg-white hover:shadow-sm"
+			>
+				<div class="min-w-0">
+					<div class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Next</div>
+					<div class="truncate text-xs font-medium text-foreground">{data.next.title}</div>
+				</div>
+				<ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-orange-600" />
+			</a>
+		{:else}
+			<div class="flex-1"></div>
+		{/if}
+	</nav>
+{/if}
 
 <section>
 	<Button
