@@ -4,92 +4,60 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { ChevronUp, ChevronDown, X } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
-	import { user } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
-	import { api } from '$stores/sessionManager.js';
-	import { onMount } from 'svelte';
+	import { getProposalDraft, saveProposalDraft } from '$lib/draftVotes.js';
 
 	let { proposal, ballot, disabled = false } = $props();
 
 	const options = $derived(proposal.voteOptions ?? []);
 	const abstainAllowed = $derived(proposal.abstainAllowed !== false);
 
-	// Vote shape: `[id1, id2, id3, ...]` in rank order, or `["abstain"]`.
-	const initial = $derived(() => Array.isArray(proposal.voterVote) ? [...proposal.voterVote] : []);
-	let ranking = $state(initial());
+	function resolveInitial() {
+		const local = getProposalDraft(ballot._id, proposal._id);
+		if (Array.isArray(local)) return [...local];
+		if (Array.isArray(proposal.voterVote)) return [...proposal.voterVote];
+		return [];
+	}
+
+	let ranking = $state(resolveInitial());
 	const isAbstaining = $derived(ranking.length === 1 && ranking[0] === 'abstain');
 	const rankedIds = $derived(isAbstaining ? [] : ranking);
 	const unrankedOptions = $derived(options.filter((o) => !rankedIds.includes(o.id)));
-	let loading = $state(true);
 
-	async function storeVote(newValue, prevValue) {
-		if (disabled) return;
-		loading = true;
-		try {
-			const res = await api.fetch(fetch, '/vote/' + proposal._id, {
-				method: 'POST',
-				body: JSON.stringify({ vote: newValue }),
-				headers: { 'Content-Type': 'application/json' }
-			});
-			if (res.status === 200) {
-				const stored = await res.json();
-				if (stored.changes) $user.pendingVotesCount = true;
-				toast.success('Vote updated successfully (not submitted!)');
-			} else {
-				let msg;
-				try { msg = (await res.json())?.message; } catch {}
-				toast.error('Error storing vote: ' + (msg || res.statusText));
-				ranking = prevValue;
-			}
-		} catch (err) {
-			ranking = prevValue;
-			toast.error('Error storing vote: ' + (err?.body?.message || err?.message || 'Unknown'));
-		} finally {
-			loading = false;
-		}
+	function saveDraft(next) {
+		ranking = next;
+		const normalized = Array.isArray(next) && next.length > 0 ? next : null;
+		const changed = saveProposalDraft(ballot._id, proposal._id, normalized);
+		if (changed) toast.success('Ranking saved as draft');
 	}
 
-	onMount(() => {
-		loading = false;
-	});
-
 	function addToRanking(id) {
-		const prev = [...ranking];
-		const next = isAbstaining ? [id] : [...ranking, id];
-		ranking = next;
-		storeVote(next, prev);
+		if (disabled) return;
+		saveDraft(isAbstaining ? [id] : [...ranking, id]);
 	}
 
 	function removeFromRanking(id) {
-		const prev = [...ranking];
-		const next = ranking.filter((v) => v !== id);
-		ranking = next;
-		storeVote(next, prev);
+		if (disabled) return;
+		saveDraft(ranking.filter((v) => v !== id));
 	}
 
 	function moveUp(idx) {
-		if (idx === 0) return;
-		const prev = [...ranking];
+		if (disabled || idx === 0) return;
 		const next = [...ranking];
 		[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-		ranking = next;
-		storeVote(next, prev);
+		saveDraft(next);
 	}
 
 	function moveDown(idx) {
-		if (idx >= ranking.length - 1) return;
-		const prev = [...ranking];
+		if (disabled || idx >= ranking.length - 1) return;
 		const next = [...ranking];
 		[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-		ranking = next;
-		storeVote(next, prev);
+		saveDraft(next);
 	}
 
 	function toggleAbstain(checked) {
-		const prev = [...ranking];
-		const next = checked ? ['abstain'] : [];
-		ranking = next;
-		storeVote(next, prev);
+		if (disabled) return;
+		saveDraft(checked ? ['abstain'] : []);
 	}
 
 	function labelFor(id) {
@@ -126,7 +94,7 @@
 								variant="ghost"
 								size="icon"
 								class="h-7 w-7"
-								disabled={loading || disabled || i === 0}
+								disabled={disabled || i === 0}
 								onclick={() => moveUp(i)}
 								aria-label="Move up"
 							>
@@ -136,7 +104,7 @@
 								variant="ghost"
 								size="icon"
 								class="h-7 w-7"
-								disabled={loading || disabled || i === rankedIds.length - 1}
+								disabled={disabled || i === rankedIds.length - 1}
 								onclick={() => moveDown(i)}
 								aria-label="Move down"
 							>
@@ -146,7 +114,7 @@
 								variant="ghost"
 								size="icon"
 								class="h-7 w-7 text-muted-foreground hover:text-red-600"
-								disabled={loading || disabled}
+								{disabled}
 								onclick={() => removeFromRanking(id)}
 								aria-label="Remove from ranking"
 							>
@@ -171,7 +139,7 @@
 							variant="outline"
 							size="sm"
 							class="text-xs"
-							disabled={loading || disabled}
+							{disabled}
 							onclick={() => addToRanking(option.id)}
 						>
 							+ {option.label}
@@ -190,7 +158,7 @@
 				<Checkbox
 					id="voteRankedAbstain"
 					checked={isAbstaining}
-					disabled={loading || disabled}
+					{disabled}
 					onCheckedChange={(c) => toggleAbstain(!!c)}
 				/>
 				<Label for="voteRankedAbstain" class="leading-4">

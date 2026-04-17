@@ -38,7 +38,7 @@
 		return legacy ? [legacy] : [];
 	});
 
-	let facetsOpen = $state(false);
+	let facetsOpen = $state(true);
 </script>
 
 <section class="mt-2 flex flex-col gap-1 text-xs">

@@ -21,7 +21,7 @@
 </div>
 
 <section class="text-sm text-muted-foreground">
-	<BallotDetails {ballot} />
+	<BallotDetails {ballot} collapsible />
 	<ProposalDetails {proposal} {ballot} />
 </section>
 

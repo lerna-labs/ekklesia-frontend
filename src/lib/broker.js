@@ -1,4 +1,5 @@
 import { api } from '$stores/sessionManager.js';
+import { ballotDraftsForBroker } from '$lib/draftVotes.js';
 
 // Convert a CIP-30 signData `signature` string (COSE_Sign1 hex) and `key`
 // (COSE key hex) into the witness shape the backend broker expects.
@@ -81,20 +82,14 @@ export async function listPackages(fetch, ballotId, { includeTerminal = false, l
 }
 
 /**
- * Pull the current user's pending vote selections for a specific ballot from
- * the v0 per-proposal draft store and shape them into the `votes[]` array
+ * Pull the current user's draft vote selections for a specific ballot from
+ * the browser-local draft cache and shape them into the `votes[]` array
  * that `/v1/votes/:ballotId/draft` expects.
  *
- * Per-proposal draft rows carry `{ proposalId, vote }` today — we assume
- * `vote` is the selection array. `ranking` and `weights` payloads come in
- * on specialized vote types we don't yet draft through the v0 path; when
- * that lands we'll branch here on proposal voteType.
+ * Drafts are intentionally browser-local — the backend never sees a
+ * selection until the voter signs a package, which keeps the DB from
+ * growing with abandoned drafts. See `$lib/draftVotes.js`.
  */
-export async function getPendingBallotVotes(fetch, ballotId) {
-	const res = await api.fetch(fetch, '/dashboard/pending');
-	const payload = await res.json();
-	if (!Array.isArray(payload)) return [];
-	return payload
-		.filter((row) => String(row.ballotId) === String(ballotId))
-		.map((row) => ({ questionId: String(row.proposalId), selection: row.vote ?? [] }));
+export async function getPendingBallotVotes(_fetch, ballotId) {
+	return ballotDraftsForBroker(ballotId);
 }

@@ -1,102 +1,62 @@
 <script>
-	import { user } from '$stores/sessionManager.js';
 	import BrokerVoteFlow from '$lib/BrokerVoteFlow.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import Badge from '$lib/BallotBadge.svelte';
-	import { convertTimestamp } from '$lib/utils.js';
-	import BallotDetails from './BallotDetails.svelte';
+	import { draftsTree } from '$lib/draftVotes.js';
 
-	let { pendingVotes, pendingTransactions } = $props();
+	// Optional list of ballot documents for title resolution; dashboard
+	// passes this from its own `/dashboard/ballots` fetch so we can show
+	// "The XYZ ballot" instead of a bare ObjectId.
+	let { ballots = [] } = $props();
+
+	function ballotFor(id) {
+		return ballots.find((b) => String(b._id) === String(id));
+	}
+
+	const draftBallots = $derived.by(() => {
+		const tree = $draftsTree;
+		return Object.entries(tree).map(([ballotId, drafts]) => ({
+			ballotId,
+			draftCount: Object.keys(drafts ?? {}).length,
+			ballot: ballotFor(ballotId)
+		}));
+	});
 </script>
 
 <section class="mt-6" id="pending-votes">
-	<h2>Your Pending Votes</h2>
-	{#if pendingVotes.length > 0}
-		<p class="mb-4">
-			You have pending votes that still need to be signed and submitted. Please review and submit
-			them by using your Cardano wallet or the CardanoSigner.
+	<h2>Your Unsubmitted Drafts</h2>
+	{#if draftBallots.length > 0}
+		<p class="mb-4 text-sm text-muted-foreground">
+			These drafts live in your browser until you sign and submit them on-chain. They don't
+			leave this device — switch browsers or clear your storage and they're gone. Submit a
+			ballot's votes through the broker below when you're ready to commit.
 		</p>
 
-		{#each pendingVotes as ballot}
+		{#each draftBallots as entry}
 			<Card.Root class="mb-4">
 				<Card.Header class="pt-5">
 					<Card.Title class="flex gap-2 text-xl">
-						{ballot.title}
-						<Badge status={ballot.status} />
+						{entry.ballot?.title ?? 'Ballot ' + entry.ballotId}
+						{#if entry.ballot?.status}
+							<Badge status={entry.ballot.status} />
+						{/if}
 					</Card.Title>
 					<Card.Description>
-						<BallotDetails {ballot} class="text-sm text-muted-foreground" />
+						{entry.draftCount} draft{entry.draftCount === 1 ? '' : 's'} saved locally.
 					</Card.Description>
 				</Card.Header>
-				<Card.Content>
-					<div
-						class="mb-2 flex items-center justify-between text-sm font-semibold text-muted-foreground"
-					>
-						<div>Proposal</div>
-						<div>Your vote</div>
-					</div>
-					{#each ballot.proposals as proposal}
-						<div class="mb-2 flex items-start justify-between gap-3">
-							<div class="font-medium">
-								<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id} target="_blank">
-									{proposal.title}
-									<div class="mt-1 text-xs text-muted-foreground">
-										<span>Proposal ID:</span>
-										{proposal._id}
-									</div>
-								</a>
-							</div>
-							<!-- DUPLICATE FROM BallotCardVotes -->
-							<div
-								class="flex flex-col items-end gap-0.5 md:max-w-[30vw] md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-0.5"
-							>
-								{#each proposal.vote as label}
-									<div
-										class="mb-0.5 w-full overflow-hidden whitespace-nowrap rounded-md px-3 py-1 text-center text-xs md:inline-flex md:w-auto {label ===
-										'Yes'
-											? 'bg-green-500 text-green-100'
-											: label === 'No'
-												? 'bg-red-500 text-red-100'
-												: 'bg-slate-500 text-slate-100'}"
-									>
-										{label}
-									</div>
-								{/each}
-							</div>
-						</div>
-					{/each}
-				</Card.Content>
-				<Card.Footer class="block">
-					<div class=" flex gap-1">
-						{#if ballot.source === 'hydra'}
-							<BrokerVoteFlow
-								{ballot}
-								buttonText={pendingTransactions
-									.map((tx) => tx.ballotId)
-									.includes(ballot._id)
-									? 'Re-Submit Votes'
-									: 'Submit Votes'}
-							/>
-						{/if}
-						<Button href={'/ballots/' + ballot._id + '/proposals'} size="sm">View Ballot</Button>
-					</div>
-					{#if ballot.source === 'legacy'}
-						<div class="mt-4 block w-full text-sm text-muted-foreground">
-							This ballot has been archived. Its selections can no longer be submitted on-chain.
-						</div>
-					{:else if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
-						<div class="mt-4 block w-full text-sm text-red-500">
-							You have a pending multisig transaction for this ballot. If you re-submit the votes on
-							this ballot - changed or unchanged - the pending transaction will be released and all
-							required signers have to sign again.
-						</div>
+				<Card.Footer class="flex gap-1">
+					{#if entry.ballot?.source === 'hydra'}
+						<BrokerVoteFlow ballot={entry.ballot} buttonText="Submit Votes" />
 					{/if}
-					<div></div>
+					<Button href={'/ballots/' + entry.ballotId + '/proposals'} size="sm" variant="outline">
+						Review Ballot
+					</Button>
 				</Card.Footer>
 			</Card.Root>
 		{/each}
 	{:else}
-		<p class="text-muted-foreground">No pending votes.</p>
+		<p class="text-muted-foreground">No unsubmitted drafts.</p>
 	{/if}
 </section>

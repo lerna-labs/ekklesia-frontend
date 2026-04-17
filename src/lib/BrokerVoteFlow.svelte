@@ -21,6 +21,7 @@
 		toWitness,
 		merkleRootPayloadHex
 	} from '$lib/broker.js';
+	import { clearBallotDrafts } from '$lib/draftVotes.js';
 	import ConfirmationModal from '$lib/ConfirmationModal.svelte';
 
 	/**
@@ -206,6 +207,10 @@
 			phase = 'confirmed';
 			open = false;
 			confirmationOpen = true;
+			// Drafts now live in the Hydra head — wipe the local cache for
+			// this ballot so the "unsubmitted draft" badge clears and
+			// re-drafting on this same ballot starts from an empty slate.
+			clearBallotDrafts(ballot._id);
 			await invalidateAll();
 			return;
 		}
@@ -269,6 +274,7 @@
 			phase = 'confirmed';
 			open = false;
 			confirmationOpen = true;
+			clearBallotDrafts(ballot._id);
 			await invalidateAll();
 		} else {
 			errorMessage = 'Package is in state: ' + p.status;
