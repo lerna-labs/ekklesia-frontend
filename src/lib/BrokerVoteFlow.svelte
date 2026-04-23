@@ -18,10 +18,14 @@
 		postSignature,
 		postSubmit,
 		getPendingBallotVotes,
+		listPackages,
+		deletePackage,
 		toWitness,
 		merkleRootPayloadHex
 	} from '$lib/broker.js';
 	import { clearBallotDrafts } from '$lib/draftVotes.js';
+	import { ERROR_CODES } from '$lib/voteSchema.js';
+	import { loadSignerPreference, saveSignerPreference } from '$lib/signerPreferences.js';
 	import ConfirmationModal from '$lib/ConfirmationModal.svelte';
 
 	/**
@@ -47,6 +51,13 @@
 	let open = $state(false);
 	let phase = $state('idle');
 	/** @type {string|null} */ let errorMessage = $state(null);
+	/** @type {string|null} */ let errorCode = $state(null);
+	/** @type {string|null} */ let errorQuestionId = $state(null);
+	// Package-id pulled off a PACKAGE_ALREADY_SIGNED response body so the
+	// Cancel+Redraft affordance knows which package to DELETE before
+	// re-calling /draft.
+	/** @type {string|null} */ let errorPackageId = $state(null);
+	let cancelling = $state(false);
 
 	// Draft state
 	/** @type {{id:string,status:string,nonce:number}|null} */
@@ -60,8 +71,15 @@
 	/** @type {string|undefined} */ let ipfsCid = $state(undefined);
 	/** @type {string|undefined} */ let confirmedAt = $state(undefined);
 
-	// Wallet / CardanoSigner shared state
-	let tab = $state('wallet');
+	// Wallet / CardanoSigner shared state. Initial tab follows the voter's
+	// remembered signer tool if one is on file so returning voters don't
+	// have to re-pick. `preselectedWallet` is then fed to WalletConnect
+	// to auto-connect the same CIP-30 wallet.
+	const initialPreference = loadSignerPreference();
+	let tab = $state(initialPreference?.kind === 'signer' ? 'signer' : 'wallet');
+	const preselectedWallet = $derived(
+		initialPreference?.kind === 'wallet' ? initialPreference.walletName : null
+	);
 	let connecting = $state(false);
 	/** @type {any} */ let connectedWallet = $state(undefined);
 	let cardanoSignerJSON = $state('');
@@ -71,24 +89,93 @@
 	// Signer address for wallet.signData(). Matches the current v0 convention
 	// used by SignerWallet.svelte: bech32 for the connected identity, except
 	// `pool` uses the Calidus bech32 when present on the user.
+	//
+	// DRep: CIP-30 signData would need an address-shaped hex (not a raw
+	// 32-byte pub key); CIP-95 signData — where present — is happy with the
+	// bech32 drep1… since it embeds the key hash as payload. Prefer
+	// $user.voterId, which is the drep1… bech32 post-login and works for
+	// both routes.
 	const signerAddress = $derived.by(() => {
 		if (!connectedWallet) return undefined;
 		if (signType === 'pool' && $user?.calidusID) return $user.calidusID;
+		if (signType === 'drep' && $user?.voterId) return $user.voterId;
 		return connectedWallet.address;
 	});
 
 	function resetFlow() {
 		phase = 'idle';
 		errorMessage = null;
+		errorCode = null;
+		errorQuestionId = null;
+		errorPackageId = null;
 		pkg = null;
 		merkleRoot = null;
 		multisigState = null;
 		cardanoSignerJSON = '';
 	}
 
-	function close() {
+	// Pull Hydra-shaped error details off either a thrown fetch error's
+	// `body` or a JSON response body that carried `status:'error'`.
+	// Schema v2 delta §"Error code routing": INVALID_VOTE vs INVALID_INPUT
+	// drive different voter-facing copy. A failing questionId, when
+	// present, is surfaced so the voter knows which question to revisit.
+	function captureError(payload, fallback) {
+		const src = payload?.body ?? payload ?? {};
+		errorCode = src.code || src.errorCode || null;
+		errorQuestionId = src.questionId || src.failingQuestionId || null;
+		// PACKAGE_ALREADY_SIGNED (409 on /draft) returns the offending
+		// package so the frontend can offer a Cancel+Redraft UX.
+		errorPackageId = src.package?.id || src.package?._id || null;
+		errorMessage = src.message || payload?.message || fallback;
+	}
+
+	const errorHeading = $derived(
+		errorCode === ERROR_CODES.INVALID_VOTE
+			? 'Your vote needs a fix'
+			: errorCode === ERROR_CODES.INVALID_INPUT
+				? 'Ballot definition rejected'
+				: errorCode === ERROR_CODES.PACKAGE_ALREADY_SIGNED
+					? 'Cosigners have already signed'
+					: 'Submission failed'
+	);
+
+	// Cancel button: if we have our own in-flight (non-cosigner) package,
+	// DELETE it server-side so the nonce is released and the
+	// "N packages awaiting action" banner doesn't carry a ghost. Cosigner
+	// flows close without touching the server (the package belongs to the
+	// drafter, not us).
+	async function cancel() {
+		const candidateId = pkg?.id ?? errorPackageId;
+		if (candidateId && !isCosigner && phase !== 'confirmed') {
+			cancelling = true;
+			try {
+				await deletePackage(fetch, ballot._id, candidateId);
+			} catch (err) {
+				console.warn('Cancel → delete failed:', err?.body?.message || err?.message);
+			}
+			cancelling = false;
+		}
 		open = false;
 		resetFlow();
+	}
+
+	// PACKAGE_ALREADY_SIGNED recovery: delete the stuck package and
+	// immediately re-enter the draft flow with the voter's current
+	// selections. The fresh /draft will mint a new nonce + merkleRoot.
+	async function cancelAndRedraft() {
+		if (!errorPackageId) return;
+		cancelling = true;
+		try {
+			await deletePackage(fetch, ballot._id, errorPackageId);
+		} catch (err) {
+			console.warn('Redraft → delete failed:', err?.body?.message || err?.message);
+			toast.error('Could not cancel the stuck package — please try again.');
+			cancelling = false;
+			return;
+		}
+		cancelling = false;
+		resetFlow();
+		await startDraft();
 	}
 
 	function seedFromExistingPackage() {
@@ -113,14 +200,48 @@
 		}
 
 		errorMessage = null;
+		errorCode = null;
+		errorQuestionId = null;
 		phase = 'drafting';
+
+		// Pre-flight: if this voter already has an active package for this
+		// ballot, resume it instead of asking the backend for a new draft.
+		// The nonce is stable between draft calls (it only advances on
+		// Hydra landing) so the existing package is logically the same as
+		// whatever a fresh /draft would return — we just skip the round-trip.
+		try {
+			const existing = await listPackages(fetch, ballot._id);
+			const resumable = existing.find(
+				(p) => p.status === 'awaiting-signatures' || p.status === 'awaiting-submission'
+			);
+			if (resumable && resumable.merkleRoot) {
+				pkg = {
+					id: resumable.id || resumable._id?.toString(),
+					status: resumable.status,
+					nonce: resumable.nonce
+				};
+				merkleRoot = resumable.merkleRoot;
+				multisigState = resumable.multisig ?? null;
+				phase =
+					resumable.status === 'awaiting-submission' ? 'failed' : 'awaiting-signature';
+				if (resumable.status === 'awaiting-submission') {
+					errorMessage =
+						'A previous submission attempt stalled — retry it, or it will clear itself.';
+				}
+				return;
+			}
+		} catch (err) {
+			// Soft-fail: if the listing blew up, fall through to a fresh draft
+			// rather than blocking the voter. They'll see the fresh-draft path.
+			console.warn('Package pre-flight failed, creating fresh draft:', err?.message || err);
+		}
 
 		let votes;
 		try {
 			votes = await getPendingBallotVotes(fetch, ballot._id);
 		} catch (err) {
 			phase = 'idle';
-			errorMessage = err?.body?.message || err?.message || 'Could not load your pending votes';
+			captureError(err, 'Could not load your pending votes');
 			toast.error(errorMessage);
 			return;
 		}
@@ -151,13 +272,13 @@
 			draft = await postDraft(fetch, ballot._id, body);
 		} catch (err) {
 			phase = 'failed';
-			errorMessage = err?.body?.message || err?.message || 'Draft failed';
+			captureError(err, 'Draft failed');
 			toast.error(errorMessage);
 			return;
 		}
 		if (draft?.status === 'error' || !draft?.merkleRoot) {
 			phase = 'failed';
-			errorMessage = draft?.message || 'Draft failed';
+			captureError(draft, 'Draft failed');
 			toast.error(errorMessage);
 			return;
 		}
@@ -186,14 +307,14 @@
 			res = await postSignature(fetch, ballot._id, pkg.id, toWitness(coseSign1Hex, coseKeyHex));
 		} catch (err) {
 			phase = 'failed';
-			errorMessage = err?.body?.message || err?.message || 'Submission failed';
+			captureError(err, 'Submission failed');
 			toast.error(errorMessage);
 			return;
 		}
 
 		if (res?.status === 'error') {
 			phase = 'failed';
-			errorMessage = res.message || 'Submission failed';
+			captureError(res, 'Submission failed');
 			toast.error(errorMessage);
 			return;
 		}
@@ -223,13 +344,22 @@
 	async function signWithConnectedWallet() {
 		if (!merkleRoot || !signerAddress) return;
 		const payloadHex = merkleRootPayloadHex(merkleRoot);
-		const signature = await signWithWallet(connectedWallet, signerAddress, payloadHex);
+		const signature = await signWithWallet(
+			connectedWallet,
+			signerAddress,
+			payloadHex,
+			signType
+		);
 		if (signature?.error) {
 			toast.error(signature.error);
 			return;
 		}
 		// CIP-30 signData returns `{ signature, key }` where `signature` is the
 		// COSE_Sign1 hex and `key` is the COSE key hex.
+		// Remember the wallet choice so the next modal open skips the picker.
+		if (connectedWallet?.walletName) {
+			saveSignerPreference({ kind: 'wallet', walletName: connectedWallet.walletName });
+		}
 		await submitWitness(signature.signature, signature.key);
 	}
 
@@ -241,11 +371,19 @@
 			toast.error('Invalid JSON — paste the raw CardanoSigner output');
 			return;
 		}
-		if (!parsed?.signature || !parsed?.key) {
-			toast.error('JSON must include both `signature` and `key` fields');
+		// Accept both CIP-30 wallet naming (`signature` / `key`) and
+		// CardanoSigner's CIP-8 naming (`COSE_Sign1_hex` / `COSE_Key_hex`).
+		const coseSign1Hex = parsed?.signature ?? parsed?.COSE_Sign1_hex;
+		const coseKeyHex = parsed?.key ?? parsed?.COSE_Key_hex;
+		if (!coseSign1Hex || !coseKeyHex) {
+			toast.error(
+				'JSON must include `signature`+`key` (wallets) or `COSE_Sign1_hex`+`COSE_Key_hex` (CardanoSigner)'
+			);
 			return;
 		}
-		await submitWitness(parsed.signature, parsed.key);
+		// Remember that this voter prefers the offline signer path.
+		saveSignerPreference({ kind: 'signer' });
+		await submitWitness(coseSign1Hex, coseKeyHex);
 	}
 
 	async function retrySubmission() {
@@ -256,13 +394,13 @@
 			res = await postSubmit(fetch, ballot._id, pkg.id);
 		} catch (err) {
 			phase = 'failed';
-			errorMessage = err?.body?.message || err?.message || 'Retry failed';
+			captureError(err, 'Retry failed');
 			toast.error(errorMessage);
 			return;
 		}
 		if (res?.status === 'error') {
 			phase = 'failed';
-			errorMessage = res.message || 'Retry failed';
+			captureError(res, 'Retry failed');
 			toast.error(errorMessage);
 			return;
 		}
@@ -283,7 +421,27 @@
 	}
 </script>
 
-<AlertDialog.Root bind:open onOpenChange={(o) => { if (!o) resetFlow(); }}>
+<AlertDialog.Root
+	bind:open
+	onOpenChange={(o) => {
+		// Dismissing the dialog (Escape, click-outside when allowed) is
+		// treated the same as Cancel: if we drafted a package this session,
+		// tell the server to release it so the nonce is recycled and no
+		// ghost surfaces on the dashboard banner.
+		if (!o) {
+			const candidateId = pkg?.id ?? errorPackageId;
+			if (candidateId && !isCosigner && phase !== 'confirmed') {
+				deletePackage(fetch, ballot._id, candidateId).catch((err) => {
+					console.warn(
+						'Dialog-dismiss → delete failed:',
+						err?.body?.message || err?.message
+					);
+				});
+			}
+			resetFlow();
+		}
+	}}
+>
 	<AlertDialog.Trigger>
 		<Button size="sm" variant={triggerVariant} onclick={startDraft}>
 			<WalletMinimalIcon class="size-4 shrink-0" aria-hidden="true" />
@@ -329,6 +487,7 @@
 					<Tabs.Content value="wallet">
 						<WalletConnect
 							{signType}
+							{preselectedWallet}
 							bind:loading={connecting}
 							on:connected={(e) => (connectedWallet = e.detail)}
 							on:nowallets={() => (tab = 'signer')}
@@ -387,10 +546,45 @@
 				<div class="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
 					<div class="mb-1 flex items-center gap-2 font-semibold">
 						<TriangleAlert class="h-4 w-4" />
-						Submission failed
+						{errorHeading}
 					</div>
 					<p class="text-xs">{errorMessage}</p>
-					{#if pkg}
+					{#if errorQuestionId}
+						<p class="mt-2 text-[11px] text-amber-800">
+							Failing question ID:
+							<code class="rounded bg-amber-100 px-1 py-0.5 font-mono">{errorQuestionId}</code>
+						</p>
+					{/if}
+					{#if errorCode === ERROR_CODES.INVALID_VOTE}
+						<p class="mt-2 text-[11px]">
+							Close this dialog and revisit the highlighted question — typical causes are a
+							partial ranking, an off-grid rating, or an allocation that doesn't sum to the
+							budget.
+						</p>
+					{:else if errorCode === ERROR_CODES.INVALID_INPUT}
+						<p class="mt-2 text-[11px]">
+							This error comes from the ballot definition itself, not your selections.
+							Contact the ballot author — it can't be resolved from the voter side.
+						</p>
+					{:else if errorCode === ERROR_CODES.PACKAGE_ALREADY_SIGNED}
+						<p class="mt-2 text-[11px]">
+							A cosigner has already signed the existing package for your original
+							selections. Your updated selections can't overwrite what was already signed —
+							cancel the signed package and draft a fresh one. The other cosigners will
+							need to sign the new one.
+						</p>
+					{/if}
+					{#if errorCode === ERROR_CODES.PACKAGE_ALREADY_SIGNED && errorPackageId}
+						<Button
+							variant="outline"
+							size="sm"
+							class="mt-3"
+							onclick={cancelAndRedraft}
+							disabled={cancelling}
+						>
+							{cancelling ? 'Cancelling…' : 'Cancel package and redraft'}
+						</Button>
+					{:else if pkg && errorCode !== ERROR_CODES.INVALID_VOTE && errorCode !== ERROR_CODES.INVALID_INPUT}
 						<Button variant="outline" size="sm" class="mt-3" onclick={retrySubmission}>
 							Retry submission
 						</Button>
@@ -402,7 +596,9 @@
 		</div>
 
 		<AlertDialog.Footer class="mt-4 shrink-0">
-			<Button variant="outline" onclick={close}>Cancel</Button>
+			<Button variant="outline" onclick={cancel} disabled={cancelling}>
+				{cancelling ? 'Cancelling…' : 'Cancel'}
+			</Button>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>

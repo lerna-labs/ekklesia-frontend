@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { Copy, ExternalLink } from 'lucide-svelte';
+	import { Copy, ExternalLink, ChevronDown, ChevronUp } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import { config } from '$stores/sessionManager.js';
 	import { convertTimestamp } from '$lib/utils.js';
@@ -11,6 +11,9 @@
 	let { ballot } = $props();
 
 	/** @type {any} */ let closeReceipt = $state(null);
+	// Collapsed by default — most readers only need to know the ballot is
+	// provenance-backed; auditors who want the hashes/links expand.
+	let expanded = $state(false);
 
 	const enabled = $derived(ballot?.source === 'hydra' && ballot?.hydra && ballot?.status !== 'upcoming');
 
@@ -62,24 +65,40 @@
 
 {#if enabled}
 	<Card.Root class="mt-4">
-		<Card.Header class="pb-3">
-			<Card.Title class="text-base">On-chain provenance</Card.Title>
-			<Card.Description class="text-xs">
-				This ballot is backed by a Hydra voting head. Every vote and the final tally are
-				verifiable against the artifacts below.
-			</Card.Description>
-		</Card.Header>
-		<Card.Content class="space-y-3 text-xs">
-			{#if headStatus}
-				<div>
-					<span class="font-semibold">Hydra head status:</span>
-					<span
-						class="ml-1 inline-block rounded bg-muted px-2 py-0.5 text-[11px] uppercase tracking-wide"
-					>
-						{headStatus}
-					</span>
+		<button
+			type="button"
+			class="w-full cursor-pointer rounded-t text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+			onclick={() => (expanded = !expanded)}
+			aria-expanded={expanded}
+			aria-controls="ballot-provenance-detail"
+		>
+			<Card.Header class="pb-3">
+				<div class="flex items-start justify-between gap-3">
+					<div class="min-w-0 flex-1">
+						<Card.Title class="text-base">On-chain provenance</Card.Title>
+						<Card.Description class="text-xs">
+							This ballot is backed by a Hydra voting head. Every vote and the final
+							tally are verifiable against on-chain artifacts.
+							{#if headStatus}
+								<span class="ml-1 inline-block rounded bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+									{headStatus}
+								</span>
+							{/if}
+						</Card.Description>
+					</div>
+					<div class="shrink-0 pt-1 text-muted-foreground" aria-hidden="true">
+						{#if expanded}
+							<ChevronUp class="h-4 w-4" />
+						{:else}
+							<ChevronDown class="h-4 w-4" />
+						{/if}
+					</div>
 				</div>
-			{/if}
+			</Card.Header>
+		</button>
+		<Card.Content
+			id="ballot-provenance-detail"
+			class="space-y-3 text-xs {expanded ? '' : 'hidden'}">
 
 			{#if headId}
 				<div>
@@ -135,8 +154,14 @@
 
 			{#if merkleRoot}
 				<div>
-					<div class="font-semibold">Voter snapshot Merkle root</div>
-					<div class="flex items-center gap-1">
+					<div class="font-semibold">Ballot content Merkle root</div>
+					<p class="mt-0.5 text-[11px] text-muted-foreground">
+						Cryptographic digest of the ballot definition itself — proposals, options,
+						voting rules. Anchored on-chain via the prepare transaction so anyone can
+						verify the ballot they're voting on matches what's committed on-chain (no
+						silent parameter changes mid-vote).
+					</p>
+					<div class="mt-1 flex items-center gap-1">
 						<code class="flex-1 break-all rounded bg-muted px-2 py-1 font-mono text-[11px]">
 							{merkleRoot}
 						</code>

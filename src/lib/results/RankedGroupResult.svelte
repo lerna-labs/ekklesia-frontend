@@ -2,6 +2,7 @@
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
 	import { ListOrdered } from 'lucide-svelte';
+	import OptionDetails from '$lib/OptionDetails.svelte';
 
 	/**
 	 * Per-group visualization for `ranked` (ranked-choice) vote types.
@@ -23,7 +24,12 @@
 	 * "compromise consensus" options read as broad middle segments with
 	 * little unranked tail.
 	 */
-	let { group, ballot } = $props();
+	let { group, ballot, proposal } = $props();
+
+	function optionFor(id) {
+		if (!Array.isArray(proposal?.voteOptions)) return null;
+		return proposal.voteOptions.find((o) => String(o.id) === String(id)) ?? null;
+	}
 
 	const hasWeight = $derived(!!ballot?.voteWeighted);
 	const hasRanked = $derived(
@@ -31,10 +37,11 @@
 	);
 	const rankDepth = $derived(group.ranked?.rankDepth ?? 0);
 
-	// Abstention: voters who submitted ["abstain"] are filtered out of
-	// ranked.rows by the backend cron and parked in results[] as the
-	// Abstain row. We visualize the split so stake that chose to abstain
-	// isn't hidden from the reader.
+	// Abstention: voters who abstained are filtered out of ranked.rows by
+	// the backend cron and parked in results[] as the Abstain row. We
+	// visualize the split so stake that chose to abstain isn't hidden
+	// from the reader. (Final-results view has a dedicated
+	// AbstainedByRolePanel rendered at page level.)
 	const abstainRow = $derived.by(() => {
 		// The page's `groups` derivation forwards the results array as
 		// `group.rows` (sorted copy). Older `group.results` is never set.
@@ -52,7 +59,7 @@
 	const rankedPower = $derived(
 		(group.ranked?.rows ?? []).reduce((s, r) => s + (r.power?.[0] || 0), 0)
 	);
-	const SLATE_600 = '#475569';
+	const ABSTAIN_COLOR = '#1e293b';
 	const RANKED_ACCENT = '#c2410e'; // orange-700 — matches the rank-1 bar color
 
 	// Dimension toggle mirrors the scale card: count vs voting power. Only
@@ -126,6 +133,78 @@
 	function formatValue(v) {
 		return dimension === 'power' ? lovelaceToAda(v) : `${v} vote${v === 1 ? '' : 's'}`;
 	}
+
+	// --- Auditor disclosure helpers ---
+
+	function rankLabel(i) {
+		const n = i + 1;
+		if (n === 1) return '1st';
+		if (n === 2) return '2nd';
+		if (n === 3) return '3rd';
+		return `${n}th`;
+	}
+
+	function countAtRank(row, i) {
+		return Number(row?.counts?.[i]) || 0;
+	}
+
+	function powerAtRank(row, i) {
+		return Number(row?.power?.[i]) || 0;
+	}
+
+	function unrankedValue(row) {
+		return dimension === 'power'
+			? Number(row?.unranked?.power) || 0
+			: Number(row?.unranked?.count) || 0;
+	}
+
+	function valueAt(row, i) {
+		return dimension === 'power' ? powerAtRank(row, i) : countAtRank(row, i);
+	}
+
+	function totalFor(row) {
+		let sum = 0;
+		for (let i = 0; i < rankDepth; i++) sum += valueAt(row, i);
+		sum += unrankedValue(row);
+		return sum;
+	}
+
+	// Compact-no-suffix for power (same trick as Likert) so narrow cells
+	// don't wrap. The unit lives on the column header.
+	function fmtRaw(v) {
+		if (dimension === 'power') return lovelaceToAdaCompact(v).replace(/\s*ADA$/, '');
+		return String(v);
+	}
+
+	// Copy-event handler on the disclosure table: swap on-screen truncated
+	// values for the full lovelace amounts stashed in `data-full` so a
+	// paste into a spreadsheet carries precision.
+	function handleDistributionCopy(ev) {
+		const selection = document.getSelection();
+		if (!selection || selection.rangeCount === 0) return;
+		const range = selection.getRangeAt(0);
+		const container = document.createElement('div');
+		container.appendChild(range.cloneContents());
+		container.querySelectorAll('[data-full]').forEach((el) => {
+			el.textContent = el.getAttribute('data-full') ?? el.textContent ?? '';
+		});
+		const rows = container.querySelectorAll('tr');
+		let text;
+		if (rows.length > 0) {
+			text = Array.from(rows)
+				.map((row) =>
+					Array.from(row.querySelectorAll('td, th'))
+						.map((cell) => (cell.textContent || '').replace(/\s+/g, ' ').trim())
+						.join('\t')
+				)
+				.join('\n');
+		} else {
+			text = (container.textContent || '').replace(/\s+/g, ' ').trim();
+		}
+		if (!text) return;
+		ev.clipboardData?.setData('text/plain', text);
+		ev.preventDefault();
+	}
 </script>
 
 <GroupCardShell {group} {ballot}>
@@ -189,7 +268,7 @@
 								></div>
 							{/if}
 							{#if abstainVal > 0}
-								<div class="h-full" style="width: {abstainPct}%; background-color: {SLATE_600};"></div>
+								<div class="h-full" style="width: {abstainPct}%; background-color: {ABSTAIN_COLOR};"></div>
 							{/if}
 						</div>
 						<div class="mt-1 flex flex-col gap-y-1 text-[10px]">
@@ -213,7 +292,7 @@
 							>
 								<span
 									class="inline-block h-2 w-2 rounded-sm"
-									style="background-color: {SLATE_600};"
+									style="background-color: {ABSTAIN_COLOR};"
 									aria-hidden="true"
 								></span>
 								<span class="font-mono tabular-nums">
@@ -342,8 +421,16 @@
 								(s, r) => s + (r.power?.[0] ?? 0),
 								0
 							)}
+							{@const opt = optionFor(row.id)}
 							<tr class="border-t border-slate-100 align-middle">
-								<td class="py-2 font-medium">{row.label}</td>
+								<td class="py-2 font-medium">
+									<span class="inline-flex items-center gap-1.5">
+										{row.label}
+										{#if opt}
+											<OptionDetails option={opt} />
+										{/if}
+									</span>
+								</td>
 								<td class="py-2 text-right font-mono tabular-nums">
 									{firstCount}
 									<span class="ml-1 text-muted-foreground">
@@ -368,6 +455,118 @@
 						{/each}
 					</tbody>
 				</table>
+
+				<!-- Full rank distribution matrix for voting authorities /
+				     auditors running IRV / STV / Borda / Condorcet
+				     themselves. Options × rank positions with an Unranked
+				     tail column and a Total. Honors the card's dimension
+				     toggle. Power cells carry data-full for clean
+				     spreadsheet paste. -->
+				<details class="mt-3 rounded-md border border-slate-200 bg-slate-50/60">
+					<summary
+						class="cursor-pointer select-none px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900"
+					>
+						Full rank distribution ({dimension === 'power'
+							? 'weighted by voting power'
+							: 'unweighted'}) — expand for copy / custom tabulation
+					</summary>
+					<div class="border-t border-slate-200 p-3">
+						<div class="overflow-x-auto">
+							<table
+								class="w-full border-collapse text-xs"
+								oncopy={handleDistributionCopy}
+							>
+								<thead>
+									<tr
+										class="border-b border-slate-200 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
+									>
+										<th class="py-2 pr-2 text-left font-semibold">Option</th>
+										{#each Array.from({ length: rankDepth }) as _, i}
+											<th class="py-2 px-2 text-right font-semibold">
+												<span class="inline-flex items-center justify-end gap-1">
+													<span
+														class="inline-block h-2 w-2 rounded-sm"
+														style="background-color: {rankColor(i)};"
+														aria-hidden="true"
+													></span>
+													{rankLabel(i)}
+												</span>
+											</th>
+										{/each}
+										<th class="py-2 px-2 text-right font-semibold">
+											<span class="inline-flex items-center justify-end gap-1">
+												<span
+													class="inline-block h-2 w-2 rounded-sm"
+													style="background-color: {UNRANKED_COLOR};"
+													aria-hidden="true"
+												></span>
+												Unranked
+											</span>
+										</th>
+										<th class="py-2 pl-2 text-right font-semibold">
+											{#if dimension === 'power'}
+												Total <span class="text-muted-foreground/70">(ADA)</span>
+											{:else}
+												Total
+											{/if}
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each sortedRows as row}
+										{@const rowTotal = totalFor(row)}
+										<tr class="border-t border-slate-100">
+											<td class="py-2 pr-2 font-medium">{row.label}</td>
+											{#each Array.from({ length: rankDepth }) as _, i}
+												{@const v = valueAt(row, i)}
+												{@const pct = rowTotal ? (v / rowTotal) * 100 : 0}
+												<td
+													class="py-2 px-2 text-right font-mono tabular-nums"
+													data-full={dimension === 'power' ? String(v) : null}
+												>
+													{fmtRaw(v)}
+													<span class="ml-1 text-[10px] text-muted-foreground">
+														({formatPercent(pct, 0)})
+													</span>
+												</td>
+											{/each}
+											<td
+												class="py-2 px-2 text-right font-mono tabular-nums"
+												data-full={dimension === 'power' ? String(unrankedValue(row)) : null}
+											>
+												{fmtRaw(unrankedValue(row))}
+												<span class="ml-1 text-[10px] text-muted-foreground">
+													({formatPercent(
+														rowTotal ? (unrankedValue(row) / rowTotal) * 100 : 0,
+														0
+													)})
+												</span>
+											</td>
+											<td
+												class="py-2 pl-2 text-right font-mono tabular-nums"
+												data-full={dimension === 'power' ? String(rowTotal) : null}
+											>
+												{fmtRaw(rowTotal)}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+						<p class="mt-2 text-[10px] italic text-muted-foreground">
+							Each cell is the {dimension === 'power'
+								? 'voting power (compact ADA)'
+								: 'voter count'}
+							that placed the option at that rank (or left it unranked). Totals sum
+							across ranks + unranked; they should match the number of
+							{dimension === 'power' ? 'lovelace of ' : ''}non-abstaining
+							{dimension === 'power' ? 'power' : 'voters'} in this group. The matrix
+							has no interpretation baked in — authorities apply their own rule
+							(IRV / STV / Borda / Condorcet). Toggle "By power" above to run the
+							same tabulation on weighted voting power.
+						</p>
+					</div>
+				</details>
 			</div>
 		{/if}
 	{/snippet}

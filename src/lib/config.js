@@ -41,5 +41,17 @@ export async function refreshUserSession(fetch) {
 	const session =
 		sessionRes.status === 'fulfilled' && sessionRes.value.ok ? await sessionRes.value.json() : {};
 
-	return { ...dash, ...session };
+	const merged = { ...dash, ...session };
+
+	// Backend field names drift by voter type — /session returns the
+	// bech32 identifier as `userId`, while legacy /dashboard code paths
+	// and older fixtures use `voterId`. Normalize both directions so
+	// frontend consumers don't have to branch.
+	const id = merged.voterId ?? merged.userId;
+	if (id) {
+		merged.voterId = id;
+		merged.userId = id;
+	}
+
+	return merged;
 }

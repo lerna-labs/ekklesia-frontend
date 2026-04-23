@@ -9,6 +9,7 @@
 		redirectAfterLogin
 	} from '$stores/sessionManager.js';
 	import { refreshUserSession } from '$lib/config.js';
+	import { saveSignerPreference } from '$lib/signerPreferences.js';
 	import { get } from 'svelte/store';
 	import Wallet from '$lib/WalletSigner/SignerWallet.svelte';
 	import CardanoSigner from '$lib/WalletSigner/SignerCS.svelte';
@@ -103,7 +104,7 @@
 
 	// store token
 	async function storeToken(event) {
-		const { token, expiresIn } = event.detail;
+		const { token, expiresIn, walletName } = event.detail;
 		setJWT(token, expiresIn);
 		loggedIn.set(true);
 		toast.success('Login successful');
@@ -111,6 +112,17 @@
 		// nativeScript, pendingPackages, and isAdmin in one go.
 		const userData = await refreshUserSession(fetch);
 		user.set(userData);
+
+		// Capture the signer path chosen at login so the voter's first
+		// broker submission auto-selects the same tool — no need to
+		// re-pick the wallet they just used to authenticate. `selected`
+		// is the currently-active tab on this dialog (wallet / signer).
+		if (selected === 'wallet' && walletName) {
+			saveSignerPreference({ kind: 'wallet', walletName });
+		} else if (selected === 'signer') {
+			saveSignerPreference({ kind: 'signer' });
+		}
+
 		open = false;
 		showLogin.set(false);
 		// Redirect target is picked up from the click interceptor (if any).

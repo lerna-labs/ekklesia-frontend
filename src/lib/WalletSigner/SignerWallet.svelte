@@ -116,7 +116,7 @@
 		if (signType === 'pool' && poolId) {
 			signer = payload.calidusID;
 		}
-		const signature = await signData(connectedWallet, signer, payload.dataHex);
+		const signature = await signData(connectedWallet, signer, payload.dataHex, signType);
 		if (signature?.error) {
 			toast.error(signature.error);
 			loading = false;
@@ -144,6 +144,7 @@
 		if (mode === 'login') {
 			dispatch('login', {
 				address: connectedWallet.address,
+				walletName: connectedWallet.walletName,
 				token: submitResponse.token,
 				expiresIn: submitResponse.expiresIn,
 				maxAge: submitResponse.maxAge

@@ -6,6 +6,7 @@
 	import ProposalVote from '$lib/ProposalVote.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import BallotDetails from '$lib/BallotDetails.svelte';
+	import BallotEligibilityBanner from '$lib/BallotEligibilityBanner.svelte';
 	import { convertTimestamp } from '$lib/utils';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Markdown from '$lib/base/Markdown.svelte';
@@ -26,6 +27,8 @@
 	<BallotDetails {ballot} collapsible />
 	<ProposalDetails {proposal} {ballot} />
 </section>
+
+<BallotEligibilityBanner {ballot} />
 
 {#if data.prev || data.next}
 	<nav

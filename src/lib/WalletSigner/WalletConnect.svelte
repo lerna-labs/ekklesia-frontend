@@ -7,7 +7,7 @@
 	const dispatch = createEventDispatcher();
 	const NETWORK_ID = $derived.by(() => $page.data.serverStatus.networkId);
 
-	let { signType = 'stake', loading = $bindable(false) } = $props();
+	let { signType = 'stake', loading = $bindable(false), preselectedWallet = null } = $props();
 	let allWallets = $state([]);
 	let wallets = $derived.by(() => {
 		if (signType === 'pool') {
@@ -29,6 +29,19 @@
 		}
 
 		allWallets = walletList;
+
+		// Auto-connect to the voter's remembered wallet when available,
+		// so a returning signer skips the picker and goes straight to
+		// the sign prompt. Falls through to manual selection if the
+		// remembered wallet isn't installed on this browser.
+		if (
+			preselectedWallet &&
+			allWallets.includes(preselectedWallet) &&
+			!connectedWallet &&
+			!loading
+		) {
+			connectWallet(preselectedWallet);
+		}
 	});
 
 	async function connectWallet(walletName) {

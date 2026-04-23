@@ -7,6 +7,8 @@
 	import ProposalVoteBudget from './ProposalVoteBudget.svelte';
 	import ProposalVoteScale from './ProposalVoteScale.svelte';
 	import ProposalVoteRanked from './ProposalVoteRanked.svelte';
+	import ProposalVoteLikert from './ProposalVoteLikert.svelte';
+	import ProposalVoteWeighted from './ProposalVoteWeighted.svelte';
 	import { Archive, Clock, UserX, TriangleAlert } from 'lucide-svelte';
 	import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
 	import {
@@ -101,54 +103,29 @@
 					Connect Wallet
 				</Button>
 			</div>
-		{:else if hasTypeMismatch || hasSnapshotIneligibility}
-			<div
-				class="mb-3 flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
-			>
-				<div class="mt-0.5 shrink-0">
-					{#if hasTypeMismatch}
-						<UserX class="h-5 w-5" />
-					{:else}
-						<TriangleAlert class="h-5 w-5" />
-					{/if}
-				</div>
-				<div class="flex-1">
-					<div class="font-semibold">
-						{hasTypeMismatch ? 'Wrong credential type' : 'Not in the voter snapshot'}
-					</div>
-					<p class="mt-1">
-						{#if hasTypeMismatch}
-							This ballot accepts
-							{#each acceptedCredentials as k, i}
-								<span class="font-semibold">{credentialLabel(k)}</span>{#if i < acceptedCredentials.length - 2},
-								{:else if i === acceptedCredentials.length - 2}
-									&nbsp;and
-								{/if}
-							{/each}
-							credentials only. You're logged in as
-							<span class="font-semibold">{credentialLabel(voterCredential)}</span>, so
-							the options below are read-only — reconnect with an eligible wallet
-							identity to cast a vote.
-						{:else}
-							You're logged in, but this ballot's snapshot doesn't include your
-							{credentialLabel(voterCredential)} identity at registration time. The
-							options below are read-only for your reference; contact support if you
-							believe this is wrong.
-						{/if}
-					</p>
-				</div>
-			</div>
 		{/if}
+		<!-- Ineligibility banner now lives at page-level via
+		     BallotEligibilityBanner — rendered once at the top of the
+		     proposals list / proposal detail pages rather than duplicated
+		     on every proposal card. -->
 	{/if}
 
-	<!-- Vote form — always rendered, locked when not live/eligible -->
-	{#if proposal.voteType === 'default'}
+	<!-- Vote form — always rendered, locked when not live/eligible.
+	     Backend may emit legacy ekklesia voteTypes (default/preference/
+	     budget/scale) or Hydra-native method names (choice/binary/
+	     single-choice/multi-choice/range). Aliases route to the same
+	     component in each case. -->
+	{#if ['default', 'choice', 'binary', 'single-choice'].includes(proposal.voteType)}
 		<ProposalVoteDefault {proposal} {ballot} disabled={locked} />
-	{:else if proposal.voteType === 'budget' || proposal.voteType === 'preference'}
+	{:else if ['budget', 'preference', 'multi-choice'].includes(proposal.voteType)}
 		<ProposalVoteBudget {proposal} {ballot} disabled={locked} />
-	{:else if proposal.voteType === 'scale'}
+	{:else if ['scale', 'range'].includes(proposal.voteType)}
 		<ProposalVoteScale {proposal} {ballot} disabled={locked} />
 	{:else if proposal.voteType === 'ranked'}
 		<ProposalVoteRanked {proposal} {ballot} disabled={locked} />
+	{:else if proposal.voteType === 'likert'}
+		<ProposalVoteLikert {proposal} {ballot} disabled={locked} />
+	{:else if proposal.voteType === 'weighted'}
+		<ProposalVoteWeighted {proposal} {ballot} disabled={locked} />
 	{/if}
 </section>

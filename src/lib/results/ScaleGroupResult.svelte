@@ -32,9 +32,10 @@
 	const weightedStats = $derived(group.scale?.weightedStats ?? null);
 
 	// Abstainers are intentionally excluded from the numeric stats (you
-	// can't take a mean of "abstain"). Surface count AND voting power
+	// can't take a mean of an abstention). Surface count AND voting power
 	// so the split-bar above the histogram can visualize how much of the
-	// group chose to abstain.
+	// group chose to abstain. (Final-results view has a dedicated
+	// AbstainedByRolePanel rendered at page level.)
 	const abstainRow = $derived.by(() => {
 		// The page's `groups` derivation forwards the results array as
 		// `group.rows` (sorted copy). Older `group.results` is never set.
@@ -50,7 +51,7 @@
 
 	// Accent color for the "numeric" half of the split bar — matches the
 	// histogram bars so the eye reads them as the same dimension.
-	const SLATE_600 = '#475569';
+	const ABSTAIN_COLOR = '#1e293b';
 
 	// A ballot-weighted scale proposal gets two views: by voters and by
 	// voting power. Default to voters; a tiny pill toggles between.
@@ -164,7 +165,7 @@
 								></div>
 							{/if}
 							{#if abstainVal > 0}
-								<div class="h-full" style="width: {abstainPct}%; background-color: {SLATE_600};"></div>
+								<div class="h-full" style="width: {abstainPct}%; background-color: {ABSTAIN_COLOR};"></div>
 							{/if}
 						</div>
 						<div class="mt-1 flex flex-col gap-y-1 text-[10px]">
@@ -188,7 +189,7 @@
 							>
 								<span
 									class="inline-block h-2 w-2 rounded-sm"
-									style="background-color: {SLATE_600};"
+									style="background-color: {ABSTAIN_COLOR};"
 									aria-hidden="true"
 								></span>
 								<span class="font-mono tabular-nums">

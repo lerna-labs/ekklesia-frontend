@@ -4,9 +4,10 @@
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import ResultsStatus from '$lib/ResultsStatus.svelte';
 	import GroupResultCard from '$lib/results/GroupResultCard.svelte';
+	import AbstainedByRolePanel from '$lib/results/AbstainedByRolePanel.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { fetchProposalResult, startResultsPoller } from '$lib/results.js';
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-svelte';
 
 	let { data } = $props();
 	const ballot = $derived(data.ballot);
@@ -43,6 +44,9 @@
 	//   - scale: numeric voters live in `scale.histogram[]`; fold in abstain row
 	//   - ranked: every voter appears once at rank-1 across rows; sum
 	//     `ranked.rows[i].power[0]`; fold in abstain row
+	//   - likert: every voter rates every option so the per-option count
+	//     and totalPower are the same across rows; read the first option's
+	//     stats, fold in abstain row
 	function activeTotals(group, type) {
 		const rows = Array.isArray(group?.results) ? group.results : [];
 		let voters = 0;
@@ -70,6 +74,35 @@
 					power += r.votingPower || 0;
 				}
 			}
+		} else if (type === 'likert' && group?.likert) {
+			const first = group.likert.options?.[0];
+			voters += first?.stats?.count || 0;
+			power += first?.weightedStats?.totalPower || 0;
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
+		} else if (type === 'weighted' && group?.weighted) {
+			voters += Number(group.weighted.answeringBallots) || 0;
+			// Sum of powerTotalPoints across options / budget ≈ total voting
+			// power of answering voters (each voter's power contributes
+			// `voterPower * budget` to the sum).
+			const budget = Number(group.weighted.budget) || 0;
+			if (budget > 0) {
+				const sumPower = (group.weighted.results ?? []).reduce(
+					(s, o) => s + (Number(o.powerTotalPoints) || 0),
+					0
+				);
+				power += sumPower / budget;
+			}
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
 		} else {
 			for (const r of rows) {
 				voters += r.count || 0;
@@ -79,6 +112,22 @@
 
 		return { voters, power };
 	}
+
+	// True when the final Result row is missing its tally payload — the
+	// finalize handler recorded evidence/hashes but never populated
+	// resultsByGroup or abstainedByRole. Render a clear error rather than a
+	// silent blank section under the "Final Results" banner.
+	const finalButEmpty = $derived.by(() => {
+		if (result?.source !== 'final') return false;
+		const byGroup = result?.resultsByGroup;
+		const hasGroups =
+			byGroup && typeof byGroup === 'object' && Object.keys(byGroup).length > 0;
+		const hasAbstain =
+			result?.abstainedByRole &&
+			typeof result.abstainedByRole === 'object' &&
+			Object.keys(result.abstainedByRole).length > 0;
+		return !hasGroups && !hasAbstain;
+	});
 
 	const groups = $derived.by(() => {
 		const raw = result?.resultsByGroup;
@@ -93,7 +142,10 @@
 			// cron `$unwind`s rank arrays / numeric values and over-counts.
 			// Our derived count is correct for all types.
 			const activeVoters =
-				voteType === 'ranked' || voteType === 'scale'
+				voteType === 'ranked' ||
+				voteType === 'scale' ||
+				voteType === 'likert' ||
+				voteType === 'weighted'
 					? derivedVoters
 					: group.totalVotes ?? derivedVoters;
 			const totalAllowedVoterCount =
@@ -109,7 +161,9 @@
 				totalVotingPower,
 				rows: sorted,
 				scale: group.scale ?? null,
-				ranked: group.ranked ?? null
+				ranked: group.ranked ?? null,
+				likert: group.likert ?? null,
+				weighted: group.weighted ?? null
 			};
 		});
 	});
@@ -195,12 +249,41 @@
 		<p class="text-sm text-muted-foreground">
 			No results available yet. They'll appear here once the first tally runs.
 		</p>
-	{:else if groups.length > 0}
-		<div class="mb-8 space-y-4">
-			<h3 class="text-lg">Results by voter group</h3>
-			{#each groups as group}
-				<GroupResultCard {group} {ballot} {proposal} {result} />
-			{/each}
-		</div>
+	{:else}
+		{#if finalButEmpty}
+			<div
+				class="mb-6 flex items-start gap-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+			>
+				<div class="mt-0.5 shrink-0">
+					<TriangleAlert class="h-5 w-5" />
+				</div>
+				<div class="flex-1">
+					<div class="font-semibold uppercase tracking-wide">Tally data unavailable</div>
+					<p class="mt-1">
+						This ballot was finalized on-chain, but the per-group tally wasn't published. The
+						evidence hash and finalize transaction are recorded, so the vote itself is intact — the
+						results breakdown just didn't make it through. Please contact support if this persists.
+					</p>
+					{#if result.hydraFinalizeTxHash}
+						<p class="mt-1 font-mono text-xs opacity-75">
+							Finalize tx: {result.hydraFinalizeTxHash}
+						</p>
+					{/if}
+				</div>
+			</div>
+		{/if}
+		{#if result.abstainedByRole}
+			<div class="mb-6">
+				<AbstainedByRolePanel abstainedByRole={result.abstainedByRole} />
+			</div>
+		{/if}
+		{#if groups.length > 0}
+			<div class="mb-8 space-y-4">
+				<h3 class="text-lg">Results by voter group</h3>
+				{#each groups as group}
+					<GroupResultCard {group} {ballot} {proposal} {result} />
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </section>

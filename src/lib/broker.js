@@ -27,9 +27,11 @@ export function merkleRootPayloadHex(merkleRoot) {
 	return out;
 }
 
-// POST /v1/votes/:ballotId/draft — reserves a nonce + creates a VotePackage,
-// returns the merkleRoot the caller must sign and the packageId to reference
-// on the subsequent /signature call.
+// POST /v1/votes/:ballotId/draft — returns the merkleRoot the caller must
+// sign and the packageId to reference on the subsequent /signature call.
+// The voter's nonce is stable between drafts (it only advances when a vote
+// actually lands on the Hydra head), so repeat /draft calls for the same
+// voter+ballot should resolve to the same logical package.
 export async function postDraft(fetch, ballotId, body) {
 	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/draft', {
 		method: 'POST',
@@ -64,6 +66,18 @@ export async function postSubmit(fetch, ballotId, packageId) {
 // the confirmation + retry surfaces.
 export async function getPackage(fetch, ballotId, packageId) {
 	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/package/' + packageId);
+	return res.json();
+}
+
+// DELETE /v1/votes/:ballotId/package/:packageId — voter-scoped cancel.
+// Flips the package to `abandoned` and releases its reserved nonce so a
+// subsequent /draft starts clean. Only the original drafter can call this;
+// cosigners do not have delete authority. Terminal packages return 409
+// (PACKAGE_TERMINAL) — callers should treat that as a no-op success.
+export async function deletePackage(fetch, ballotId, packageId) {
+	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/package/' + packageId, {
+		method: 'DELETE'
+	});
 	return res.json();
 }
 

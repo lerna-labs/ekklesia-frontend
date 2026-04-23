@@ -9,6 +9,43 @@
 	let { ballot, collapsible = false } = $props();
 
 	let open = $state(!collapsible);
+
+	// Per VOTER_GROUPS_V1.md, a ballot may carry a structured
+	// `voterGroups: [{ group, powerSource }]` list that encodes
+	// heterogeneous eligibility (e.g. "DReps vote by voting power; SPOs
+	// vote by pledge"). When present, prefer it over the legacy
+	// `voterType` display string. Fall back to the old single-label
+	// rendering when absent.
+	const voterGroups = $derived(
+		Array.isArray(ballot?.voterGroups) ? ballot.voterGroups : []
+	);
+	const hasVoterGroups = $derived(voterGroups.length > 0);
+
+	const GROUP_LABELS = {
+		drep: 'DReps',
+		pool: 'SPOs',
+		stake: 'Stakeholders'
+	};
+
+	function groupLabel(g) {
+		const k = String(g || '').toLowerCase();
+		return GROUP_LABELS[k] ?? (k ? k[0].toUpperCase() + k.slice(1) : 'Voters');
+	}
+
+	// Map (group, powerSource) → human-readable copy per the TRD.
+	function powerSourceCopy(group, powerSource) {
+		const g = String(group || '').toLowerCase();
+		const p = String(powerSource || '');
+		if (p === 'CredentialBased') return 'one vote per credential';
+		if (p === 'PledgeBased') return 'by pool pledge';
+		if (p === 'StakeBased') {
+			if (g === 'drep') return 'by delegated voting power';
+			if (g === 'pool') return 'by total delegated stake';
+			if (g === 'stake') return 'by ADA held at snapshot';
+			return 'by stake';
+		}
+		return p || '—';
+	}
 </script>
 
 {#if collapsible}
@@ -25,7 +62,23 @@
 {#if open}
 	<section class="text-xs *:mb-1" class:mt-1={collapsible}>
 		<div><span class="font-semibold">Ballot ID:</span> {ballot._id}</div>
-		{#if ballot.voterType}
+		{#if hasVoterGroups}
+			<div>
+				<span class="font-semibold">Eligible voters:</span>
+				{voterGroups.map((g) => groupLabel(g.group)).join(', ')}
+			</div>
+			<div class="mt-1">
+				<span class="font-semibold">Vote weight:</span>
+				<ul class="ml-2 mt-0.5 list-none">
+					{#each voterGroups as g}
+						<li class="text-muted-foreground">
+							<span class="font-medium text-foreground">{groupLabel(g.group)}</span>
+							vote <span class="italic">{powerSourceCopy(g.group, g.powerSource)}</span>.
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{:else if ballot.voterType}
 			<div><span class="font-semibold">Voter Group:</span> {ballot.voterType}</div>
 		{/if}
 

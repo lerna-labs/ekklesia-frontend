@@ -126,18 +126,27 @@ export async function submitSignature(
 }
 
 // sign data with wallet
-export async function signData(connectedWallet, address, data) {
+//
+// For `signType === 'drep'` we route through CIP-95's `cip95.signData`
+// rather than CIP-30's top-level `signData` — DRep credentials aren't
+// a CIP-30-native concept, and most wallets silently fall back to the
+// stake key when handed a DRep identifier via the legacy endpoint.
+// Other sign types (stake / pool / addr) continue to use CIP-30.
+export async function signData(connectedWallet, address, data, signType) {
 	log('Signing data with wallet', connectedWallet.walletName);
 	log('Data to sign:', data);
-	log('Address to sign with:', address);
+	log('Address to sign with:', address, 'signType:', signType);
 
 	try {
-		const signature = await connectedWallet.api.signData(address, data);
+		const useCip95 =
+			signType === 'drep' && connectedWallet?.api?.cip95?.signData;
+		const api = useCip95 ? connectedWallet.api.cip95 : connectedWallet.api;
+		const signature = await api.signData(address, data);
 		return signature;
 	} catch (error) {
 		logError('Error signing data:', error.info || error.message);
 		return {
-			error: 'Error signing data: ' + error.info
+			error: 'Error signing data: ' + (error.info || error.message)
 		};
 	}
 }

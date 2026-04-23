@@ -46,7 +46,7 @@
 </script>
 
 {#if checked && activePackage && activePackage.status === 'awaiting-signatures'}
-	<div class="mb-4 rounded-md border border-indigo-300 bg-indigo-50 p-3 text-sm text-indigo-900">
+	<div class="mb-4 mt-4 rounded-md border border-indigo-300 bg-indigo-50 p-3 text-sm text-indigo-900">
 		<div class="mb-1 font-semibold">This ballot has a vote package awaiting your signature</div>
 		{#if activePackage.multisig}
 			<p class="mb-2 text-xs">

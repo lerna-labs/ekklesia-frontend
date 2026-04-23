@@ -1,4 +1,4 @@
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { error } from '@sveltejs/kit';
 import { writable, get } from 'svelte/store';
 import Cookies from 'js-cookie';
@@ -165,7 +165,19 @@ export const logout = async () => {
 		loggedIn.set(false);
 		user.set(null);
 
-		// Redirect to the home page after logout
-		goto('/');
+		// If the voter is on an auth-required page (currently just the
+		// dashboard), bounce them to the homepage — staying put would show
+		// a blank / 401 state. On any public page (ballots, proposals,
+		// results, voter directory, home), keep them where they are and
+		// just re-run loads so the page re-renders in its logged-out
+		// state. Less disruptive to someone who just wanted to drop auth.
+		const pathname =
+			typeof window !== 'undefined' ? window.location.pathname : '/';
+		const PRIVATE_PREFIXES = ['/dashboard'];
+		if (PRIVATE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+			goto('/');
+		} else {
+			invalidateAll();
+		}
 	}
 };

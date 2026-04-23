@@ -1,65 +1,114 @@
 <script>
-	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
 	import { toast } from 'svelte-sonner';
 	import { lovelaceToAda } from './utils';
-	import { getProposalDraft, saveProposalDraft } from '$lib/draftVotes.js';
+	import {
+		draftsTree,
+		saveProposalSelection,
+		saveProposalAbstain,
+		clearProposalDraft,
+		draftHasSelection,
+		draftIsAbstaining
+	} from '$lib/draftVotes.js';
+	import { isAbstainAllowed } from '$lib/voteSchema.js';
+	import AbstainToggle from '$lib/AbstainToggle.svelte';
 
 	let { proposal, ballot, disabled = false } = $props();
 
-	// Scale proposals carry their numeric range as the option `id`s on
-	// `voteOptions[]`. The voter submits a single number anywhere in
-	// [min, max] in steps of `voteIncrement`.
-	const numericIds = $derived(
-		(proposal.voteOptions ?? [])
+	// Schema v2 introduces `valueRange: {min, max, step}` as the canonical
+	// shape for range-method questions. Pre-migration ballots still encode
+	// the range as numeric `voteOptions[].id` with a `voteIncrement` step;
+	// keep that fallback so a mixed-state backend doesn't break the UI.
+	const rangeDef = $derived.by(() => {
+		const vr = proposal?.valueRange;
+		if (vr && Number.isFinite(Number(vr.min)) && Number.isFinite(Number(vr.max))) {
+			return {
+				min: Number(vr.min),
+				max: Number(vr.max),
+				step: Number(vr.step) || 1
+			};
+		}
+		const numericIds = (proposal?.voteOptions ?? [])
 			.map((o) => Number(o.id))
-			.filter((n) => Number.isFinite(n))
-	);
-	const min = $derived(numericIds.length ? Math.min(...numericIds) : 0);
-	const max = $derived(numericIds.length ? Math.max(...numericIds) : 100);
-	const step = $derived(Number(proposal.voteIncrement) || 1);
-	const abstainAllowed = $derived(proposal.abstainAllowed !== false);
+			.filter((n) => Number.isFinite(n));
+		return {
+			min: numericIds.length ? Math.min(...numericIds) : 0,
+			max: numericIds.length ? Math.max(...numericIds) : 100,
+			step: Number(proposal?.voteIncrement) || 1
+		};
+	});
+	const min = $derived(rangeDef.min);
+	const max = $derived(rangeDef.max);
+	const step = $derived(rangeDef.step);
+	const canAbstain = $derived(isAbstainAllowed(proposal));
 
 	const anchors = $derived(
-		(proposal.voteOptions ?? [])
+		(proposal?.voteOptions ?? [])
 			.filter((o) => Number.isFinite(Number(o.id)))
 			.sort((a, b) => Number(a.id) - Number(b.id))
 	);
 
-	function resolveInitial() {
-		const local = getProposalDraft(ballot._id, proposal._id)?.[0];
-		if (local === 'abstain') return 'abstain';
-		if (typeof local === 'number') return local;
-		const server = proposal.voterVote?.[0];
-		if (server === 'abstain') return 'abstain';
-		const n = Number(server);
-		return Number.isFinite(n) ? n : null;
-	}
+	// Derived — see ProposalVoteDefault for the reactive-draft rationale.
+	const draft = $derived.by(() => {
+		const stored = $draftsTree?.[ballot._id]?.[proposal._id];
+		if (stored != null) return stored;
+		if (Array.isArray(proposal.voterVote) && proposal.voterVote.length > 0) {
+			const first = proposal.voterVote[0];
+			if (first === 'abstain') return { kind: 'abstain' };
+			const n = Number(first);
+			if (Number.isFinite(n)) return { kind: 'selection', selection: [n] };
+		}
+		return null;
+	});
 
-	let value = $state(resolveInitial());
-	let isAbstaining = $derived(value === 'abstain');
-	const hasSelection = $derived(value !== null && value !== undefined);
+	const isAbstaining = $derived(draftIsAbstaining(draft));
+	const hasSelection = $derived(draftHasSelection(draft));
+	const storedValue = $derived(hasSelection ? Number(draft.selection[0]) : null);
 
-	function saveDraft(v) {
-		const changed = saveProposalDraft(
-			ballot._id,
-			proposal._id,
-			v === null || v === undefined ? null : [v]
-		);
-		if (changed) toast.success('Vote saved as draft');
+	// Slider / number input write at every tick while dragging or typing.
+	// Keep `pendingValue` as a local override so the UI follows the input
+	// instantly, then debounce the actual store write so we don't churn
+	// localStorage + stack toasts for every intermediate position. `null`
+	// means "no pending override — just show the stored value."
+	let pendingValue = $state(null);
+	let saveTimer = null;
+	const SAVE_DEBOUNCE_MS = 200;
+
+	const numericValue = $derived(pendingValue ?? storedValue);
+
+	function clamp(n) {
+		return Math.max(min, Math.min(max, Math.round((n - min) / step) * step + min));
 	}
 
 	function setNumeric(n) {
-		if (disabled) return;
-		const clamped = Math.max(min, Math.min(max, Math.round(n / step) * step));
-		value = clamped;
-		saveDraft(clamped);
+		if (disabled || isAbstaining) return;
+		const v = clamp(n);
+		pendingValue = v;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => {
+			saveTimer = null;
+			const changed = saveProposalSelection(ballot._id, proposal._id, [v]);
+			if (changed) toast.success('Vote saved');
+			// Release the local override now that the store reflects the
+			// committed value — the derived chain takes over.
+			pendingValue = null;
+		}, SAVE_DEBOUNCE_MS);
 	}
 
-	function toggleAbstain(checked) {
+	function onAbstain() {
 		if (disabled) return;
-		value = checked ? 'abstain' : null;
-		saveDraft(value);
+		const changed = saveProposalAbstain(ballot._id, proposal._id);
+		if (changed) toast.success('Recorded as abstaining');
+	}
+
+	function onResumeVoting() {
+		if (disabled) return;
+		clearProposalDraft(ballot._id, proposal._id);
+	}
+
+	function onClear() {
+		if (disabled) return;
+		const changed = clearProposalDraft(ballot._id, proposal._id);
+		if (changed) toast.success('Vote cleared');
 	}
 </script>
 
@@ -75,12 +124,12 @@
 		{/if}
 	</div>
 
-	<div class={isAbstaining || disabled ? 'opacity-60' : ''}>
+	<div class={isAbstaining ? 'pointer-events-none opacity-50' : disabled ? 'opacity-60' : ''}>
 		<div class="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
 			<span class="shrink-0 font-mono tabular-nums">{min}</span>
-			<!-- Numeric input mirrors and drives the slider — wide ranges
-			     (think -1M to +1M with step 1) can't practically be set via
-			     the slider alone; a paired number input gives precise entry. -->
+			<!-- Numeric input mirrors the slider — wide ranges (think
+			     -1M..+1M step 1) can't practically be set via the slider
+			     alone; a paired number input gives precise entry. -->
 			<input
 				type="number"
 				class="w-28 rounded-md border border-input bg-background px-2 py-1 text-center font-mono text-lg tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -88,7 +137,7 @@
 				{max}
 				{step}
 				disabled={disabled || isAbstaining}
-				value={isAbstaining ? '' : (value ?? '')}
+				value={numericValue ?? ''}
 				placeholder={isAbstaining ? '—' : 'Pick a value'}
 				oninput={(e) => {
 					const n = Number(e.currentTarget.value);
@@ -104,7 +153,7 @@
 			{max}
 			{step}
 			disabled={disabled || isAbstaining}
-			value={isAbstaining || value === null ? Math.round((min + max) / 2) : value}
+			value={numericValue ?? Math.round((min + max) / 2)}
 			oninput={(e) => setNumeric(Number(e.currentTarget.value))}
 		/>
 		{#if anchors.length > 0}
@@ -116,22 +165,13 @@
 		{/if}
 	</div>
 
-	{#if abstainAllowed}
-		<div class="mt-3 border-t pt-3">
-			<div class="flex items-center space-x-2">
-				<Checkbox
-					id="voteScaleAbstain"
-					checked={isAbstaining}
-					{disabled}
-					onCheckedChange={(c) => toggleAbstain(!!c)}
-				/>
-				<Label for="voteScaleAbstain" class="leading-4">
-					Abstain from this proposal
-				</Label>
-			</div>
-			<p class="mt-1 pl-6 text-xs text-muted-foreground">
-				Abstaining is mutually exclusive — your numeric value won't be counted.
-			</p>
-		</div>
-	{/if}
+	<AbstainToggle
+		{isAbstaining}
+		{hasSelection}
+		{canAbstain}
+		{disabled}
+		{onAbstain}
+		{onResumeVoting}
+		{onClear}
+	/>
 </div>
