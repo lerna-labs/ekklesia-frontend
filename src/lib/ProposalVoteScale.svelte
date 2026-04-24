@@ -48,13 +48,14 @@
 	);
 
 	// Derived — see ProposalVoteDefault for the reactive-draft rationale.
+	// voterVote carries the v2 VoteSelection shape.
 	const draft = $derived.by(() => {
 		const stored = $draftsTree?.[ballot._id]?.[proposal._id];
 		if (stored != null) return stored;
-		if (Array.isArray(proposal.voterVote) && proposal.voterVote.length > 0) {
-			const first = proposal.voterVote[0];
-			if (first === 'abstain') return { kind: 'abstain' };
-			const n = Number(first);
+		const v = proposal.voterVote;
+		if (v && v.abstain === true) return { kind: 'abstain' };
+		if (v && Array.isArray(v.selection) && v.selection.length > 0) {
+			const n = Number(v.selection[0]);
 			if (Number.isFinite(n)) return { kind: 'selection', selection: [n] };
 		}
 		return null;

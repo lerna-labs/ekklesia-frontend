@@ -12,13 +12,42 @@
 	import { CircleCheck, Circle, MinusCircle, ChevronDown, ChevronUp } from 'lucide-svelte';
 	let { proposal, ballot } = $props();
 
-	// Drafted indicator — visible when the authed user has a locally
-	// saved selection or abstain flag for this proposal. Doesn't reflect
-	// other browsers or pre-submit state on other devices.
-	const draft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
-	const hasSelection = $derived(draftHasSelection(draft));
-	const isAbstaining = $derived(draftIsAbstaining(draft));
+	// Three-state vote indicator:
+	//   empty (slate-300)   — voter hasn't touched this proposal
+	//   amber               — local draft OR an in-flight VotePackage
+	//                         covers it (awaiting-signatures /
+	//                         awaiting-submission); i.e. a pending
+	//                         intent that hasn't landed on Hydra yet
+	//   emerald             — Hydra-confirmed submission recorded
+	//
+	// A local draft always beats a server-side submission on the
+	// indicator so a voter editing a previously-submitted vote sees
+	// "pending" — matching the three-state priority the draft/rehydrate
+	// pipeline uses throughout the vote forms.
+	const localDraft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
+	const hasLocalSelection = $derived(draftHasSelection(localDraft));
+	const isLocalAbstaining = $derived(draftIsAbstaining(localDraft));
+	const hasLocalDraft = $derived(hasLocalSelection || isLocalAbstaining);
+
+	// Server-side submission seeded by the proposals loader from
+	// /v1/votes/:ballotId/mine. `voterVote` is the schema-v2
+	// VoteSelection — `{abstain: true}` or `{selection: [...]}`.
+	// `voterVoteStatus` is 'confirmed' | 'in-flight'.
+	const serverAbstaining = $derived(proposal.voterVote?.abstain === true);
+	const serverHasSelection = $derived(
+		Array.isArray(proposal.voterVote?.selection) && proposal.voterVote.selection.length > 0
+	);
+
+	// What the indicator should actually show. Local draft wins; otherwise
+	// fall back to whatever the server says. Icon shape = selection vs
+	// abstain; color = pending (amber) vs confirmed (emerald).
+	const hasSelection = $derived(hasLocalSelection || (!hasLocalDraft && serverHasSelection));
+	const isAbstaining = $derived(isLocalAbstaining || (!hasLocalDraft && serverAbstaining));
 	const hasDraft = $derived(hasSelection || isAbstaining);
+	const isPending = $derived(
+		hasLocalDraft || (!hasLocalDraft && proposal.voterVoteStatus === 'in-flight')
+	);
+	const isConfirmed = $derived(!hasLocalDraft && proposal.voterVoteStatus === 'confirmed');
 
 	// Suppress the drafted indicator for voters who can't actually vote
 	// on this ballot — a wrong-credential or validation-script failure.
@@ -57,19 +86,32 @@
 				{#if $loggedIn && !isIneligible}
 					<span
 						class="mt-1 shrink-0"
-						class:text-emerald-600={hasSelection}
-						class:text-amber-600={isAbstaining}
+						class:text-emerald-600={hasDraft && isConfirmed}
+						class:text-amber-600={hasDraft && isPending}
 						class:text-slate-300={!hasDraft}
-						title={isAbstaining
-							? 'You have drafted an abstention on this proposal'
-							: hasSelection
-								? 'You have a draft vote on this proposal'
-								: 'Not yet voted'}
+						title={(() => {
+							if (!hasDraft) return 'Not yet voted';
+							if (isConfirmed) {
+								return isAbstaining
+									? 'Your abstention on this proposal is recorded on Hydra'
+									: 'Your vote on this proposal is recorded on Hydra';
+							}
+							// pending
+							return isAbstaining
+								? 'You have a pending abstention on this proposal (not yet submitted)'
+								: 'You have a pending vote on this proposal (not yet submitted)';
+						})()}
 					>
 						{#if isAbstaining}
-							<MinusCircle class="h-5 w-5" aria-label="Abstaining" />
+							<MinusCircle
+								class="h-5 w-5"
+								aria-label={isConfirmed ? 'Abstention submitted' : 'Abstention pending'}
+							/>
 						{:else if hasSelection}
-							<CircleCheck class="h-5 w-5" aria-label="Drafted" />
+							<CircleCheck
+								class="h-5 w-5"
+								aria-label={isConfirmed ? 'Vote submitted' : 'Vote pending'}
+							/>
 						{:else}
 							<Circle class="h-5 w-5" aria-label="Not yet voted" />
 						{/if}

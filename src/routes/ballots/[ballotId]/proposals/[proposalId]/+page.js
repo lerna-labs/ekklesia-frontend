@@ -1,13 +1,15 @@
 import { api } from '$stores/sessionManager.js';
 import { normalizeBallot } from '$lib/utils.js';
+import { loadMyBallotVotes, mineToProposalAnnotations } from '$lib/broker.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, params }) {
-	const [ballotV1, ballotV0, proposalResponse, siblingsResponse] = await Promise.all([
+	const [ballotV1, ballotV0, proposalResponse, siblingsResponse, mine] = await Promise.all([
 		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
 		api.fetch(fetch, '/ballots/' + params.ballotId),
 		api.v1.fetch(fetch, '/proposals/' + params.proposalId),
-		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?limit=500')
+		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?limit=500'),
+		loadMyBallotVotes(fetch, params.ballotId)
 	]);
 
 	if (ballotV1.status !== 200) {
@@ -28,6 +30,16 @@ export async function load({ fetch, params }) {
 	const proposalPayload = await proposalResponse.json();
 	const proposal = proposalPayload?.data ?? proposalPayload;
 	if (proposal._id == null && proposal.id != null) proposal._id = proposal.id;
+
+	// Seed the proposal with the voter's submitted selection so the vote
+	// form rehydrates on page load. See mineToProposalAnnotations() for
+	// the in-flight > confirmed priority rule.
+	const annotations = mineToProposalAnnotations(mine);
+	const ann = annotations[String(proposal._id)];
+	if (ann) {
+		proposal.voterVote = ann.voterVote;
+		proposal.voterVoteStatus = ann.voterVoteStatus;
+	}
 
 	// Build prev/next sibling links from the ballot's full proposal list.
 	let prev = null;

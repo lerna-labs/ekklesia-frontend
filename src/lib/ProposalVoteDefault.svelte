@@ -29,14 +29,15 @@
 	// cross-tab draft sync, broker post-submit wipe — propagate into the
 	// UI without needing to remount. Falls back to the server-side
 	// `voterVote` (the voter's last submitted selection, if any) when
-	// there's no local vote.
+	// there's no local vote. voterVote carries the schema-v2
+	// VoteSelection shape — `{abstain: true}` or `{selection: [...]}`.
 	const draft = $derived.by(() => {
 		const stored = $draftsTree?.[ballot._id]?.[proposal._id];
 		if (stored != null) return stored;
-		if (Array.isArray(proposal.voterVote) && proposal.voterVote.length > 0) {
-			const first = proposal.voterVote[0];
-			if (first === 'abstain') return { kind: 'abstain' };
-			return { kind: 'selection', selection: [first] };
+		const v = proposal.voterVote;
+		if (v && v.abstain === true) return { kind: 'abstain' };
+		if (v && Array.isArray(v.selection) && v.selection.length > 0) {
+			return { kind: 'selection', selection: [v.selection[0]] };
 		}
 		return null;
 	});

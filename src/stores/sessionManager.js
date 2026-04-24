@@ -114,11 +114,33 @@ async function apiFetch(base, fetch, url, options = {}) {
 	}
 }
 
+// Best-effort request that returns the Response on any HTTP status (no
+// throw) and null on network failure. Crucially, it does NOT log the
+// user out on 401 — callers use this for optional/enrichment reads
+// where "not authorized" should just mean "skip this side request."
+async function apiTryFetch(base, fetchFn, url, options = {}) {
+	try {
+		const token = get(jwt) || getJWT();
+		const headers = new Headers(options.headers || {});
+		headers.set('Content-Type', 'application/json');
+		if (token) headers.set('Authorization', `Bearer ${token}`);
+		return await fetchFn(base + url, {
+			...options,
+			headers,
+			credentials: 'include'
+		});
+	} catch {
+		return null;
+	}
+}
+
 // Handle connection failures gracefully
 export const api = {
 	fetch: (fetch, url, options = {}) => apiFetch(V0_BASE, fetch, url, options),
+	tryFetch: (fetch, url, options = {}) => apiTryFetch(V0_BASE, fetch, url, options),
 	v1: {
-		fetch: (fetch, url, options = {}) => apiFetch(V1_BASE, fetch, url, options)
+		fetch: (fetch, url, options = {}) => apiFetch(V1_BASE, fetch, url, options),
+		tryFetch: (fetch, url, options = {}) => apiTryFetch(V1_BASE, fetch, url, options)
 	}
 };
 

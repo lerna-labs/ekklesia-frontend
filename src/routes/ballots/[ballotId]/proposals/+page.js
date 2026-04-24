@@ -1,5 +1,6 @@
 import { api } from '$stores/sessionManager.js';
 import { normalizeBallot } from '$lib/utils.js';
+import { loadMyBallotVotes, mineToProposalAnnotations } from '$lib/broker.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, params, url }) {
@@ -31,11 +32,16 @@ export async function load({ fetch, params, url }) {
 
 	// Fetch ballot + proposals via v1 in parallel. Also fetch v0 ballot
 	// detail for the auth-dependent voterValidated field until the backend
-	// surfaces it on v1.
-	const [ballotV1, ballotV0, proposalsResponse] = await Promise.all([
+	// surfaces it on v1, and the voter's /mine packages so we can seed the
+	// vote forms with their previously-submitted selections. /mine is a
+	// best-effort call — returns null when not authenticated or when the
+	// ballot is legacy — so the public proposals endpoint stays voter-
+	// agnostic and cacheable for third-party consumers.
+	const [ballotV1, ballotV0, proposalsResponse, mine] = await Promise.all([
 		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
 		api.fetch(fetch, '/ballots/' + params.ballotId),
-		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?' + qp.toString())
+		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?' + qp.toString()),
+		loadMyBallotVotes(fetch, params.ballotId)
 	]);
 
 	if (ballotV1.status !== 200) {
@@ -56,9 +62,20 @@ export async function load({ fetch, params, url }) {
 
 	const proposalsData = await proposalsResponse.json();
 
-	// Normalize _id on each proposal for downstream components.
+	// Normalize _id on each proposal for downstream components, and
+	// splice in the voter's submitted selection (if any) from /mine.
+	// The ProposalVote* components fall back to `voterVote` when there
+	// is no local draft — so this is what rehydrates a returning voter's
+	// answers on page load. `voterVoteStatus` drives the three-state
+	// ProposalCard indicator (empty / amber / green).
+	const annotations = mineToProposalAnnotations(mine);
 	for (const p of proposalsData.data || []) {
 		if (p._id == null && p.id != null) p._id = p.id;
+		const ann = annotations[String(p._id)];
+		if (ann) {
+			p.voterVote = ann.voterVote;
+			p.voterVoteStatus = ann.voterVoteStatus;
+		}
 	}
 
 	return {

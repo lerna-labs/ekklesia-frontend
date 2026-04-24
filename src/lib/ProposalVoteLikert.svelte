@@ -52,15 +52,18 @@
 	const useRadioStrip = $derived(ratingGrid.length <= 10);
 
 	// Derived — see ProposalVoteDefault for the reactive-draft rationale.
+	// voterVote carries the v2 VoteSelection shape. `selection` for
+	// likert is a SelectionEntry[] (`[{option, value}, ...]`).
 	const draft = $derived.by(() => {
 		const stored = $draftsTree?.[ballot._id]?.[proposal._id];
 		if (stored != null) return stored;
-		if (
-			Array.isArray(proposal.voterVote) &&
-			proposal.voterVote.length > 0 &&
-			proposal.voterVote.includes('abstain')
-		) {
-			return { kind: 'abstain' };
+		const v = proposal.voterVote;
+		if (v && v.abstain === true) return { kind: 'abstain' };
+		if (v && Array.isArray(v.selection)) {
+			const seeded = v.selection.filter(
+				(e) => e && typeof e === 'object' && 'option' in e && 'value' in e
+			);
+			if (seeded.length > 0) return { kind: 'selection', selection: seeded };
 		}
 		return null;
 	});

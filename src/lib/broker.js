@@ -107,3 +107,68 @@ export async function listPackages(fetch, ballotId, { includeTerminal = false, l
 export async function getPendingBallotVotes(_fetch, ballotId) {
 	return ballotDraftsForBroker(ballotId);
 }
+
+/**
+ * GET /v1/votes/:ballotId/mine — the authenticated voter's confirmed +
+ * in-flight VotePackages for a ballot. Best-effort: returns null when the
+ * voter is not authenticated, the ballot is legacy (endpoint 4xxs), or any
+ * other non-OK. Public read paths (`/v1/proposals/ballot/:id`) stay voter-
+ * agnostic and cacheable for third-party explorers; voter-specific state
+ * loads separately, only when there's a session.
+ *
+ * @returns {Promise<{
+ *   confirmed: { packageId: string, nonce: number, submittedAt: string|null, hydraTxId: string|null, votes: Record<string, any> } | null,
+ *   inFlight: Array<{ packageId: string, status: string, nonce: number, createdAt: string|null, votes: Record<string, any>, multisig?: { signaturesCollected: number, signaturesNeeded: number, satisfied: boolean } }>,
+ *   summary: { confirmed: number, awaitingSignatures: number, awaitingSubmission: number, draft: number, failed: number }
+ * } | null>}
+ */
+export async function loadMyBallotVotes(fetch, ballotId) {
+	const res = await api.v1.tryFetch(fetch, '/votes/' + ballotId + '/mine');
+	if (!res || !res.ok) return null;
+	try {
+		return await res.json();
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Fold a /mine response into a `{ proposalId: { voterVote, voterVoteStatus } }`
+ * map suitable for splicing onto proposals. Priority: in-flight >
+ * confirmed. Rationale: an in-flight package is the voter's latest
+ * intent — they've already drafted (and possibly partially signed) a
+ * revision, so showing it over the older confirmed vote better matches
+ * their mental model. The browser-local $draftsTree still overrides
+ * both in the UI.
+ *
+ * `voterVote` is the schema-v2 VoteSelection shape (minus the
+ * questionId key): `{abstain: true}` or `{selection: number[] | SelectionEntry[]}`.
+ * The six ProposalVote* components read this shape natively.
+ *
+ * Values that are null or shaped like neither branch are skipped so a
+ * stale/unfilled map entry doesn't light up the indicator.
+ */
+export function mineToProposalAnnotations(mine) {
+	const out = {};
+	if (!mine) return out;
+	const isValid = (v) =>
+		v != null &&
+		typeof v === 'object' &&
+		(v.abstain === true || Array.isArray(v.selection));
+	if (mine.confirmed?.votes) {
+		for (const [pid, v] of Object.entries(mine.confirmed.votes)) {
+			if (!isValid(v)) continue;
+			out[pid] = { voterVote: v, voterVoteStatus: 'confirmed' };
+		}
+	}
+	// inFlight is ordered nonce-desc by the backend; the first entry
+	// covering a proposal wins.
+	for (const pkg of mine.inFlight || []) {
+		for (const [pid, v] of Object.entries(pkg.votes || {})) {
+			if (!isValid(v)) continue;
+			if (out[pid]?.voterVoteStatus === 'in-flight') continue;
+			out[pid] = { voterVote: v, voterVoteStatus: 'in-flight' };
+		}
+	}
+	return out;
+}
