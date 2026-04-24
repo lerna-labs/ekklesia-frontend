@@ -1,17 +1,20 @@
 <script>
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import markdownit from 'markdown-it';
-	import { onMount } from 'svelte';
 
 	const md = markdownit();
 	let { markdown } = $props();
 
-	const content = md.render(markdown);
+	// Re-render on prop change so navigating between proposals (where the
+	// parent keeps this component mounted and only swaps the `markdown`
+	// prop) reflects the new document instead of the first one rendered.
+	const content = $derived(md.render(String(markdown ?? '')));
 	let accordionSections = $state([]);
 	let pageTitle = $state('');
 
-	onMount(() => {
-		// Create a temporary div to hold rendered markdown
+	$effect(() => {
+		// Re-parse into accordion sections whenever `content` changes.
+		// Uses DOM APIs, so only runs client-side (fine — app is SPA-only).
 		const tempDiv = document.createElement('div');
 		tempDiv.innerHTML = content;
 
@@ -21,13 +24,15 @@
 			pageTitle = h1Element.textContent;
 			// Remove the h1 from the content to avoid duplication
 			h1Element.remove();
+		} else {
+			pageTitle = '';
 		}
 
 		// Find all h2 elements
 		const h2Elements = tempDiv.querySelectorAll('h2');
 
 		if (h2Elements.length > 0) {
-			let tempSections = [];
+			const tempSections = [];
 			// Create sections based on h2 elements
 			h2Elements.forEach((h2, index) => {
 				// Get the header text
@@ -37,9 +42,9 @@
 
 				// Collect all content until the next h2 or end
 				while (currentNode && currentNode.tagName !== 'H2') {
-					const tempDiv = document.createElement('div');
-					tempDiv.appendChild(currentNode.cloneNode(true));
-					sectionContent += tempDiv.innerHTML;
+					const wrapper = document.createElement('div');
+					wrapper.appendChild(currentNode.cloneNode(true));
+					sectionContent += wrapper.innerHTML;
 					currentNode = currentNode.nextSibling;
 				}
 
@@ -50,8 +55,9 @@
 				});
 			});
 
-			// Update the reactive state variable with all sections at once
 			accordionSections = tempSections;
+		} else {
+			accordionSections = [];
 		}
 	});
 </script>
