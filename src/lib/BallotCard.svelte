@@ -1,5 +1,5 @@
 <script>
-	import Text from './base/Text.svelte';
+	import MarkdownBrief from './base/MarkdownBrief.svelte';
 	import Badge from '$lib/BallotBadge.svelte';
 	import SourceBadge from '$lib/BallotSourceBadge.svelte';
 	import BallotDetails from './BallotDetails.svelte';
@@ -7,6 +7,9 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
 	let { ballot } = $props();
+
+	const isLong = $derived((ballot.description ?? '').length > 300);
+	let expanded = $state(false);
 </script>
 
 <Card.Root class="z-1000 relative mb-4">
@@ -21,7 +24,19 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content class="pt-4 text-sm">
-		<Text text={ballot.description} expanded={true} />
+		{#if ballot.description}
+			<div class={isLong && !expanded ? 'line-clamp-6' : ''}>
+				<MarkdownBrief markdown={ballot.description} inline />
+			</div>
+			{#if isLong}
+				<button
+					onclick={() => (expanded = !expanded)}
+					class="mt-2 text-xs font-medium text-orange-500 hover:text-orange-700"
+				>
+					{expanded ? 'Show less' : 'Show more'}
+				</button>
+			{/if}
+		{/if}
 	</Card.Content>
 
 	<Card.Footer class="flex items-center justify-between">

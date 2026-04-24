@@ -1,8 +1,6 @@
 <script>
 	import { loggedIn } from './../stores/sessionManager.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import Comments from '$lib/Comments.svelte';
-	// import VoteDetails from './VotePopoverContent.svelte';
 	import ProposalVote from './ProposalVote.svelte';
 	import ProposalDetails from './ProposalDetails.svelte';
 	import * as Table from '$lib/components/ui/table/index.js';
@@ -47,7 +45,6 @@
 							>
 								View Proposal
 							</Button>
-							<Comments {proposal} {ballot} />
 							<VotePopover {proposal} {ballot} />
 						</div>
 

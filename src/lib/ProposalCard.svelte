@@ -6,7 +6,6 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import ProposalVote from '$lib/ProposalVote.svelte';
 	import VotePopover from './VotePopover.svelte';
-	import Comments from '$lib/Comments.svelte';
 	import ProposalDetails from './ProposalDetails.svelte';
 	import { draftsTree, draftHasSelection, draftIsAbstaining } from '$lib/draftVotes.js';
 	import { acceptedCredentialsOf, voterCredentialFromId } from '$lib/utils.js';
@@ -136,7 +135,6 @@
 				>
 					View Proposal
 				</Button>
-				<Comments {proposal} {ballot} />
 				{#if proposal.voteCount != null}
 					<VotePopover {proposal} {ballot} />
 				{/if}

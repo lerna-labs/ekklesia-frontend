@@ -1,12 +1,14 @@
 <script>
 	import Badge from '$lib/BallotBadge.svelte';
 	import SourceBadge from '$lib/BallotSourceBadge.svelte';
+	import CertificationBadge from '$lib/CertificationBadge.svelte';
 	import ProposalCard from '$lib/ProposalCard.svelte';
 	import ProposalTable from '$lib/ProposalTable.svelte';
 	import Pagination from '$lib/base/Pagination.svelte';
 	import FacetControls from '$lib/FacetControls.svelte';
 	import Search from '$lib/base/Search.svelte';
 	import BallotDetails from '$lib/BallotDetails.svelte';
+	import MarkdownBrief from '$lib/base/MarkdownBrief.svelte';
 	import BallotCosignerPrompt from '$lib/BallotCosignerPrompt.svelte';
 	import BallotProvenance from '$lib/BallotProvenance.svelte';
 	import AuditMyVote from '$lib/AuditMyVote.svelte';
@@ -60,8 +62,15 @@
 		if (ballot.status === 'live') return '';
 		if (ballot.status === 'upcoming')
 			return 'Voting has not opened yet. You can review the proposals now.';
-		if (ballot.status === 'closed')
-			return 'Voting has closed. Results are final (or pending finalization on-chain).';
+		if (ballot.status === 'closed') {
+			if (ballot.certification?.certified) {
+				return 'Voting has closed. Authority-certified results are available below.';
+			}
+			if (ballot.certification?.narrative?.url) {
+				return 'Voting has closed. The voting authority has published a narrative endorsement.';
+			}
+			return 'Voting has closed. Provisional results are below — awaiting authority certification.';
+		}
 		return '';
 	});
 
@@ -114,15 +123,19 @@
 	});
 </script>
 
-<div class="flex flex-wrap items-start gap-2">
-	<h1 class="text-3xl">{ballot.title}</h1>
+<h1 class="text-3xl">{ballot.title}</h1>
+<div class="mb-3 mt-2 flex flex-wrap items-center gap-2">
 	<Badge status={ballot.status} />
 	<SourceBadge source={ballot.source} />
+	<CertificationBadge certification={ballot.certification} ballotStatus={ballot.status} />
 </div>
 <BallotDetails {ballot} class="mt-2" />
 
 {#if ballot.description}
-	<p class="mt-3 text-sm text-muted-foreground">{ballot.description}</p>
+	<MarkdownBrief
+		markdown={ballot.description}
+		class="mt-3 text-muted-foreground"
+	/>
 {/if}
 
 <div class="mt-4 rounded-md border border-slate-200 bg-slate-50/50 p-4 text-sm">

@@ -1,16 +1,19 @@
 import { api } from '$stores/sessionManager.js';
 import { normalizeBallot } from '$lib/utils.js';
 import { fetchProposalResult } from '$lib/results.js';
+import { fetchCertification } from '$lib/certified.js';
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, params }) {
-	const [ballotV1, ballotV0, proposalResponse, initialResult, siblingsResponse] = await Promise.all([
-		api.v1.fetch(fetch, '/ballots/' + params.ballotId),
-		api.fetch(fetch, '/ballots/' + params.ballotId),
-		api.v1.fetch(fetch, '/proposals/' + params.proposalId),
-		fetchProposalResult(fetch, params.proposalId),
-		api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?limit=500')
-	]);
+	const [ballotV1, ballotV0, proposalResponse, initialResult, siblingsResponse, certification] =
+		await Promise.all([
+			api.v1.fetch(fetch, '/ballots/' + params.ballotId),
+			api.fetch(fetch, '/ballots/' + params.ballotId),
+			api.v1.fetch(fetch, '/proposals/' + params.proposalId),
+			fetchProposalResult(fetch, params.proposalId),
+			api.v1.fetch(fetch, '/proposals/ballot/' + params.ballotId + '?limit=500'),
+			fetchCertification(fetch, params.ballotId)
+		]);
 
 	if (ballotV1.status !== 200) {
 		throw error(ballotV1.status, 'Ballot not found');
@@ -44,5 +47,5 @@ export async function load({ fetch, params }) {
 		if (idx >= 0 && idx < siblings.length - 1) next = siblings[idx + 1];
 	}
 
-	return { ballot, proposal, initialResult, prev, next };
+	return { ballot, proposal, initialResult, prev, next, certification };
 }

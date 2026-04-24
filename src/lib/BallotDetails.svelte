@@ -78,8 +78,26 @@
 					{/each}
 				</ul>
 			</div>
+		{:else if ballot.source === 'hydra'}
+			<div
+				role="alert"
+				class="mt-1 rounded border border-red-300 bg-red-50 px-2 py-1 text-red-800"
+			>
+				<span class="font-semibold">Eligibility data missing.</span>
+				This Hydra ballot was published without
+				<code class="rounded bg-red-100 px-1 text-[0.85em]">voterGroups</code>
+				— voting cannot proceed until the ballot authority republishes it.
+			</div>
+		{:else if ballot.voterDescription}
+			<div>
+				<span class="font-semibold">Eligibility:</span>
+				{ballot.voterDescription}
+			</div>
 		{:else if ballot.voterType}
-			<div><span class="font-semibold">Voter Group:</span> {ballot.voterType}</div>
+			<div>
+				<span class="font-semibold">Voter Group:</span>
+				{groupLabel(ballot.voterType)}
+			</div>
 		{/if}
 
 		{#if ballot.status == 'live'}

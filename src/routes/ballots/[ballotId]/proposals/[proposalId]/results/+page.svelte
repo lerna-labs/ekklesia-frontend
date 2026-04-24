@@ -1,6 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import BallotBadge from '$lib/BallotBadge.svelte';
+	import CertificationBadge from '$lib/CertificationBadge.svelte';
+	import CertificationHistoryDisclosure from '$lib/CertificationHistoryDisclosure.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
 	import ResultsStatus from '$lib/ResultsStatus.svelte';
 	import GroupResultCard from '$lib/results/GroupResultCard.svelte';
@@ -12,6 +14,7 @@
 	let { data } = $props();
 	const ballot = $derived(data.ballot);
 	const proposal = $derived(data.proposal);
+	const certification = $derived(data.certification);
 	const basePath = $derived(`/ballots/${ballot._id}/proposals`);
 	const hasWeight = $derived(ballot.voteWeighted);
 
@@ -113,12 +116,12 @@
 		return { voters, power };
 	}
 
-	// True when the final Result row is missing its tally payload — the
-	// finalize handler recorded evidence/hashes but never populated
-	// resultsByGroup or abstainedByRole. Render a clear error rather than a
-	// silent blank section under the "Final Results" banner.
+	// True when a finalized/certified Result row is missing its tally
+	// payload — the finalize handler recorded evidence/hashes but never
+	// populated resultsByGroup or abstainedByRole. Render a clear error
+	// rather than a silent blank section under the results banner.
 	const finalButEmpty = $derived.by(() => {
-		if (result?.source !== 'final') return false;
+		if (result?.source !== 'final' && result?.source !== 'certified') return false;
 		const byGroup = result?.resultsByGroup;
 		const hasGroups =
 			byGroup && typeof byGroup === 'object' && Object.keys(byGroup).length > 0;
@@ -168,9 +171,13 @@
 		});
 	});
 
-	// Final results are authoritative; no need to keep polling once they land.
+	// Once the authority has certified, the tally won't change again unless a
+	// new cert version is published (rare, and a refresh picks it up). Stop
+	// polling in that case. A Hydra-final but uncertified tally CAN still be
+	// replaced by certification, so keep polling through that state.
 	onMount(() => {
-		if (ballot.status === 'closed' && result?.source === 'final') return;
+		if (certification?.certified) return;
+		if (ballot.status === 'closed' && result?.source === 'certified') return;
 		return startResultsPoller(async () => {
 			const next = await fetchProposalResult(fetch, proposal._id);
 			if (next) result = next;
@@ -178,9 +185,10 @@
 	});
 </script>
 
-<div class="flex gap-2 text-xl">
-	<h1 class="mb-1">{proposal.title}</h1>
+<h1 class="mb-1 text-xl">{proposal.title}</h1>
+<div class="mb-3 mt-1 flex flex-wrap items-center gap-2">
 	<BallotBadge status={ballot.status} />
+	<CertificationBadge {certification} ballotStatus={ballot.status} />
 </div>
 
 <section class="text-sm text-muted-foreground">
@@ -243,7 +251,7 @@
 </section>
 
 <section id="results" class="mt-8">
-	<ResultsStatus {result} />
+	<ResultsStatus {result} {certification} {ballot} />
 
 	{#if !result}
 		<p class="text-sm text-muted-foreground">
@@ -286,4 +294,6 @@
 			</div>
 		{/if}
 	{/if}
+
+	<CertificationHistoryDisclosure history={certification?.history ?? []} />
 </section>
