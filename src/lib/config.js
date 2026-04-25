@@ -1,4 +1,5 @@
 import { api, config } from '$stores/sessionManager.js';
+import { loadCalidusID } from '$lib/calidusCache.js';
 
 /**
  * Fetch the backend-served runtime config (IPFS gateway, explorer bases,
@@ -51,6 +52,15 @@ export async function refreshUserSession(fetch) {
 	if (id) {
 		merged.voterId = id;
 		merged.userId = id;
+		// Pool voters sign with a CIP-151 Calidus hot key. Today neither
+		// /v0/session nor /v0/dashboard carry `calidusID`, so we restore
+		// it from the localStorage cache populated at login time. Backend
+		// payload wins if it's ever populated. See
+		// .claude/trds/BACKEND_GET_SESSION_CALIDUS.md.
+		if (merged.calidusID == null && typeof id === 'string' && id.startsWith('pool')) {
+			const cached = loadCalidusID(id);
+			if (cached) merged.calidusID = cached;
+		}
 	}
 
 	return merged;

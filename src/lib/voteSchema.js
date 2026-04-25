@@ -169,6 +169,13 @@ function rankCountOf(proposal) {
 export function draftIsComplete(proposal, draft) {
 	if (!draft) return true;
 	if (draft.kind === 'abstain') return true;
+	// A `cleared` draft submits as an omitted question — Hydra accepts the
+	// new package as canonical and removes the prior vote on that question.
+	// That's a valid "remove my vote" signal when the proposal allows
+	// abstention, but the broker rejects it on `requireAnswer: true`
+	// proposals, so route those through the incomplete-drafts checklist
+	// pre-submit instead of letting the voter hit a generic INVALID_VOTE.
+	if (draft.kind === 'cleared') return isAbstainAllowed(proposal);
 	if (draft.kind !== 'selection' || !Array.isArray(draft.selection)) return false;
 
 	const sel = draft.selection;
@@ -209,6 +216,7 @@ export function draftIsComplete(proposal, draft) {
  */
 export function incompleteDraftReason(proposal, draft) {
 	if (draftIsComplete(proposal, draft)) return null;
+	if (draft?.kind === 'cleared') return 'Cleared — this question requires an answer';
 	if (!draft || draft.kind !== 'selection' || !Array.isArray(draft.selection)) return null;
 
 	const sel = draft.selection;

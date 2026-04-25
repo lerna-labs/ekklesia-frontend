@@ -12,6 +12,7 @@
 		submittedTree,
 		draftHasSelection,
 		draftIsAbstaining,
+		draftIsCleared,
 		isProposalDraftDivergent
 	} from '$lib/draftVotes.js';
 	import { acceptedCredentialsOf, voterCredentialFromId } from '$lib/utils.js';
@@ -34,7 +35,12 @@
 	const localDraft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
 	const hasLocalSelection = $derived(draftHasSelection(localDraft));
 	const isLocalAbstaining = $derived(draftIsAbstaining(localDraft));
-	const hasLocalDraft = $derived(hasLocalSelection || isLocalAbstaining);
+	const isLocalCleared = $derived(draftIsCleared(localDraft));
+	// `cleared` is a real draft entry — it's the voter's explicit intent to
+	// remove their prior vote. Counting it as "has draft" prevents the
+	// fallback to `voterVote` below from masking a cleared state with the
+	// previously-submitted selection.
+	const hasLocalDraft = $derived(hasLocalSelection || isLocalAbstaining || isLocalCleared);
 	const isDivergent = $derived.by(() => {
 		void $draftsTree;
 		void $submittedTree;
@@ -51,12 +57,12 @@
 	);
 
 	// What the indicator should actually show. Local draft wins on shape
-	// (selection vs abstain); color reflects whether anything is pending —
-	// either a divergent edit OR an in-flight package that hasn't yet
-	// landed on Hydra.
+	// (selection vs abstain vs cleared); color reflects whether anything
+	// is pending — either a divergent edit OR an in-flight package that
+	// hasn't yet landed on Hydra.
 	const hasSelection = $derived(hasLocalSelection || (!hasLocalDraft && serverHasSelection));
 	const isAbstaining = $derived(isLocalAbstaining || (!hasLocalDraft && serverAbstaining));
-	const hasDraft = $derived(hasSelection || isAbstaining);
+	const hasDraft = $derived(hasSelection || isAbstaining || isLocalCleared);
 	const isPending = $derived(
 		isDivergent || proposal.voterVoteStatus === 'in-flight'
 	);
@@ -103,6 +109,9 @@
 						class:text-amber-600={hasDraft && isPending}
 						class:text-slate-300={!hasDraft}
 						title={(() => {
+							if (isLocalCleared) {
+								return "You've cleared your previously-submitted vote on this proposal — submit to remove it from the on-chain record.";
+							}
 							if (!hasDraft) return 'Not yet voted';
 							if (isConfirmed) {
 								return isAbstaining

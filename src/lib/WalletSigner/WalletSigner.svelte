@@ -10,6 +10,7 @@
 	} from '$stores/sessionManager.js';
 	import { refreshUserSession } from '$lib/config.js';
 	import { saveSignerPreference } from '$lib/signerPreferences.js';
+	import { saveCalidusID } from '$lib/calidusCache.js';
 	import { get } from 'svelte/store';
 	import Wallet from '$lib/WalletSigner/SignerWallet.svelte';
 	import CardanoSigner from '$lib/WalletSigner/SignerCS.svelte';
@@ -104,13 +105,22 @@
 
 	// store token
 	async function storeToken(event) {
-		const { token, expiresIn, walletName } = event.detail;
+		const { token, expiresIn, walletName, calidusID } = event.detail;
 		setJWT(token, expiresIn);
 		loggedIn.set(true);
 		toast.success('Login successful');
 		// Merged /dashboard/ + /session/ read so the store picks up
 		// nativeScript, pendingPackages, and isAdmin in one go.
 		const userData = await refreshUserSession(fetch);
+		// GET /v0/session/ doesn't carry calidusID today (see
+		// .claude/trds/BACKEND_GET_SESSION_CALIDUS.md). Capture the bech32
+		// from the login response, persist it for future SPA boots, and
+		// merge it onto $user so the broker sign path has a signer
+		// address for pool voters.
+		if (calidusID && userData?.userId) {
+			saveCalidusID(userData.userId, calidusID);
+			userData.calidusID = calidusID;
+		}
 		user.set(userData);
 
 		// Capture the signer path chosen at login so the voter's first

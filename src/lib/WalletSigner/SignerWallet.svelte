@@ -147,7 +147,12 @@
 				walletName: connectedWallet.walletName,
 				token: submitResponse.token,
 				expiresIn: submitResponse.expiresIn,
-				maxAge: submitResponse.maxAge
+				maxAge: submitResponse.maxAge,
+				// `payload.calidusID` is only on the POST /session response;
+				// surface it to the parent so it can be persisted onto
+				// $user — without it, the broker sign step has no signer
+				// address for pool voters. See $lib/calidusCache.js.
+				calidusID: payload?.calidusID
 			});
 		} else {
 			dispatch('success', submitResponse);

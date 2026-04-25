@@ -17,13 +17,25 @@ import { toWireSelection } from '$lib/voteSchema.js';
  *     [ballotId]: {
  *       [proposalId]: { kind: 'selection', selection: number[] | SelectionEntry[] }
  *                   |  { kind: 'abstain' }
+ *                   |  { kind: 'cleared' }
  *     }
  *   }
  *
- * Absence of a proposalId entry = unset / no signal. A proposalId with
- * `kind: 'selection'` ships as `{questionId, selection}` on the wire;
- * `kind: 'abstain'` ships as `{questionId, abstain: true}`. The three
- * states map 1:1 to the UI's voting / abstaining / cleared affordances.
+ * Wire mapping into the broker /draft payload:
+ *   selection → { questionId, selection: [...] }
+ *   abstain   → { questionId, abstain: true }
+ *   cleared   → entry is OMITTED from the votes[] array entirely. Hydra
+ *               then accepts the new package as canonical and removes
+ *               the prior vote on that question — the explicit
+ *               "remove my vote" intent.
+ *
+ * Why an explicit `cleared` sentinel rather than just deleting the
+ * proposalId entry on Clear: the seeding pipeline (`seedBallotFromMine`)
+ * fills in any proposalId that has no draft entry, copying the submitted
+ * baseline so editing one of N votes doesn't drop the other N-1 from the
+ * eventual broker package. Without the sentinel, "delete one entry" and
+ * "no entry yet" are indistinguishable, so seeding undoes the voter's
+ * explicit Clear on the next refresh.
  *
  * Namespaced by userId so multiple wallets on the same browser don't
  * collide. Cleared for a ballot once the broker submission confirms.
@@ -65,6 +77,7 @@ function submittedStorageKey() {
 function isV2Draft(value) {
 	if (value == null || typeof value !== 'object' || Array.isArray(value)) return false;
 	if (value.kind === 'abstain') return true;
+	if (value.kind === 'cleared') return true;
 	if (value.kind === 'selection' && Array.isArray(value.selection)) return true;
 	return false;
 }
@@ -224,6 +237,15 @@ export function draftIsAbstaining(draft) {
 }
 
 /**
+ * True when the draft is explicitly cleared — the voter wants to remove
+ * their previously-submitted vote on this question. The broker package
+ * omits the questionId entirely; Hydra treats the omission as "no vote".
+ */
+export function draftIsCleared(draft) {
+	return !!draft && draft.kind === 'cleared';
+}
+
+/**
  * Persist a selection draft. Passing an empty array clears the draft.
  * Returns true if the stored value changed.
  */
@@ -241,9 +263,21 @@ export function saveProposalAbstain(ballotId, proposalId) {
 	return writeProposalDraft(ballotId, proposalId, { kind: 'abstain' });
 }
 
-/** Remove the proposal's draft entirely. */
+/**
+ * Remove the proposal from the next broker package.
+ *
+ * Two cases:
+ *   - No baseline (the voter has no prior submission for this proposal)
+ *     → write null, dropping the entry. Same semantic as before.
+ *   - Baseline exists → write a `cleared` sentinel so the seeding
+ *     pipeline doesn't silently re-fill from the baseline on the next
+ *     page load. Submitting will omit this question, removing the prior
+ *     vote from Hydra.
+ */
 export function clearProposalDraft(ballotId, proposalId) {
-	return writeProposalDraft(ballotId, proposalId, null);
+	const baseline = readAllSubmitted()[ballotId]?.[proposalId];
+	const next = baseline != null ? { kind: 'cleared' } : null;
+	return writeProposalDraft(ballotId, proposalId, next);
 }
 
 function writeProposalDraft(ballotId, proposalId, draftOrNull) {
@@ -286,12 +320,17 @@ export function clearBallotDrafts(ballotId) {
  * Shape the current user's drafts for a ballot into the `votes[]` array
  * the broker's /draft endpoint expects — one entry per drafted proposal,
  * either `{questionId, selection}` or `{questionId, abstain: true}`.
+ *
+ * `cleared` drafts are dropped from the array entirely — the wire shape
+ * for "remove my vote on this question" is the absence of an entry.
+ * Hydra accepts the new package as canonical, so the prior vote is
+ * wiped without our needing a dedicated remove signal.
  */
 export function ballotDraftsForBroker(ballotId) {
 	const drafts = getBallotDrafts(ballotId);
-	return Object.entries(drafts).map(([proposalId, draft]) =>
-		toWireSelection(String(proposalId), draft)
-	);
+	return Object.entries(drafts)
+		.filter(([, draft]) => draft.kind !== 'cleared')
+		.map(([proposalId, draft]) => toWireSelection(String(proposalId), draft));
 }
 
 // ─── Submitted-baseline + divergence ────────────────────────────────────
@@ -414,6 +453,45 @@ export function divergentBallotChangeCount(ballotId) {
 export function revertProposalDraftToBaseline(ballotId, proposalId) {
 	const baseline = getProposalBaseline(ballotId, proposalId);
 	return writeProposalDraft(ballotId, proposalId, baseline);
+}
+
+/**
+ * Discard every unsubmitted edit on a ballot — for each drafted
+ * proposal, restore the submitted baseline (or clear the draft if no
+ * baseline). Used by the ballot-level "Discard changes" button.
+ *
+ * Distinct from `clearBallotDrafts`, which is the post-broker-confirm
+ * cleanup that wipes BOTH the drafts and the baseline. Voters using the
+ * sticky-footer button want to undo their unsubmitted edits, not lose
+ * their cached server-side state.
+ */
+export function revertBallotDraftsToBaseline(ballotId) {
+	const tree = readAll();
+	const baseline = readAllSubmitted()[ballotId] ?? {};
+	const drafts = tree[ballotId] ?? {};
+	const ids = new Set([...Object.keys(drafts), ...Object.keys(baseline)]);
+
+	let dirty = false;
+	for (const pid of ids) {
+		const desired = baseline[pid] ?? null;
+		const current = drafts[pid] ?? null;
+		if (entriesEqual(current, desired)) continue;
+		if (desired == null) {
+			if (drafts[pid] != null) {
+				delete drafts[pid];
+				dirty = true;
+			}
+		} else {
+			drafts[pid] = desired;
+			dirty = true;
+		}
+	}
+
+	if (!dirty) return false;
+	if (Object.keys(drafts).length === 0) delete tree[ballotId];
+	else tree[ballotId] = drafts;
+	writeAll(tree);
+	return true;
 }
 
 // Sync stores across browser tabs so a draft saved in tab A shows up

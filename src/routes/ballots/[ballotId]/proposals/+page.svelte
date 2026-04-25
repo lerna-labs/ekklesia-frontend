@@ -29,7 +29,7 @@
 	import {
 		draftsTree,
 		submittedTree,
-		clearBallotDrafts,
+		revertBallotDraftsToBaseline,
 		seedBallotFromMine,
 		divergentBallotChangeCount
 	} from '$lib/draftVotes.js';
@@ -345,16 +345,23 @@
 	     all the way down — the submission bar detaches at the bottom of
 	     its containing block instead of covering the Footer.
 
-	     Full-bleed: `w-screen` + `left-1/2` + `-translate-x-1/2` breaks
-	     the bar out of <main>'s 768px reading column so it spans the
-	     viewport, visually rhyming with the dark sticky header at the top
-	     and the orange unsubmitted-votes notice. The inner row stays
-	     centered at `max-w-3xl` so buttons and copy still land in the
-	     reading column. `body { overflow-x-hidden }` (in app.css) absorbs
-	     any 100vw-vs-scrollbar-width difference on platforms that
-	     reserve gutter space. -->
+	     Full-bleed via symmetric negative inline margins
+	     (`calc(50% - 50vw)`) so the bar visually spans the viewport even
+	     though it's still parented under <main> (max-w-3xl).
+	     IMPORTANT: don't use `left: 50%` here — for a `position: sticky`
+	     element, `left/right/top/bottom` define the sticky threshold, NOT
+	     a positioning offset. Combining `left: 50%` with
+	     `transform: translateX(-50%)` only happened to land at zero on
+	     viewports narrow enough that <main> filled the screen; on a
+	     window-half (e.g. 960px) the bar drifted ~30% off-screen left.
+	     The margin trick works regardless of viewport / parent width.
+
+	     The inner row stays centered at `max-w-3xl` so buttons and copy
+	     still land in the reading column. `body { overflow-x-hidden }`
+	     (in app.css) absorbs any 100vw-vs-scrollbar-gutter difference on
+	     platforms that reserve gutter space. -->
 	<div
-		class="sticky bottom-0 left-1/2 z-40 w-screen -translate-x-1/2 border-t-2 border-orange-500 bg-white/95 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.12)] backdrop-blur"
+		class="sticky bottom-0 z-40 mx-[calc(50%_-_50vw)] w-screen border-t-2 border-orange-500 bg-white/95 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.12)] backdrop-blur"
 		role="region"
 		aria-label="Ballot submission"
 	>
@@ -426,15 +433,15 @@
 						onclick={() => {
 							if (
 								confirm(
-									'Clear all your unsubmitted votes on this ballot? Any vote you previously submitted will still be your recorded vote.'
+									'Discard your unsubmitted edits and revert every proposal on this ballot to the vote you previously recorded on Hydra? Proposals you have not yet voted on will be cleared.'
 								)
 							) {
-								clearBallotDrafts(ballot._id);
+								revertBallotDraftsToBaseline(ballot._id);
 							}
 						}}
-						title="Remove every unsubmitted vote on this ballot. Previously submitted votes are unaffected."
+						title="Undo every unsubmitted edit on this ballot — restores each proposal to your previously-recorded selection. Your on-chain ballot is not changed."
 					>
-						Clear votes
+						Discard changes
 					</button>
 					{#if submitBlocked}
 						<Button

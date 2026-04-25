@@ -92,7 +92,11 @@
 					address: signerAddress,
 					token: submitResponse.token,
 					expiresIn: submitResponse.expiresIn,
-					maxAge: submitResponse.maxAge
+					maxAge: submitResponse.maxAge,
+					// Same workaround as SignerWallet: `receivedPayload.calidusID`
+					// is only on the POST /session response, so capture it here
+					// for the parent to persist. See $lib/calidusCache.js.
+					calidusID: receivedPayload?.calidusID
 				});
 			} else {
 				dispatch('success', submitResponse);
