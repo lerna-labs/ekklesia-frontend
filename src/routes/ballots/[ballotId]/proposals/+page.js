@@ -89,6 +89,10 @@ export async function load({ fetch, params, url }) {
 		// Echo back the applied filters/sort so the UI can reflect active state.
 		applied: proposalsData.applied || { filters: {}, sort: null },
 		currentPage: parseInt(page, 10),
-		perPage: parseInt(limit, 10)
+		perPage: parseInt(limit, 10),
+		// Raw /mine payload — the page seeds the drafts + submitted-baseline
+		// stores from this so editing one of N previously-submitted votes
+		// doesn't drop the other N-1 from the broker package.
+		mine
 	};
 }

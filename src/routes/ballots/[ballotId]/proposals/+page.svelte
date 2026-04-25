@@ -26,7 +26,14 @@
 		voterCredentialFromId
 	} from '$lib/utils.js';
 	import { loggedIn, user, showLogin } from '$stores/sessionManager.js';
-	import { draftsTree, clearBallotDrafts } from '$lib/draftVotes.js';
+	import {
+		draftsTree,
+		submittedTree,
+		clearBallotDrafts,
+		seedBallotFromMine,
+		divergentBallotChangeCount
+	} from '$lib/draftVotes.js';
+	import { draftIsComplete, incompleteDraftReason } from '$lib/voteSchema.js';
 	let view = $state('grid');
 
 	let { data } = $props();
@@ -36,20 +43,84 @@
 	// every downstream $derived (eligibility shield, canSubmit, etc.).
 	const ballot = $derived(data.ballot);
 
+	// Mirror /mine into the local drafts + submitted-baseline stores. Seeding
+	// drafts from prior selections is what makes "edit one of N votes and
+	// submit" actually ship all N to the broker — without this, Hydra would
+	// take the partial package as canonical and wipe the voter's other
+	// previously-recorded votes.
+	$effect(() => {
+		if (data.mine && ballot?._id) {
+			seedBallotFromMine(ballot._id, data.mine);
+		}
+	});
+
 	// Count of this ballot's proposals the voter has drafted, for the
 	// "3 of 5 drafted" progress hint on the header.
 	const draftedCount = $derived(Object.keys($draftsTree?.[ballot._id] ?? {}).length);
 	const totalProposals = $derived(data.pagination?.total ?? 0);
 
+	// True when the voter has any prior submission for this ballot — drives
+	// the "Submit my vote" vs "Submit N changed votes" CTA copy. Read from
+	// $submittedTree (not data.mine) so it stays consistent if other tabs
+	// or this tab's own clearBallotDrafts wipe the baseline mid-session.
+	const hasSubmittedBaseline = $derived(
+		Object.keys($submittedTree?.[ballot._id] ?? {}).length > 0
+	);
+	// Number of drafts that diverge from the submitted baseline — the count
+	// of edits the next submission would actually change on Hydra. Reads
+	// both stores so adding, modifying, or clearing a vote all bump it.
+	const changedCount = $derived.by(() => {
+		void $draftsTree;
+		void $submittedTree;
+		return divergentBallotChangeCount(ballot._id);
+	});
+
+	// Pre-flight validation of every drafted proposal on the visible page —
+	// blocks Submit when a Likert / Ranked / Weighted draft is partial so the
+	// broker doesn't reject it with a cryptic INVALID_VOTE round-trip later.
+	// Drafts on other pages (rare with the default 25/page) can't be schema-
+	// validated here; the broker remains the final guard for those.
+	const incompleteDrafts = $derived.by(() => {
+		const ballotDrafts = $draftsTree?.[ballot._id] ?? {};
+		const out = [];
+		for (const proposal of data.proposals ?? []) {
+			const draft = ballotDrafts[proposal._id];
+			if (!draft) continue;
+			if (draftIsComplete(proposal, draft)) continue;
+			out.push({
+				id: proposal._id,
+				title: proposal.title || `Proposal ${proposal._id}`,
+				reason: incompleteDraftReason(proposal, draft)
+			});
+		}
+		return out;
+	});
+
 	// Submit CTA only surfaces when the ballot actually accepts submissions
 	// (live + hydra-sourced per the project's no-write-CTAs-on-legacy rule)
-	// and the voter has something drafted to submit.
+	// and the voter actually has *changes* to submit — drafts that match
+	// the previously-submitted baseline are a no-op resend. Partial drafts
+	// on the visible page block submit; the panel shows which to fix.
 	const canSubmit = $derived(
 		$loggedIn &&
 			ballot.status === 'live' &&
 			ballot.source === 'hydra' &&
-			draftedCount > 0
+			changedCount > 0
 	);
+	const submitBlocked = $derived(incompleteDrafts.length > 0);
+
+	// "Submit my vote(s)" reads better for a first-time voter than
+	// "Submit 3 changed votes" (nothing to compare against). Once any
+	// baseline exists, the count phrasing is more transparent about
+	// what the click actually does.
+	const submitButtonText = $derived.by(() => {
+		if (!hasSubmittedBaseline) {
+			return draftedCount === 1 ? 'Submit my vote' : 'Submit my votes';
+		}
+		return changedCount === 1
+			? 'Submit 1 changed vote'
+			: `Submit ${changedCount} changed votes`;
+	});
 
 	// Status-panel copy absorbed from the old /ballots/[ballotId] detail
 	// page (which now redirects here). Keeps the useful bits —
@@ -270,40 +341,96 @@
 		aria-label="Ballot submission"
 	>
 		<div
-			class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+			class="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3"
 		>
-			<div class="min-w-0 flex-1 text-sm">
-				<div class="font-semibold text-slate-900">
-					You've voted on {draftedCount} of {totalProposals} proposal{totalProposals === 1
-						? ''
-						: 's'} on this ballot
-				</div>
-				<p class="mt-0.5 text-xs text-muted-foreground">
-					{#if draftedCount < totalProposals}
-						Proposals you haven't voted on will be excluded from your submission. Vote on the rest or submit what you have.
-					{:else}
-						You've voted on every proposal. Submit to sign your ballot and commit it to the Hydra voting head.
-					{/if}
-				</p>
-			</div>
-			<div class="flex flex-wrap items-center gap-2">
-				<button
-					type="button"
-					class="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-slate-100 hover:text-red-700"
-					onclick={() => {
-						if (
-							confirm(
-								'Clear all your unsubmitted votes on this ballot? Any vote you previously submitted will still be your recorded vote.'
-							)
-						) {
-							clearBallotDrafts(ballot._id);
-						}
-					}}
-					title="Remove every unsubmitted vote on this ballot. Previously submitted votes are unaffected."
+			{#if submitBlocked}
+				<div
+					class="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900"
+					role="status"
 				>
-					Clear votes
-				</button>
-				<BrokerVoteFlow {ballot} buttonText="Submit Votes" />
+					<ShieldAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+					<div class="min-w-0 flex-1">
+						<div class="font-semibold">
+							{incompleteDrafts.length} proposal{incompleteDrafts.length === 1 ? '' : 's'}
+							need{incompleteDrafts.length === 1 ? 's' : ''} a fix before you can submit
+						</div>
+						<ul class="mt-1 space-y-0.5">
+							{#each incompleteDrafts as item (item.id)}
+								<li class="truncate">
+									<a
+										href={'/ballots/' + ballot._id + '/proposals/' + item.id}
+										class="font-medium underline decoration-amber-400/60 underline-offset-2 hover:decoration-amber-700"
+									>
+										{item.title}
+									</a>
+									{#if item.reason}
+										<span class="text-amber-800">— {item.reason}</span>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						<p class="mt-1 text-amber-800">
+							Complete each one or switch it to abstain. Partial drafts are kept locally
+							but the Hydra broker rejects them on submission.
+						</p>
+					</div>
+				</div>
+			{/if}
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<div class="min-w-0 flex-1 text-sm">
+					<div class="font-semibold text-slate-900">
+						{#if hasSubmittedBaseline}
+							{changedCount === 1
+								? '1 change pending submission'
+								: `${changedCount} changes pending submission`}
+						{:else}
+							You've voted on {draftedCount} of {totalProposals} proposal{totalProposals === 1
+								? ''
+								: 's'} on this ballot
+						{/if}
+					</div>
+					<p class="mt-0.5 text-xs text-muted-foreground">
+						{#if hasSubmittedBaseline}
+							Submitting will replace your previously-recorded ballot on Hydra with your
+							full set of selections — only the proposals listed as changed actually
+							differ from what's already on-chain.
+						{:else if draftedCount < totalProposals}
+							Proposals you haven't voted on will be excluded from your submission. Vote on the rest or submit what you have.
+						{:else}
+							You've voted on every proposal. Submit to sign your ballot and commit it to the Hydra voting head.
+						{/if}
+					</p>
+				</div>
+				<div class="flex flex-wrap items-center gap-2">
+					<button
+						type="button"
+						class="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-slate-100 hover:text-red-700"
+						onclick={() => {
+							if (
+								confirm(
+									'Clear all your unsubmitted votes on this ballot? Any vote you previously submitted will still be your recorded vote.'
+								)
+							) {
+								clearBallotDrafts(ballot._id);
+							}
+						}}
+						title="Remove every unsubmitted vote on this ballot. Previously submitted votes are unaffected."
+					>
+						Clear votes
+					</button>
+					{#if submitBlocked}
+						<Button
+							size="sm"
+							disabled
+							title="Resolve the incomplete proposals listed above before submitting."
+						>
+							<WalletMinimalIcon class="size-4 shrink-0" aria-hidden="true" />
+							{submitButtonText}
+						</Button>
+					{:else}
+						<BrokerVoteFlow {ballot} buttonText={submitButtonText} />
+					{/if}
+				</div>
 			</div>
 		</div>
 	</div>

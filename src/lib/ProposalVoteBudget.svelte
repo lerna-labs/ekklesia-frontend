@@ -5,11 +5,15 @@
 	import { lovelaceToAda } from './utils';
 	import {
 		draftsTree,
+		submittedTree,
 		saveProposalSelection,
 		saveProposalAbstain,
 		clearProposalDraft,
 		draftHasSelection,
-		draftIsAbstaining
+		draftIsAbstaining,
+		revertProposalDraftToBaseline,
+		isProposalDraftDivergent,
+		getProposalBaseline
 	} from '$lib/draftVotes.js';
 	import { isAbstainAllowed } from '$lib/voteSchema.js';
 	import AbstainToggle from '$lib/AbstainToggle.svelte';
@@ -118,6 +122,19 @@
 		const changed = clearProposalDraft(ballot._id, proposal._id);
 		if (changed) toast.success('Vote cleared');
 	}
+
+	const canRevert = $derived.by(() => {
+		void $submittedTree;
+		void $draftsTree;
+		if (getProposalBaseline(ballot._id, proposal._id) == null) return false;
+		return isProposalDraftDivergent(ballot._id, proposal._id);
+	});
+
+	function onRevert() {
+		if (disabled) return;
+		const changed = revertProposalDraftToBaseline(ballot._id, proposal._id);
+		if (changed) toast.success('Reverted to your submitted vote');
+	}
 </script>
 
 <div class="relative">
@@ -215,8 +232,10 @@
 		{hasSelection}
 		{canAbstain}
 		{disabled}
+		{canRevert}
 		{onAbstain}
 		{onResumeVoting}
 		{onClear}
+		{onRevert}
 	/>
 </div>

@@ -7,27 +7,39 @@
 	import ProposalVote from '$lib/ProposalVote.svelte';
 	import VotePopover from './VotePopover.svelte';
 	import ProposalDetails from './ProposalDetails.svelte';
-	import { draftsTree, draftHasSelection, draftIsAbstaining } from '$lib/draftVotes.js';
+	import {
+		draftsTree,
+		submittedTree,
+		draftHasSelection,
+		draftIsAbstaining,
+		isProposalDraftDivergent
+	} from '$lib/draftVotes.js';
 	import { acceptedCredentialsOf, voterCredentialFromId } from '$lib/utils.js';
 	import { CircleCheck, Circle, MinusCircle, ChevronDown, ChevronUp } from 'lucide-svelte';
 	let { proposal, ballot } = $props();
 
 	// Three-state vote indicator:
 	//   empty (slate-300)   — voter hasn't touched this proposal
-	//   amber               — local draft OR an in-flight VotePackage
-	//                         covers it (awaiting-signatures /
-	//                         awaiting-submission); i.e. a pending
-	//                         intent that hasn't landed on Hydra yet
-	//   emerald             — Hydra-confirmed submission recorded
+	//   amber               — divergent local draft OR an in-flight
+	//                         VotePackage; i.e. a pending intent that
+	//                         hasn't landed on Hydra yet
+	//   emerald             — Hydra-confirmed submission recorded AND
+	//                         the local draft (rehydrated from /mine)
+	//                         still matches it
 	//
-	// A local draft always beats a server-side submission on the
-	// indicator so a voter editing a previously-submitted vote sees
-	// "pending" — matching the three-state priority the draft/rehydrate
-	// pipeline uses throughout the vote forms.
+	// Drafts get rehydrated from the server-side submitted state on every
+	// page load — so "has local draft" alone doesn't imply "voter has
+	// pending changes". Compare against the submitted baseline to tell
+	// whether the local draft would actually change anything on submit.
 	const localDraft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
 	const hasLocalSelection = $derived(draftHasSelection(localDraft));
 	const isLocalAbstaining = $derived(draftIsAbstaining(localDraft));
 	const hasLocalDraft = $derived(hasLocalSelection || isLocalAbstaining);
+	const isDivergent = $derived.by(() => {
+		void $draftsTree;
+		void $submittedTree;
+		return isProposalDraftDivergent(ballot._id, proposal._id);
+	});
 
 	// Server-side submission seeded by the proposals loader from
 	// /v1/votes/:ballotId/mine. `voterVote` is the schema-v2
@@ -38,16 +50,17 @@
 		Array.isArray(proposal.voterVote?.selection) && proposal.voterVote.selection.length > 0
 	);
 
-	// What the indicator should actually show. Local draft wins; otherwise
-	// fall back to whatever the server says. Icon shape = selection vs
-	// abstain; color = pending (amber) vs confirmed (emerald).
+	// What the indicator should actually show. Local draft wins on shape
+	// (selection vs abstain); color reflects whether anything is pending —
+	// either a divergent edit OR an in-flight package that hasn't yet
+	// landed on Hydra.
 	const hasSelection = $derived(hasLocalSelection || (!hasLocalDraft && serverHasSelection));
 	const isAbstaining = $derived(isLocalAbstaining || (!hasLocalDraft && serverAbstaining));
 	const hasDraft = $derived(hasSelection || isAbstaining);
 	const isPending = $derived(
-		hasLocalDraft || (!hasLocalDraft && proposal.voterVoteStatus === 'in-flight')
+		isDivergent || proposal.voterVoteStatus === 'in-flight'
 	);
-	const isConfirmed = $derived(!hasLocalDraft && proposal.voterVoteStatus === 'confirmed');
+	const isConfirmed = $derived(!isPending && proposal.voterVoteStatus === 'confirmed');
 
 	// Suppress the drafted indicator for voters who can't actually vote
 	// on this ballot — a wrong-credential or validation-script failure.

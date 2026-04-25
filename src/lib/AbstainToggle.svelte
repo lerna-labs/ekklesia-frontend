@@ -1,6 +1,6 @@
 <script>
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { MinusCircle, Eraser, UserX } from 'lucide-svelte';
+	import { MinusCircle, Eraser, UserX, Undo2 } from 'lucide-svelte';
 
 	/**
 	 * Shared three-way draft-state controls that sit at the bottom of every
@@ -8,7 +8,7 @@
 	 * disabling / fading — their own vote controls when `isAbstaining` is
 	 * true.
 	 *
-	 * Exposes two distinct actions:
+	 * Exposes three actions:
 	 *
 	 *   - Abstain: voter explicitly records no opinion. The backend tallies
 	 *     this in `abstainedByRole`. Clear warning copy — voting power does
@@ -17,6 +17,11 @@
 	 *   - Clear: voter removes the draft entirely. The question drops out
 	 *     of the submission payload (neither a selection nor an abstain).
 	 *     Distinct from abstain: no signal is sent at all.
+	 *
+	 *   - Revert: voter restores the submitted baseline (their previously-
+	 *     recorded selection on Hydra) into the draft, undoing any local
+	 *     edits. Only meaningful when this proposal has a server-side
+	 *     submission *and* the draft diverges from it.
 	 *
 	 * Abstain is hidden when the proposal opts out via schema-v2's
 	 * `requireAnswer: true` — at that point the only way to skip is to
@@ -27,9 +32,11 @@
 	 * @property {boolean} hasSelection      whether a non-abstain draft exists
 	 * @property {boolean} canAbstain        false when proposal.requireAnswer === true
 	 * @property {boolean} [disabled]        ballot-level lock (closed / ineligible / etc.)
+	 * @property {boolean} [canRevert]       baseline exists AND draft differs from it
 	 * @property {() => void} onAbstain       enter abstaining state
 	 * @property {() => void} onResumeVoting  leave abstaining state (drops the abstain flag)
 	 * @property {() => void} onClear         wipe the draft entirely (neither selection nor abstain)
+	 * @property {() => void} [onRevert]      restore the submitted baseline into the draft
 	 */
 
 	/** @type {Props} */
@@ -38,9 +45,11 @@
 		hasSelection,
 		canAbstain,
 		disabled = false,
+		canRevert = false,
 		onAbstain,
 		onResumeVoting,
-		onClear
+		onClear,
+		onRevert
 	} = $props();
 
 	// Every action button is gated on `!disabled` so a read-only vote form
@@ -51,6 +60,7 @@
 	const showAbstainButton = $derived(canAbstain && !isAbstaining && !disabled);
 	const showResumeButton = $derived(isAbstaining && !disabled);
 	const showClearButton = $derived(!disabled && (isAbstaining || hasSelection));
+	const showRevertButton = $derived(!disabled && canRevert && typeof onRevert === 'function');
 </script>
 
 {#if isAbstaining}
@@ -69,7 +79,7 @@
 	</div>
 {/if}
 
-{#if showAbstainButton || showResumeButton || showClearButton}
+{#if showAbstainButton || showResumeButton || showClearButton || showRevertButton}
 	<div class="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
 		{#if showAbstainButton}
 			<Button
@@ -92,6 +102,21 @@
 				onclick={onResumeVoting}
 			>
 				Resume voting
+			</Button>
+		{/if}
+
+		{#if showRevertButton}
+			<Button
+				variant="ghost"
+				size="sm"
+				class="text-muted-foreground hover:text-foreground"
+				{disabled}
+				onclick={onRevert}
+				aria-label="Revert this draft to your previously-submitted vote"
+				title="Restore the selection you previously submitted on-chain."
+			>
+				<Undo2 class="h-4 w-4" aria-hidden="true" />
+				Revert to submitted
 			</Button>
 		{/if}
 

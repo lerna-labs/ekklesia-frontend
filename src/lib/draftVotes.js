@@ -30,15 +30,36 @@ import { toWireSelection } from '$lib/voteSchema.js';
  */
 
 const STORAGE_PREFIX = 'ekklesia-drafts-';
+const SUBMITTED_PREFIX = 'ekklesia-submitted-';
 
-export const draftCount = writable(0);
+// Local edit cache. Mutated by the vote forms; cleared on broker confirmation.
 export const draftsTree = writable({});
+
+// Snapshot of what `/v1/votes/:ballotId/mine` reported the last time the
+// voter visited a ballot — the "submitted baseline". Drafts that deep-equal
+// their baseline don't surface as unsubmitted changes, so a returning voter
+// who edits one of N proposals only sees a single "pending change" rather
+// than N. Seeded by `seedBallotFromMine()` on each ballot/proposal page load.
+export const submittedTree = writable({});
+
+// Number of drafts that diverge from the submitted baseline — the count that
+// drives the global "unsubmitted votes" badge. A draft equal to its baseline
+// is a no-op submission so it doesn't count; a draft with no baseline (a
+// fresh first vote) does. Recomputed automatically when either store changes.
+export const draftCount = writable(0);
 
 function storageKey() {
 	const u = get(user);
 	const id = u?.userId;
 	if (!id) return null;
 	return STORAGE_PREFIX + id;
+}
+
+function submittedStorageKey() {
+	const u = get(user);
+	const id = u?.userId;
+	if (!id) return null;
+	return SUBMITTED_PREFIX + id;
 }
 
 function isV2Draft(value) {
@@ -72,11 +93,28 @@ function sanitize(tree) {
 	return { tree: clean, dirty };
 }
 
-function countDrafts(tree) {
-	return Object.values(tree).reduce(
-		(sum, ballot) => sum + Object.keys(ballot ?? {}).length,
-		0
-	);
+function entriesEqual(a, b) {
+	if (a == null && b == null) return true;
+	if (a == null || b == null) return false;
+	return JSON.stringify(a) === JSON.stringify(b);
+}
+
+// Counts only drafts that diverge from their submitted baseline so the
+// header badge stops nagging once a returning voter has reverted their
+// edits — and so a freshly-rehydrated, untouched ballot doesn't read as
+// "you have N drafts to submit" on every dashboard visit.
+function countDivergent(drafts, submitted) {
+	let n = 0;
+	const ballotIds = new Set([...Object.keys(drafts ?? {}), ...Object.keys(submitted ?? {})]);
+	for (const bid of ballotIds) {
+		const d = drafts?.[bid] ?? {};
+		const s = submitted?.[bid] ?? {};
+		const proposalIds = new Set([...Object.keys(d), ...Object.keys(s)]);
+		for (const pid of proposalIds) {
+			if (!entriesEqual(d[pid] ?? null, s[pid] ?? null)) n += 1;
+		}
+	}
+	return n;
 }
 
 function readAll() {
@@ -100,6 +138,24 @@ function readAll() {
 	}
 }
 
+function readAllSubmitted() {
+	if (typeof localStorage === 'undefined') return {};
+	const key = submittedStorageKey();
+	if (!key) return {};
+	try {
+		const raw = localStorage.getItem(key);
+		const parsed = raw ? JSON.parse(raw) : {};
+		const { tree } = sanitize(parsed);
+		return tree;
+	} catch {
+		return {};
+	}
+}
+
+function refreshDivergentCount() {
+	draftCount.set(countDivergent(get(draftsTree), get(submittedTree)));
+}
+
 function writeAll(tree) {
 	if (typeof localStorage === 'undefined') return;
 	const key = storageKey();
@@ -110,14 +166,29 @@ function writeAll(tree) {
 		// ignore quota errors; drafts are ephemeral by design
 	}
 	draftsTree.set(tree);
-	draftCount.set(countDrafts(tree));
+	refreshDivergentCount();
+}
+
+function writeAllSubmitted(tree) {
+	if (typeof localStorage === 'undefined') return;
+	const key = submittedStorageKey();
+	if (!key) return;
+	try {
+		localStorage.setItem(key, JSON.stringify(tree));
+	} catch {
+		// ignore quota errors
+	}
+	submittedTree.set(tree);
+	refreshDivergentCount();
 }
 
 /** Seed the reactive stores from localStorage. Call once per login. */
 export function hydrateDrafts() {
 	const tree = readAll();
+	const submitted = readAllSubmitted();
 	draftsTree.set(tree);
-	draftCount.set(countDrafts(tree));
+	submittedTree.set(submitted);
+	refreshDivergentCount();
 }
 
 /** All drafts across every ballot for the current user. */
@@ -193,12 +264,21 @@ function writeProposalDraft(ballotId, proposalId, draftOrNull) {
 	return true;
 }
 
-/** Remove every draft for this ballot. Called after broker confirmation. */
+/**
+ * Remove every draft and submitted-baseline entry for this ballot. Called
+ * after broker confirmation so the UI returns to a clean slate before the
+ * next /mine fetch reseeds the baseline.
+ */
 export function clearBallotDrafts(ballotId) {
 	const tree = readAll();
 	if (tree[ballotId]) {
 		delete tree[ballotId];
 		writeAll(tree);
+	}
+	const sub = readAllSubmitted();
+	if (sub[ballotId]) {
+		delete sub[ballotId];
+		writeAllSubmitted(sub);
 	}
 }
 
@@ -214,12 +294,138 @@ export function ballotDraftsForBroker(ballotId) {
 	);
 }
 
+// ─── Submitted-baseline + divergence ────────────────────────────────────
+
+/**
+ * Convert a `voterVote` (the schema-v2 VoteSelection shape returned by
+ * `mineToProposalAnnotations`) into a draft entry shape — `{ kind: 'abstain' }`
+ * or `{ kind: 'selection', selection: [...] }`. Returns null on malformed
+ * input so a junk entry doesn't pollute either store.
+ */
+function voterVoteToDraftEntry(v) {
+	if (!v || typeof v !== 'object') return null;
+	if (v.abstain === true) return { kind: 'abstain' };
+	if (Array.isArray(v.selection) && v.selection.length > 0) {
+		return { kind: 'selection', selection: v.selection };
+	}
+	return null;
+}
+
+/**
+ * Build a `{ proposalId: draftEntry }` map from a `/mine` payload. Uses the
+ * same in-flight > confirmed priority `mineToProposalAnnotations` applies so
+ * the indicator and the baseline agree on which selection counts as "the
+ * voter's most recent server-side state".
+ */
+function buildSubmittedFromMine(mine) {
+	const out = {};
+	if (!mine) return out;
+	if (mine.confirmed?.votes) {
+		for (const [pid, v] of Object.entries(mine.confirmed.votes)) {
+			const entry = voterVoteToDraftEntry(v);
+			if (entry) out[pid] = entry;
+		}
+	}
+	for (const pkg of mine.inFlight || []) {
+		for (const [pid, v] of Object.entries(pkg.votes || {})) {
+			const entry = voterVoteToDraftEntry(v);
+			if (entry) out[pid] = entry;
+		}
+	}
+	return out;
+}
+
+/**
+ * Persist the voter's `/mine` payload as the submitted baseline for this
+ * ballot, and (if no local draft already exists for a given proposal) seed
+ * the draft with the same value so the vote forms repopulate.
+ *
+ * Why seed drafts: Hydra accepts the latest package as canonical, so a
+ * partial submission would functionally wipe earlier votes. Seeding ensures
+ * the broker package always carries every prior selection unless the voter
+ * actively cleared it.
+ *
+ * Existing local drafts are preserved (an in-progress edit always wins over
+ * the server-side baseline).
+ */
+export function seedBallotFromMine(ballotId, mine) {
+	if (!ballotId) return;
+	// `loadMyBallotVotes` returns null on transient auth/network errors.
+	// Treat that as "couldn't refresh" — preserve whatever baseline is
+	// already cached so a flaky /mine call doesn't make every previously-
+	// submitted vote suddenly look divergent.
+	if (mine == null) return;
+	const baseline = buildSubmittedFromMine(mine);
+
+	const sub = readAllSubmitted();
+	const priorSub = sub[ballotId] ?? {};
+	if (JSON.stringify(priorSub) !== JSON.stringify(baseline)) {
+		if (Object.keys(baseline).length === 0) delete sub[ballotId];
+		else sub[ballotId] = baseline;
+		writeAllSubmitted(sub);
+	}
+
+	const drafts = readAll();
+	const existing = drafts[ballotId] ?? {};
+	let dirty = false;
+	for (const [pid, entry] of Object.entries(baseline)) {
+		if (existing[pid] != null) continue;
+		if (!drafts[ballotId]) drafts[ballotId] = {};
+		drafts[ballotId][pid] = entry;
+		dirty = true;
+	}
+	if (dirty) writeAll(drafts);
+}
+
+/** The submitted baseline for one (ballotId, proposalId), or null. */
+export function getProposalBaseline(ballotId, proposalId) {
+	const sub = readAllSubmitted();
+	return sub[ballotId]?.[proposalId] ?? null;
+}
+
+/**
+ * True when the local draft for (ballotId, proposalId) differs from the
+ * submitted baseline — i.e. submitting now would actually change something
+ * server-side. A draft against no baseline always counts as divergent
+ * (it's a fresh first-time vote).
+ */
+export function isProposalDraftDivergent(ballotId, proposalId) {
+	const draft = getProposalDraft(ballotId, proposalId);
+	const baseline = getProposalBaseline(ballotId, proposalId);
+	return !entriesEqual(draft, baseline);
+}
+
+/** Number of divergent drafts within a single ballot. */
+export function divergentBallotChangeCount(ballotId) {
+	const drafts = readAll()[ballotId] ?? {};
+	const baseline = readAllSubmitted()[ballotId] ?? {};
+	const ids = new Set([...Object.keys(drafts), ...Object.keys(baseline)]);
+	let n = 0;
+	for (const pid of ids) {
+		if (!entriesEqual(drafts[pid] ?? null, baseline[pid] ?? null)) n += 1;
+	}
+	return n;
+}
+
+/**
+ * Replace the proposal's draft with its submitted baseline. Used by the
+ * "Revert to submitted" affordance. Returns true if anything changed.
+ */
+export function revertProposalDraftToBaseline(ballotId, proposalId) {
+	const baseline = getProposalBaseline(ballotId, proposalId);
+	return writeProposalDraft(ballotId, proposalId, baseline);
+}
+
 // Sync stores across browser tabs so a draft saved in tab A shows up
-// in tab B's badge / pending list.
+// in tab B's badge / pending list. Both the drafts and the submitted
+// baseline are kept in localStorage; either changing means our in-memory
+// counters are out of date.
 if (typeof window !== 'undefined') {
 	window.addEventListener('storage', (ev) => {
-		if (!ev.key || !ev.key.startsWith(STORAGE_PREFIX)) return;
-		hydrateDrafts();
+		if (!ev.key) return;
+		if (ev.key.startsWith(STORAGE_PREFIX) || ev.key.startsWith(SUBMITTED_PREFIX)) {
+			hydrateDrafts();
+		}
 	});
 }
 
@@ -231,6 +437,7 @@ if (typeof window !== 'undefined') {
 user.subscribe((u) => {
 	if (!u) {
 		draftsTree.set({});
+		submittedTree.set({});
 		draftCount.set(0);
 	} else {
 		hydrateDrafts();

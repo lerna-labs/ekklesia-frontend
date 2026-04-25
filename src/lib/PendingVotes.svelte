@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import Badge from '$lib/BallotBadge.svelte';
-	import { draftsTree } from '$lib/draftVotes.js';
+	import { draftsTree, submittedTree, divergentBallotChangeCount } from '$lib/draftVotes.js';
 
 	// Optional list of ballot documents for title resolution; dashboard
 	// passes this from its own `/dashboard/ballots` fetch so we can show
@@ -14,13 +14,25 @@
 		return ballots.find((b) => String(b._id) === String(id));
 	}
 
+	// Only surface ballots whose drafts actually diverge from the submitted
+	// baseline — a returning voter who's been rehydrated with their prior
+	// selections shouldn't see every previously-voted ballot light up the
+	// dashboard's "unsubmitted drafts" panel.
 	const draftBallots = $derived.by(() => {
-		const tree = $draftsTree;
-		return Object.entries(tree).map(([ballotId, drafts]) => ({
-			ballotId,
-			draftCount: Object.keys(drafts ?? {}).length,
-			ballot: ballotFor(ballotId)
-		}));
+		void $draftsTree;
+		void $submittedTree;
+		const ids = new Set([...Object.keys($draftsTree), ...Object.keys($submittedTree)]);
+		const out = [];
+		for (const ballotId of ids) {
+			const changedCount = divergentBallotChangeCount(ballotId);
+			if (changedCount === 0) continue;
+			out.push({
+				ballotId,
+				changedCount,
+				ballot: ballotFor(ballotId)
+			});
+		}
+		return out;
 	});
 </script>
 
@@ -43,7 +55,7 @@
 						{/if}
 					</Card.Title>
 					<Card.Description>
-						{entry.draftCount} draft{entry.draftCount === 1 ? '' : 's'} saved locally.
+						{entry.changedCount} change{entry.changedCount === 1 ? '' : 's'} pending submission.
 					</Card.Description>
 				</Card.Header>
 				<Card.Footer class="flex gap-1">

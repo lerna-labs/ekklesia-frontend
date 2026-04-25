@@ -11,11 +11,23 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Markdown from '$lib/base/Markdown.svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { seedBallotFromMine } from '$lib/draftVotes.js';
 	let { data } = $props();
 	const ballot = $derived(data.ballot);
 	const proposal = $derived(data.proposal);
 	const proposalData = $derived(proposal.data);
 	const basePath = $derived(`/ballots/${ballot._id}/proposals`);
+
+	// Mirror /mine into the local drafts + submitted-baseline stores so the
+	// vote form repopulates with prior selections and the broker package
+	// always carries every previously-submitted question on this ballot —
+	// not just the one the voter is currently editing. Re-runs whenever
+	// invalidateAll() refetches the loader after a successful submit.
+	$effect(() => {
+		if (data.mine && ballot?._id) {
+			seedBallotFromMine(ballot._id, data.mine);
+		}
+	});
 </script>
 
 <div class="flex gap-2 text-xl">

@@ -55,5 +55,5 @@ export async function load({ fetch, params }) {
 		if (idx >= 0 && idx < siblings.length - 1) next = siblings[idx + 1];
 	}
 
-	return { ballot, proposal, prev, next };
+	return { ballot, proposal, prev, next, mine };
 }

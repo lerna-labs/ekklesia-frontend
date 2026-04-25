@@ -140,3 +140,95 @@ export function toWireSelection(questionId, draft) {
 	}
 	return { questionId, selection: draft?.selection ?? [] };
 }
+
+/**
+ * The number of ranked positions a Ranked proposal expects. Schema v2 carries
+ * `rankCount` explicitly; pre-v2 ballots default to ranking every option.
+ *
+ * @param {{ rankCount?: number, voteOptions?: Array<unknown> }} proposal
+ */
+function rankCountOf(proposal) {
+	const rc = Number(proposal?.rankCount);
+	if (Number.isFinite(rc) && rc > 0) return rc;
+	return Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+}
+
+/**
+ * True when the voter's draft for a proposal satisfies the per-method
+ * completeness contract the broker enforces. Used by the ballot submit panel
+ * to gate the Submit button so a partial Likert / Ranked / Weighted draft
+ * can't reach the backend and come back as a cryptic INVALID_VOTE.
+ *
+ * Treats no-draft and abstain as complete (no-draft just isn't part of the
+ * submission; abstain is a fully-formed answer).
+ *
+ * @param {object} proposal
+ * @param {{ kind: 'abstain' } | { kind: 'selection', selection: any[] } | null | undefined} draft
+ * @returns {boolean}
+ */
+export function draftIsComplete(proposal, draft) {
+	if (!draft) return true;
+	if (draft.kind === 'abstain') return true;
+	if (draft.kind !== 'selection' || !Array.isArray(draft.selection)) return false;
+
+	const sel = draft.selection;
+	const method = methodForProposal(proposal);
+	switch (method) {
+		case VOTE_METHODS.BINARY:
+		case VOTE_METHODS.SINGLE_CHOICE:
+		case VOTE_METHODS.RANGE:
+			return sel.length === 1;
+		case VOTE_METHODS.MULTI_CHOICE:
+			// Preference / budget allow partial selection — any non-empty
+			// pick is a valid submission.
+			return sel.length >= 1;
+		case VOTE_METHODS.RANKED:
+			return sel.length === rankCountOf(proposal);
+		case VOTE_METHODS.WEIGHTED: {
+			const budget = Number(proposal?.voterBudget) || 0;
+			const total = sel.reduce((s, e) => s + (Number(e?.value) || 0), 0);
+			return total === budget;
+		}
+		case VOTE_METHODS.LIKERT: {
+			const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+			return sel.length === optionCount;
+		}
+		default:
+			return true;
+	}
+}
+
+/**
+ * Short human-readable reason a draft fails its method's completeness
+ * contract, suitable for a per-proposal hint in the submit-panel checklist.
+ * Returns null when the draft is complete (or isn't a selection draft at all).
+ *
+ * @param {object} proposal
+ * @param {{ kind: 'abstain' } | { kind: 'selection', selection: any[] } | null | undefined} draft
+ * @returns {string | null}
+ */
+export function incompleteDraftReason(proposal, draft) {
+	if (draftIsComplete(proposal, draft)) return null;
+	if (!draft || draft.kind !== 'selection' || !Array.isArray(draft.selection)) return null;
+
+	const sel = draft.selection;
+	const method = methodForProposal(proposal);
+	switch (method) {
+		case VOTE_METHODS.RANKED: {
+			const need = rankCountOf(proposal);
+			return `Ranked ${sel.length} of ${need}`;
+		}
+		case VOTE_METHODS.WEIGHTED: {
+			const budget = Number(proposal?.voterBudget) || 0;
+			const total = sel.reduce((s, e) => s + (Number(e?.value) || 0), 0);
+			if (total > budget) return `Over budget by ${total - budget}`;
+			return `Allocated ${total} of ${budget}`;
+		}
+		case VOTE_METHODS.LIKERT: {
+			const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+			return `Rated ${sel.length} of ${optionCount} options`;
+		}
+		default:
+			return null;
+	}
+}
