@@ -33,18 +33,10 @@
 			: options.length
 	);
 
-	// Derived — see ProposalVoteDefault for the reactive-draft rationale.
-	// voterVote carries the v2 VoteSelection shape.
-	const draft = $derived.by(() => {
-		const stored = $draftsTree?.[ballot._id]?.[proposal._id];
-		if (stored != null) return stored;
-		const v = proposal.voterVote;
-		if (v && v.abstain === true) return { kind: 'abstain' };
-		if (v && Array.isArray(v.selection) && v.selection.length > 0) {
-			return { kind: 'selection', selection: [...v.selection] };
-		}
-		return null;
-	});
+	// Drafts are seeded from /mine by the page's synchronous seedBallotFromMine
+	// call. No fallback to proposal.voterVote — see ProposalVoteLikert for
+	// why (the fallback defeats per-proposal Clear).
+	const draft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
 
 	const isAbstaining = $derived(draftIsAbstaining(draft));
 	const hasSelection = $derived(draftHasSelection(draft));

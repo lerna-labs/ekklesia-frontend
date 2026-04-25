@@ -31,20 +31,11 @@
 
 	// Derived (not $state) so external store changes — bulk clear,
 	// cross-tab draft sync, broker post-submit wipe — propagate into the
-	// UI without needing to remount. Falls back to the server-side
-	// `voterVote` (the voter's last submitted selection, if any) when
-	// there's no local vote. voterVote carries the schema-v2
-	// VoteSelection shape — `{abstain: true}` or `{selection: [...]}`.
-	const draft = $derived.by(() => {
-		const stored = $draftsTree?.[ballot._id]?.[proposal._id];
-		if (stored != null) return stored;
-		const v = proposal.voterVote;
-		if (v && v.abstain === true) return { kind: 'abstain' };
-		if (v && Array.isArray(v.selection) && v.selection.length > 0) {
-			return { kind: 'selection', selection: [v.selection[0]] };
-		}
-		return null;
-	});
+	// UI without needing to remount. Drafts are seeded from /mine by the
+	// page's synchronous seedBallotFromMine call so this reads from the
+	// canonical store directly. No fallback to proposal.voterVote — see
+	// ProposalVoteLikert for why (defeats per-proposal Clear).
+	const draft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
 
 	const isAbstaining = $derived(draftIsAbstaining(draft));
 	const hasSelection = $derived(draftHasSelection(draft));

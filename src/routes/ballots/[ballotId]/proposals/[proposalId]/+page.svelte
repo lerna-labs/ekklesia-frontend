@@ -21,9 +21,13 @@
 	// Mirror /mine into the local drafts + submitted-baseline stores so the
 	// vote form repopulates with prior selections and the broker package
 	// always carries every previously-submitted question on this ballot —
-	// not just the one the voter is currently editing. Re-runs whenever
-	// invalidateAll() refetches the loader after a successful submit.
-	$effect(() => {
+	// not just the one the voter is currently editing.
+	//
+	// `$effect.pre` runs before the vote form mounts so its first paint
+	// reads the seeded draft directly. The vote forms therefore don't need
+	// a `voterVote` fallback in their `draft` derivation — see the
+	// proposals listing page for the rationale around per-proposal Clear.
+	$effect.pre(() => {
 		if (data.mine && ballot?._id) {
 			seedBallotFromMine(ballot._id, data.mine);
 		}

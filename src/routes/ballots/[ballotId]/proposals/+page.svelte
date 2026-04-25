@@ -48,7 +48,16 @@
 	// submit" actually ship all N to the broker — without this, Hydra would
 	// take the partial package as canonical and wipe the voter's other
 	// previously-recorded votes.
-	$effect(() => {
+	//
+	// `$effect.pre` runs synchronously BEFORE the DOM updates — including
+	// before the proposal cards' first mount — so the vote forms read the
+	// seeded drafts on their first paint. The vote forms therefore don't
+	// need a `voterVote` fallback in their `draft` derivation, which is
+	// what lets per-proposal Clear actually clear (a fallback to
+	// `voterVote` would silently re-derive the prior selection the moment
+	// the drafts entry was removed). Re-runs on subsequent loader refreshes
+	// (post-submit invalidateAll, etc.).
+	$effect.pre(() => {
 		if (data.mine && ballot?._id) {
 			seedBallotFromMine(ballot._id, data.mine);
 		}
@@ -334,9 +343,18 @@
 	<!-- Sticky (not fixed) so it sits within main's flow and the page
 	     Footer (version number, etc.) stays visible when the user scrolls
 	     all the way down — the submission bar detaches at the bottom of
-	     its containing block instead of covering the Footer. -->
+	     its containing block instead of covering the Footer.
+
+	     Full-bleed: `w-screen` + `left-1/2` + `-translate-x-1/2` breaks
+	     the bar out of <main>'s 768px reading column so it spans the
+	     viewport, visually rhyming with the dark sticky header at the top
+	     and the orange unsubmitted-votes notice. The inner row stays
+	     centered at `max-w-3xl` so buttons and copy still land in the
+	     reading column. `body { overflow-x-hidden }` (in app.css) absorbs
+	     any 100vw-vs-scrollbar-width difference on platforms that
+	     reserve gutter space. -->
 	<div
-		class="sticky bottom-0 z-40 -mx-4 border-t-2 border-orange-500 bg-white/95 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.12)] backdrop-blur"
+		class="sticky bottom-0 left-1/2 z-40 w-screen -translate-x-1/2 border-t-2 border-orange-500 bg-white/95 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.12)] backdrop-blur"
 		role="region"
 		aria-label="Ballot submission"
 	>
