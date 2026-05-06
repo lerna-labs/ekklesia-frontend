@@ -2,12 +2,16 @@
 /**
  * Post-build branding pass.
  *
- * SvelteKit + adapter-static writes `build/index.html` and copies
- * `static/site.webmanifest` to `build/site.webmanifest` AFTER all of
- * Vite's plugin hooks (including closeBundle) have run. This script runs
- * after `vite build` completes and substitutes `%BRAND_*%` placeholders
- * in the emitted HTML, plus rewrites the manifest's `name` /
- * `short_name` from build-time env values.
+ * SvelteKit + adapter-static writes `build/<mode>/index.html` and copies
+ * `static/site.webmanifest` to `build/<mode>/site.webmanifest` AFTER all
+ * of Vite's plugin hooks (including closeBundle) have run. This script
+ * runs after `vite build` completes and substitutes `%BRAND_*%`
+ * placeholders in the emitted HTML, plus rewrites the manifest's `name`
+ * / `short_name` from build-time env values.
+ *
+ * Pass the build mode as the first CLI arg (e.g. `node
+ * scripts/brand-build-output.js preprod`) so this matches the
+ * `build/<mode>` directory the SvelteKit adapter wrote to.
  *
  * Defaults must stay in sync with `src/lib/base/branding.js`.
  */
@@ -26,6 +30,7 @@ const BRAND_DEFAULTS = {
 
 const mode = process.argv[2] || process.env.NODE_ENV || 'production';
 const env = loadEnv(mode, process.cwd(), 'VITE_');
+const buildDir = path.resolve('build', mode);
 
 function escapeHtmlAttr(value) {
 	return String(value)
@@ -68,7 +73,7 @@ function applyBranding(html) {
 	return out;
 }
 
-const indexPath = path.resolve('build/index.html');
+const indexPath = path.join(buildDir, 'index.html');
 if (fs.existsSync(indexPath)) {
 	const html = fs.readFileSync(indexPath, 'utf8');
 	fs.writeFileSync(indexPath, applyBranding(html));
@@ -77,7 +82,7 @@ if (fs.existsSync(indexPath)) {
 	console.warn(`[brand] ${indexPath} not found — skipping`);
 }
 
-const buildManifest = path.resolve('build/site.webmanifest');
+const buildManifest = path.join(buildDir, 'site.webmanifest');
 const sourceManifest = path.resolve('static/site.webmanifest');
 if (fs.existsSync(buildManifest) && fs.existsSync(sourceManifest)) {
 	const manifest = JSON.parse(fs.readFileSync(sourceManifest, 'utf8'));

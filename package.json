@@ -1,14 +1,14 @@
 {
 	"name": "ekklesia-frontend",
 	"private": true,
-	"version": "0.8.84",
+	"version": "0.9.0",
 	"type": "module",
 	"license": "Apache-2.0",
 	"author": "Mad Orkestra for Lerna Labs",
 	"homepage": "https://github.com/Lerna-Labs/ekklesia-frontend",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build && node scripts/brand-build-output.js",
+		"build": "vite build --mode production && node scripts/brand-build-output.js production",
 		"build:preprod": "vite build --mode preprod && node scripts/brand-build-output.js preprod",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
