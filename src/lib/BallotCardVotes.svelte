@@ -7,6 +7,23 @@
 	let proposals = $derived(ballot.proposals);
 	import { convertTimestamp } from '$lib/utils.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+
+	// The voters API returns most vote types as flat label arrays
+	// (`["Yes"]`, `[42]`, `["Alice", "Bob"]`). Likert and Weighted are
+	// per-option and arrive as objects: `{option, optionLabel, value}`.
+	// Render them as `<label>: <value>` so the row shows the per-option
+	// detail instead of a row of opaque badges.
+	function isStructured(entry) {
+		return entry && typeof entry === 'object' && 'value' in entry;
+	}
+
+	function formatStructured(entry, voteType) {
+		const label = entry.optionLabel ?? entry.option ?? '';
+		if (voteType === 'weighted') {
+			return `${label} · ${entry.value} pts`;
+		}
+		return `${label}: ${entry.value}`;
+	}
 </script>
 
 <Card.Root class="mb-4">
@@ -44,20 +61,26 @@
 						</div>
 					</div>
 
-					<div
-						class="flex flex-col items-end gap-0.5 md:max-w-[30vw] md:flex-row md:flex-wrap md:items-end md:justify-end md:gap-0.5"
-					>
-						{#each proposal.vote as label}
-							<div
-								class="mb-0.5 w-full overflow-hidden whitespace-nowrap rounded-md px-3 py-1 text-center text-xs md:inline-flex md:w-auto {label ===
-								'Yes'
-									? 'bg-green-500 text-green-100'
-									: label === 'No'
-										? 'bg-red-500 text-red-100'
-										: 'bg-slate-500 text-slate-100'}"
-							>
-								{label}
-							</div>
+					<div class="flex flex-col items-end gap-0.5">
+						{#each proposal.vote as entry}
+							{#if isStructured(entry)}
+								<div
+									class="w-full overflow-hidden whitespace-nowrap rounded-md bg-slate-500 px-3 py-1 text-center text-xs text-slate-100"
+								>
+									{formatStructured(entry, proposal.voteType)}
+								</div>
+							{:else}
+								<div
+									class="w-full overflow-hidden whitespace-nowrap rounded-md px-3 py-1 text-center text-xs {entry ===
+									'Yes'
+										? 'bg-green-500 text-green-100'
+										: entry === 'No'
+											? 'bg-red-500 text-red-100'
+											: 'bg-slate-500 text-slate-100'}"
+								>
+									{entry}
+								</div>
+							{/if}
 						{/each}
 					</div>
 				</div>

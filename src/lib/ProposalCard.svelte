@@ -1,6 +1,6 @@
 <script>
 	import { get } from 'svelte/store';
-	import Text from './base/Text.svelte';
+	import MarkdownBrief from './base/MarkdownBrief.svelte';
 	import { loggedIn, user } from './../stores/sessionManager.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -151,11 +151,11 @@
 	<Card.Content class="pb-0">
 		{#if proposal.summary}
 			<div class="mb-4">
-				<Text text={proposal.summary} />
+				<MarkdownBrief markdown={proposal.summary} inline headings="flatten" breaks />
 			</div>
 		{:else if proposal.description}
 			<div class="mb-4">
-				<Text text={proposal.description} />
+				<MarkdownBrief markdown={proposal.description} inline headings="flatten" breaks />
 			</div>
 		{/if}
 	</Card.Content>

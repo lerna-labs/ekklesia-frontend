@@ -26,7 +26,7 @@
 	<Card.Content class="pt-4 text-sm">
 		{#if ballot.description}
 			<div class={isLong && !expanded ? 'line-clamp-6' : ''}>
-				<MarkdownBrief markdown={ballot.description} inline />
+				<MarkdownBrief markdown={ballot.description} inline headings="flatten" />
 			</div>
 			{#if isLong}
 				<button

@@ -215,6 +215,8 @@
 	<MarkdownBrief
 		markdown={ballot.description}
 		class="mt-3 text-muted-foreground"
+		headings="demote"
+		headingStartLevel={2}
 	/>
 {/if}
 

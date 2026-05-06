@@ -8,12 +8,13 @@
 	"homepage": "https://github.com/Lerna-Labs/ekklesia-frontend",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
-		"build:preprod": "vite build --mode preprod",
+		"build": "vite build && node scripts/brand-build-output.js",
+		"build:preprod": "vite build --mode preprod && node scripts/brand-build-output.js preprod",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "npm run lint:content && prettier --check . && eslint .",
+		"lint:content": "node scripts/lint-content.js"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",

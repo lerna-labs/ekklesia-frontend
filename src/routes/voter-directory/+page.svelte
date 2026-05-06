@@ -7,18 +7,20 @@
 	import Sort from '$lib/base/Sort.svelte';
 	import Filter from '$lib/base/Filter.svelte';
 	import Pagination from '$lib/base/Pagination.svelte';
+	import MarkdownBrief from '$lib/base/MarkdownBrief.svelte';
+	import { content } from '$lib/content.js';
 	let search = $state('');
 	let { data } = $props();
 
 	let voters = $derived(data.voters);
+	const intro = content.voterDirectory.intro;
 </script>
 
-<h1>Voter Directory</h1>
+<h1>{intro?.data.title ?? 'Voter Directory'}</h1>
 
-<p>
-	Search for voters by stake address, DRep-Id or Pool-Id. The list below shows all active voters on
-	all ballots accumulated.
-</p>
+{#if intro?.body}
+	<MarkdownBrief markdown={intro.body} />
+{/if}
 
 <section class="relative mt-6">
 	<header class="mb-4 items-center justify-between sm:flex">
@@ -28,7 +30,7 @@
 			<Sort
 				sortOptions={[
 					{ label: 'Votes', value: 'votes' },
-					{ label: 'VoterId', value: 'voterId' },
+					{ label: 'Voter ID', value: 'userId' },
 					{ label: 'Last Login', value: 'lastLogin' }
 				]}
 			/>
@@ -43,7 +45,7 @@
 			<Table.Header>
 				<Table.Row>
 					<Table.Head class="w-[40px] pl-0">Votes</Table.Head>
-					<Table.Head class="w-[100px]">VoterId</Table.Head>
+					<Table.Head class="w-[100px]">Voter ID</Table.Head>
 					<Table.Head class="pr-0 text-right">Last Login</Table.Head>
 				</Table.Row>
 			</Table.Header>
@@ -52,8 +54,8 @@
 					<Table.Row>
 						<Table.Cell class="pl-0 align-top">{voter.votes}</Table.Cell>
 						<Table.Cell class="align-top font-medium">
-							<a href={`/voter-directory/${voter.voterId}`} class="text-sm font-semibold">
-								{shortenString(voter.voterId, 20, true)}
+							<a href={`/voter-directory/${voter.userId}`} class="text-sm font-semibold">
+								{shortenString(voter.userId, 20, true)}
 							</a>
 						</Table.Cell>
 						<Table.Cell class="pr-0 text-right">

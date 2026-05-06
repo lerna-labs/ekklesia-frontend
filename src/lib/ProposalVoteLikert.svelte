@@ -55,6 +55,33 @@
 	// clicking through 50+ radios per option.
 	const useRadioStrip = $derived(ratingGrid.length <= 10);
 
+	// Anchor labels for the scale (`proposal.data.ratingLabels`) — typically
+	// only min and max are populated, but the schema permits any grade. We
+	// surface min/max as a legend above the matrix and enrich aria-labels.
+	const ratingLabels = $derived.by(() => {
+		const raw = proposal?.data?.ratingLabels;
+		if (!raw || typeof raw !== 'object') return {};
+		const map = {};
+		for (const [k, v] of Object.entries(raw)) {
+			const n = Number(k);
+			if (Number.isFinite(n) && typeof v === 'string' && v.trim()) {
+				map[n] = v.trim();
+			}
+		}
+		return map;
+	});
+	const labelForGrade = (g) => ratingLabels[g] ?? null;
+	// All labeled grades, sorted ascending — supports min/max only ballots
+	// (`{1: "Least", 5: "Most"}`) and multi-anchor ballots
+	// (`{-5: "I hate it", 0: "Neutral", 5: "I love it"}`) alike.
+	const labeledGrades = $derived(
+		Object.keys(ratingLabels)
+			.map(Number)
+			.filter((n) => Number.isFinite(n))
+			.sort((a, b) => a - b)
+	);
+	const hasAnchorLabels = $derived(labeledGrades.length > 0);
+
 	// Drafts are seeded from /mine by the page's synchronous seedBallotFromMine
 	// call so the form's first paint reads from the drafts store directly. No
 	// fallback to proposal.voterVote: that fallback would silently re-derive
@@ -145,15 +172,41 @@
 		</div>
 	</div>
 
+	<p class="mb-2 text-xs text-muted-foreground">
+		Each option is rated independently — multiple options can share the same rating.
+	</p>
+
 	<div class={isAbstaining ? 'pointer-events-none opacity-50' : disabled ? 'opacity-60' : ''}>
 		<table class="w-full border-collapse text-sm">
+			{#if hasAnchorLabels}
+				<thead>
+					<tr>
+						<th class="w-0"></th>
+						<th class="py-1 text-left align-bottom font-normal">
+							<div
+								class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground"
+							>
+								{#each labeledGrades as grade, i}
+									{#if i > 0}
+										<span aria-hidden="true" class="text-slate-300">→</span>
+									{/if}
+									<span>
+										<span class="font-mono tabular-nums">{grade}</span>
+										= {ratingLabels[grade]}
+									</span>
+								{/each}
+							</div>
+						</th>
+					</tr>
+				</thead>
+			{/if}
 			<tbody>
 				{#each options as option}
 					{@const current = valueFor(option.id)}
 					<tr class="border-t border-slate-100 align-top">
-						<td class="py-2 pr-3">
+						<td class="py-2 pr-3 align-top">
 							<div class="flex items-start gap-1.5">
-								<Label class="leading-5">{option.label}</Label>
+								<Label class="whitespace-nowrap leading-5">{option.label}</Label>
 								<div class="shrink-0 pt-0.5">
 									<OptionDetails {option} />
 								</div>
@@ -178,7 +231,12 @@
 											disabled={disabled || isAbstaining}
 											onclick={() => rateOption(option.id, grade)}
 											aria-pressed={selected}
-											aria-label="Rate {option.label} {grade}"
+											aria-label="Rate {option.label} {grade}{labelForGrade(grade)
+												? ` (${labelForGrade(grade)})`
+												: ''}"
+											title={labelForGrade(grade)
+												? `${grade} — ${labelForGrade(grade)}`
+												: undefined}
 										>
 											{grade}
 										</button>

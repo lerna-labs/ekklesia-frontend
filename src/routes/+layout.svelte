@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import NetworkCheck from './../lib/base/NetworkCheck.svelte';
 	import '../app.css';
 	import Header from '$lib/base/Header.svelte';
@@ -8,11 +9,14 @@
 	import PendingPackagesAlert from '$lib/PendingPackagesAlert.svelte';
 	import { Toaster } from '$lib/components/ui/sonner/index.js';
 	import PageHead from '$lib/base/PageHead.svelte';
+	import { applyTheme } from '$lib/base/theme.js';
 
 	let { children, data } = $props();
 	const NETWORK_ID = import.meta.env.VITE_NETWORK_ID;
 
 	let notice = $state(undefined);
+
+	onMount(() => applyTheme());
 </script>
 
 <Toaster />

@@ -19,37 +19,40 @@
 	<meta name="viewport"
 		  content="width=device-width, initial-scale=1" />
 
-	<!-- HTML Meta Tags -->
-	<title>Ekklesia x Intersect</title>
+	<!--
+		Static branding meta tags. The %BRAND_*% placeholders are
+		substituted by `scripts/brand-build-output.js` (production) and
+		by `src/hooks.server.js` (dev server). Social scrapers read
+		these — they don't run JS, so PageHead.svelte only updates them
+		in-browser.
+	-->
+	<title>%BRAND_TITLE%</title>
 	<meta name="description"
-		  content="Verifiable on-chain voting on Cardano.">
+		  content="%BRAND_DESCRIPTION%">
 
-	<!-- Facebook Meta Tags -->
-	<meta property="og:url"
-		  content="intersect.ekklesia.vote">
+	<!-- OpenGraph / Facebook -->
 	<meta property="og:type"
 		  content="website">
+	<meta property="og:site_name"
+		  content="%BRAND_NAME%">
 	<meta property="og:title"
-		  content="Ekklesia">
+		  content="%BRAND_TITLE%">
 	<meta property="og:description"
-		  content="Verifiable on-chain voting on Cardano.">
+		  content="%BRAND_DESCRIPTION%">
 	<meta property="og:image"
-		  content="https://intersect.ekklesia.vote/social.png">
+		  content="%BRAND_OG_IMAGE%">
+	%BRAND_URL_META%
 
-	<!-- Twitter Meta Tags -->
+	<!-- Twitter -->
 	<meta name="twitter:card"
 		  content="summary_large_image">
-	<meta property="twitter:domain"
-		  content="intersect.ekklesia.vote">
-	<meta property="twitter:url"
-		  content="intersect.ekklesia.vote">
 	<meta name="twitter:title"
-		  content="Ekklesia x Intersect">
+		  content="%BRAND_TITLE%">
 	<meta name="twitter:description"
-		  content="Verifiable on-chain voting on Cardano.">
+		  content="%BRAND_DESCRIPTION%">
 	<meta name="twitter:image"
-		  content="https://intersect.ekklesia.vote/social.png">
-
+		  content="%BRAND_OG_IMAGE%">
+	%BRAND_TWITTER_META%
 
 	%sveltekit.head%
 </head>
