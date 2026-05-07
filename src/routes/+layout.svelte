@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import NetworkCheck from './../lib/base/NetworkCheck.svelte';
 	import '../app.css';
+	import '$lib/css/markdown.css';
 	import Header from '$lib/base/Header.svelte';
 	import Breadcrumbs from '$lib/base/Breadcrumbs.svelte';
 	import VersionCheck from '$lib/base/VersionCheck.svelte';
