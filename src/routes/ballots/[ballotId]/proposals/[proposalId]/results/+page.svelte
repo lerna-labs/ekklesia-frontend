@@ -1,131 +1,243 @@
 <script>
-	import { tweened } from 'svelte/motion';
-	import MedianScale from './../../../../../../lib/charts/MedianScale.svelte';
+	import { onMount } from 'svelte';
 	import BallotBadge from '$lib/BallotBadge.svelte';
+	import CertificationBadge from '$lib/CertificationBadge.svelte';
+	import CertificationHistoryDisclosure from '$lib/CertificationHistoryDisclosure.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { lovelaceToAda, convertTimestamp } from '$lib/utils.js';
-	import DonutChart from '$lib/charts/DonutChart.svelte';
+	import ResultsStatus from '$lib/ResultsStatus.svelte';
+	import GroupResultCard from '$lib/results/GroupResultCard.svelte';
+	import AbstainedByRolePanel from '$lib/results/AbstainedByRolePanel.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import { fetchProposalResult, startResultsPoller } from '$lib/results.js';
+	import { ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-svelte';
 
 	let { data } = $props();
-	let { ballot, proposal } = data;
-	let proposalData = proposal.data;
-	let hasWeight = ballot.voteWeighted;
-	let totalVotes = $derived(proposal.voteCount);
+	const ballot = $derived(data.ballot);
+	const proposal = $derived(data.proposal);
+	const certification = $derived(data.certification);
+	const basePath = $derived(`/ballots/${ballot._id}/proposals`);
+	const hasWeight = $derived(ballot.voteWeighted);
 
-	const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
+	// Live-updating result. Seeded from the load fn, refreshed by the poller.
+	let result = $state(data.initialResult);
+	$effect(() => { result = data.initialResult; });
 
-	const activeVoterPerc = totalAllowedVoterCount
-		? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
-		: '0.00';
-
-	const activeVotingPowerPerc = ballot.totalVotingPower
-		? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
-		: '0.00';
-
-	// Voter group switching
-	const resultsByGroup = proposal.result?.resultsByGroup ?? {};
-	const groups = Object.keys(resultsByGroup);
-	const hasGroups = groups.length > 0;
-	let selectedGroup = $state('all');
-
-	const activeResults = $derived.by(() => {
-		if (selectedGroup === 'all' || !hasGroups) {
-			return proposal.result?.results ?? [];
-		}
-		return resultsByGroup[selectedGroup]?.results ?? [];
-	});
-
-	const activeTotalVotes = $derived.by(() => {
-		if (selectedGroup === 'all' || !hasGroups) return proposal.voteCount;
-		return resultsByGroup[selectedGroup]?.totalVotes ?? 0;
-	});
-
-	const activeTotalVotingPower = $derived.by(() => {
-		if (selectedGroup === 'all' || !hasGroups) return proposal.votingPower;
-		return activeResults.reduce((sum, r) => sum + (r.votingPower ?? 0), 0);
-	});
-
-	const resultsSorted = $derived(
-		[...activeResults].sort((a, b) => {
-			if (ballot.voteWeighted) return b.votingPower - a.votingPower;
-			return b.count - a.count;
-		})
-	);
-
-	// Named colors for well-known vote options
-	const RESULT_COLOR_MAP = {
-		yes:     '#1e293b', // dark navy (header colour)
-		no:      '#f97316', // brand orange
-		abstain: '#e5e7eb', // light grey (same as participation inactive)
+	// Canonical display names for the voter-group keys the backend emits.
+	// Anything not listed here falls back to a simple capitalization so a
+	// new group type still renders, just without the custom label.
+	const GROUP_LABELS = {
+		drep: 'DRep',
+		pool: 'SPO',
+		spo: 'SPO',
+		stake: 'Stakeholder',
+		stakeholder: 'Stakeholder',
+		addr: 'Payment Address',
+		default: 'Other'
 	};
-	// Fallback palette for any additional options
-	const RESULT_COLOR_FALLBACK = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
 
-	function resultColor(label, fallbackIndex) {
-		return RESULT_COLOR_MAP[label.toLowerCase()] ?? RESULT_COLOR_FALLBACK[fallbackIndex % RESULT_COLOR_FALLBACK.length];
+	function groupLabel(key) {
+		const k = String(key || '').toLowerCase();
+		return GROUP_LABELS[k] ?? key.charAt(0).toUpperCase() + key.slice(1);
 	}
 
-	const resultCountSegments = $derived(
-		resultsSorted.map((r, i) => ({
-			label: r.label,
-			value: activeTotalVotes ? (r.count / activeTotalVotes) * 100 : 0,
-			color: resultColor(r.label, i),
-			count: r.count,
-		}))
-	);
+	const voteType = $derived(String(proposal?.voteType ?? 'default').toLowerCase());
 
-	const resultPowerSegments = $derived(
-		resultsSorted.map((r, i) => ({
-			label: r.label,
-			value: activeTotalVotingPower ? (r.votingPower / activeTotalVotingPower) * 100 : 0,
-			color: resultColor(r.label, i),
-			absoluteLabel: lovelaceToAda(r.votingPower),
-		}))
-	);
+	// Sum the active voting count + power for a group based on vote type:
+	//   - discrete (default/preference/budget): sum `results[].votingPower`
+	//   - scale: numeric voters live in `scale.histogram[]`; fold in abstain row
+	//   - ranked: every voter appears once at rank-1 across rows; sum
+	//     `ranked.rows[i].power[0]`; fold in abstain row
+	//   - likert: every voter rates every option so the per-option count
+	//     and totalPower are the same across rows; read the first option's
+	//     stats, fold in abstain row
+	function activeTotals(group, type) {
+		const rows = Array.isArray(group?.results) ? group.results : [];
+		let voters = 0;
+		let power = 0;
 
-	// Tweened breakdown values for animation when voter group changes
-	const targetBreakdown = $derived(
-		resultsSorted.map((r) => ({
-			votingPower: Number(r.votingPower) || 0,
-			count: Number(r.count) || 0,
-			pctPower: activeTotalVotingPower ? ((r.votingPower ?? 0) / activeTotalVotingPower) * 100 : 0,
-			pctCount: activeTotalVotes ? ((r.count ?? 0) / activeTotalVotes) * 100 : 0
-		}))
-	);
-	const breakdownTweenOpts = {
-		duration: 400,
-		easing: (t) => t * (2 - t),
-		interpolate: (a, b) => (t) =>
-			Array.from(
-				{ length: Math.max(a.length, b.length) },
-				(_, i) => {
-					const pa = a[i] ?? { votingPower: 0, count: 0, pctPower: 0, pctCount: 0 };
-					const pb = b[i] ?? { votingPower: 0, count: 0, pctPower: 0, pctCount: 0 };
-					return {
-						votingPower: pa.votingPower + t * (pb.votingPower - pa.votingPower),
-						count: pa.count + t * (pb.count - pa.count),
-						pctPower: pa.pctPower + t * (pb.pctPower - pa.pctPower),
-						pctCount: pa.pctCount + t * (pb.pctCount - pa.pctCount)
-					};
+		if (type === 'scale' && group?.scale) {
+			for (const b of group.scale.histogram ?? []) {
+				voters += b.count || 0;
+				power += b.power || 0;
+			}
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
 				}
-			)
-	};
-	const tweenedBreakdown = tweened([], breakdownTweenOpts);
-	$effect(() => {
-		tweenedBreakdown.set(targetBreakdown, breakdownTweenOpts);
+			}
+		} else if (type === 'ranked' && group?.ranked) {
+			for (const r of group.ranked.rows ?? []) {
+				voters += r.counts?.[0] || 0;
+				power += r.power?.[0] || 0;
+			}
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
+		} else if (type === 'likert' && group?.likert) {
+			const first = group.likert.options?.[0];
+			voters += first?.stats?.count || 0;
+			power += first?.weightedStats?.totalPower || 0;
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
+		} else if (type === 'weighted' && group?.weighted) {
+			voters += Number(group.weighted.answeringBallots) || 0;
+			// Sum of powerTotalPoints across options / budget ≈ total voting
+			// power of answering voters (each voter's power contributes
+			// `voterPower * budget` to the sum).
+			const budget = Number(group.weighted.budget) || 0;
+			if (budget > 0) {
+				const sumPower = (group.weighted.results ?? []).reduce(
+					(s, o) => s + (Number(o.powerTotalPoints) || 0),
+					0
+				);
+				power += sumPower / budget;
+			}
+			for (const r of rows) {
+				if (r.id === 'abstain') {
+					voters += r.count || 0;
+					power += r.votingPower || 0;
+				}
+			}
+		} else {
+			for (const r of rows) {
+				voters += r.count || 0;
+				power += r.votingPower || 0;
+			}
+		}
+
+		return { voters, power };
+	}
+
+	// True when a finalized/certified Result row is missing its tally
+	// payload — the finalize handler recorded evidence/hashes but never
+	// populated resultsByGroup or abstainedByRole. Render a clear error
+	// rather than a silent blank section under the results banner.
+	const finalButEmpty = $derived.by(() => {
+		if (result?.source !== 'final' && result?.source !== 'certified') return false;
+		const byGroup = result?.resultsByGroup;
+		const hasGroups =
+			byGroup && typeof byGroup === 'object' && Object.keys(byGroup).length > 0;
+		const hasAbstain =
+			result?.abstainedByRole &&
+			typeof result.abstainedByRole === 'object' &&
+			Object.keys(result.abstainedByRole).length > 0;
+		return !hasGroups && !hasAbstain;
+	});
+
+	const groups = $derived.by(() => {
+		const raw = result?.resultsByGroup;
+		if (!raw || typeof raw !== 'object') return [];
+		const participation = result?.ballotParticipation ?? null;
+		return Object.entries(raw).map(([key, group]) => {
+			const rows = Array.isArray(group?.results) ? group.results : [];
+			const sorted = hasWeight ? [...rows].sort((a, b) => b.votingPower - a.votingPower) : rows;
+			const { voters: derivedVoters, power: activePower } = activeTotals(group, voteType);
+			// `totalVotes` from the backend is reliable for discrete vote
+			// types (includes abstainers). For ranked + scale it's not — the
+			// cron `$unwind`s rank arrays / numeric values and over-counts.
+			// Our derived count is correct for all types.
+			const activeVoters =
+				voteType === 'ranked' ||
+				voteType === 'scale' ||
+				voteType === 'likert' ||
+				voteType === 'weighted'
+					? derivedVoters
+					: group.totalVotes ?? derivedVoters;
+			const totalAllowedVoterCount =
+				group.totalAllowedVoterCount ?? participation?.voterCount?.[key] ?? null;
+			const totalVotingPower =
+				group.totalVotingPower ?? participation?.totalVotingPower?.[key] ?? null;
+			return {
+				key,
+				label: groupLabel(key),
+				activeVoters,
+				activePower,
+				totalAllowedVoterCount,
+				totalVotingPower,
+				rows: sorted,
+				scale: group.scale ?? null,
+				ranked: group.ranked ?? null,
+				likert: group.likert ?? null,
+				weighted: group.weighted ?? null
+			};
+		});
+	});
+
+	// Once the authority has certified, the tally won't change again unless a
+	// new cert version is published (rare, and a refresh picks it up). Stop
+	// polling in that case. A Hydra-final but uncertified tally CAN still be
+	// replaced by certification, so keep polling through that state.
+	onMount(() => {
+		if (certification?.certified) return;
+		if (ballot.status === 'closed' && result?.source === 'certified') return;
+		return startResultsPoller(async () => {
+			const next = await fetchProposalResult(fetch, proposal._id);
+			if (next) result = next;
+		});
 	});
 </script>
 
-<div class="flex gap-2 text-xl">
-	<h1 class="mb-1">{proposal.title}</h1>
+<h1 class="mb-1 text-xl">{proposal.title}</h1>
+<div class="mb-3 mt-1 flex flex-wrap items-center gap-2">
 	<BallotBadge status={ballot.status} />
+	<CertificationBadge {certification} ballotStatus={ballot.status} />
 </div>
 
 <section class="text-sm text-muted-foreground">
 	<ProposalDetails {proposal} {ballot} />
 </section>
+
+{#if data.prev || data.next}
+	<nav
+		class="mt-5 flex items-stretch gap-2 rounded-lg border border-slate-200 bg-slate-50/60 p-1.5"
+		aria-label="Proposal navigation"
+	>
+		{#if data.prev}
+			<a
+				href="{basePath}/{data.prev._id}/results"
+				class="group flex min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-white hover:shadow-sm"
+			>
+				<ChevronLeft class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-orange-600" />
+				<div class="min-w-0">
+					<div class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Previous</div>
+					<div class="truncate text-xs font-medium text-foreground">{data.prev.title}</div>
+				</div>
+			</a>
+		{:else}
+			<div class="flex-1"></div>
+		{/if}
+
+		<a
+			href="{basePath}"
+			class="flex shrink-0 items-center rounded-md px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-white hover:text-foreground hover:shadow-sm"
+		>
+			All
+		</a>
+
+		{#if data.next}
+			<a
+				href="{basePath}/{data.next._id}/results"
+				class="group flex min-w-0 flex-1 items-center justify-end gap-2 rounded-md px-3 py-2 text-right text-sm transition-colors hover:bg-white hover:shadow-sm"
+			>
+				<div class="min-w-0">
+					<div class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Next</div>
+					<div class="truncate text-xs font-medium text-foreground">{data.next.title}</div>
+				</div>
+				<ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-orange-600" />
+			</a>
+		{:else}
+			<div class="flex-1"></div>
+		{/if}
+	</nav>
+{/if}
 
 <section>
 	<Button
@@ -138,185 +250,50 @@
 	</Button>
 </section>
 
-<section id="participation" class="mb-8 mt-8">
-	<h2>Vote Statistics</h2>
-	<div class="grid gap-4 md:grid-cols-2">
-		<Card.Root class="order-2 flex h-full flex-col md:order-1">
-			<Card.Header class="pt-4">
-				<Card.Title class="mb-2  p-0 text-lg">Participation</Card.Title>
-			</Card.Header>
-			<Card.Content class="h-full pt-1 text-sm">
-				<div class="border-t pt-3">
-					<div class="mb-3">
-						<div class="text-nowrap font-semibold">Active Voters</div>
-						<div>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%)</div>
-					</div>
+<section id="results" class="mt-8">
+	<ResultsStatus {result} {certification} {ballot} />
 
-					{#if hasWeight}
-						<div class="mb-3">
-							<div class="text-nowrap font-semibold">Total Voting Power</div>
-							<div>{lovelaceToAda(ballot.totalVotingPower)}</div>
-						</div>
-
-						<div>
-							<div class="text-nowrap font-semibold">Active Voting Power</div>
-							<div>{lovelaceToAda(proposal.votingPower)} ({activeVotingPowerPerc}%)</div>
-						</div>
+	{#if !result}
+		<p class="text-sm text-muted-foreground">
+			No results available yet. They'll appear here once the first tally runs.
+		</p>
+	{:else}
+		{#if finalButEmpty}
+			<div
+				class="mb-6 flex items-start gap-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+			>
+				<div class="mt-0.5 shrink-0">
+					<TriangleAlert class="h-5 w-5" />
+				</div>
+				<div class="flex-1">
+					<div class="font-semibold uppercase tracking-wide">Tally data unavailable</div>
+					<p class="mt-1">
+						This ballot was finalized on-chain, but the per-group tally wasn't published. The
+						evidence hash and finalize transaction are recorded, so the vote itself is intact — the
+						results breakdown just didn't make it through. Please contact support if this persists.
+					</p>
+					{#if result.hydraFinalizeTxHash}
+						<p class="mt-1 font-mono text-xs opacity-75">
+							Finalize tx: {result.hydraFinalizeTxHash}
+						</p>
 					{/if}
 				</div>
-			</Card.Content>
-		</Card.Root>
+			</div>
+		{/if}
+		{#if result.abstainedByRole}
+			<div class="mb-6">
+				<AbstainedByRolePanel abstainedByRole={result.abstainedByRole} />
+			</div>
+		{/if}
+		{#if groups.length > 0}
+			<div class="mb-8 space-y-4">
+				<h3 class="text-lg">Results by voter group</h3>
+				{#each groups as group}
+					<GroupResultCard {group} {ballot} {proposal} {result} />
+				{/each}
+			</div>
+		{/if}
+	{/if}
 
-		<Card.Root class="order-1 flex h-full flex-col md:order-2">
-			<Card.Header class="pt-4">
-				<Card.Title class="mb-2 p-0 text-lg">Participation</Card.Title>
-			</Card.Header>
-			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
-				<div class="border-t pt-3">
-				<div class="mb-4 grid w-full grid-cols-2 gap-3">
-					<DonutChart
-						segments={[
-							{ label: 'Active', value: Number(activeVotingPowerPerc), color: '#f97316', absoluteLabel: lovelaceToAda(proposal.votingPower) },
-							{ label: 'Inactive', value: 100 - Number(activeVotingPowerPerc), color: '#e5e7eb', absoluteLabel: lovelaceToAda(ballot.totalVotingPower - proposal.votingPower) }
-						]}
-						title="By Voting Power"
-					/>
-					<DonutChart
-						segments={[
-							{ label: 'Active', value: Number(activeVoterPerc), color: '#f97316', count: totalVotes },
-							{ label: 'Inactive', value: 100 - Number(activeVoterPerc), color: '#e5e7eb', count: totalAllowedVoterCount - totalVotes }
-						]}
-						title="By Voter Count"
-						valueUnit="Voters"
-					/>
-				</div>
-				</div>
-			</Card.Content>
-		</Card.Root>
-	</div>
+	<CertificationHistoryDisclosure history={certification?.history ?? []} />
 </section>
-
-{#if proposal.result}
-	<section id="results" class="mt-8 mb-16">
-		<div class="mb-4">
-			<div class="flex items-center justify-between">
-				<h2 class="mb-0">{ballot.status == 'live' ? 'Preliminary Results' : 'Results'}</h2>
-				{#if hasGroups}
-					<div class="flex gap-1 rounded-md border p-0.5 text-xs">
-						<button
-							onclick={() => (selectedGroup = 'all')}
-							class="rounded px-2 py-1 capitalize transition-colors {selectedGroup === 'all' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}"
-						>All</button>
-						{#each groups as group}
-							<button
-								onclick={() => (selectedGroup = group)}
-								class="rounded px-2 py-1 capitalize transition-colors {selectedGroup === group ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'}"
-							>{group}</button>
-						{/each}
-					</div>
-				{/if}
-			</div>
-			{#if proposal.result?.updatedAt}
-				<p class="mt-1 text-xs text-muted-foreground">
-					Last Updated {convertTimestamp(proposal.result?.updatedAt)}
-				</p>
-			{/if}
-		</div>
-		<div class="mb-8 grid gap-4 md:grid-cols-2">
-
-		<Card.Root class="order-2 flex h-full flex-col md:order-1">
-			<Card.Header class="pt-4">
-				<Card.Title class="mb-2 p-0 text-lg">Vote Breakdown</Card.Title>
-			</Card.Header>
-			<Card.Content class="flex-1 pb-2 pt-1 text-sm">
-				<div class="border-t pt-3">
-					{#each resultsSorted as result, i}
-						{@const d = $tweenedBreakdown[i] ?? targetBreakdown[i]}
-						<div class="mb-4">
-							<div class="flex justify-between">
-								<span class="font-semibold">{result.label}:</span>
-								<span class="text-nowrap font-semibold">
-									{#if ballot.voteWeighted}
-										{lovelaceToAda(d?.votingPower ?? result.votingPower)} ({(d?.pctPower ?? 0).toFixed(1)}%)
-									{:else}
-										{Math.round(d?.count ?? result.count)} ({(d?.pctCount ?? 0).toFixed(1)}%)
-									{/if}
-								</span>
-							</div>
-
-							{#if hasWeight}
-								<div class="mt-1 flex justify-between text-muted-foreground">
-									<span class="whitespace-nowrap font-semibold">
-										{#if !ballot.voteWeighted}
-											Voting Power:
-										{:else}
-											Total Votes:
-										{/if}
-									</span>
-									<span class="text-right">
-										{#if !ballot.voteWeighted}
-											{lovelaceToAda(d?.votingPower ?? result.votingPower)} ({(d?.pctPower ?? 0).toFixed(1)}%)
-										{:else}
-											{Math.round(d?.count ?? result.count)} ({(d?.pctCount ?? 0).toFixed(1)}%)
-										{/if}
-									</span>
-								</div>
-							{/if}
-						</div>
-					{/each}
-
-				{#if proposal.voteType === 'scale'}
-				<div class="mb-4">
-					<div class="flex justify-between text-black font-semibold mb-2">
-						<span class="whitespace-nowrap">
-							Median by Voting Power:
-						</span>
-						<span class="text-right">
-							{proposal.result.medianWeighted}
-						</span>
-					</div>
-
-					<MedianScale lowerBound={proposal.voteOptions[0].id} upperBound={proposal.voteOptions[proposal.voteOptions.length - 1].id} median={proposal.result.medianWeighted} />
-				</div>
-
-				<div class="mb-4">
-					<div class="flex justify-between text-black font-semibold mb-2">
-						<span class="whitespace-nowrap">
-							Median by Voters:
-						</span>
-						<span class="text-right">
-							{proposal.result.median}
-						</span>
-					</div>			<MedianScale lowerBound={proposal.voteOptions[0].id} upperBound={proposal.voteOptions[proposal.voteOptions.length - 1].id} median={proposal.result.median} />
-			</div>
-				{/if}
-				</div>
-			</Card.Content>
-		</Card.Root>
-
-		<Card.Root class="order-1 flex h-full flex-col md:order-2">
-			<Card.Header class="pt-4">
-				<Card.Title class="mb-2 p-0 text-lg">Vote Results</Card.Title>
-			</Card.Header>
-			<Card.Content class="flex-1 pb-2 pt-1">
-				<div class="border-t pt-3">
-				<div class="mb-4 grid w-full grid-cols-2 gap-3">
-					{#if hasWeight}
-						<DonutChart
-							segments={resultPowerSegments}
-							title="By Voting Power"
-						/>
-					{/if}
-					<DonutChart
-						segments={resultCountSegments}
-						title="By Vote Count"
-						valueUnit="Votes"
-					/>
-				</div>
-				</div>
-			</Card.Content>
-		</Card.Root>
-
-		</div><!-- end results grid -->
-	</section>
-{/if}

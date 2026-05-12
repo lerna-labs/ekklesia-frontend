@@ -1,244 +1,145 @@
 <script>
-	import { tweened } from 'svelte/motion';
-	import * as Chart from '$lib/components/ui/chart/index.js';
-	import { PieChart, Text } from 'layerchart';
+	import { onMount, onDestroy } from 'svelte';
+	// Chart.js v3+ automatic registration
+	import Chart from 'chart.js/auto';
 
-	let { segments = [], title, valueUnit = '', maxHeight = 300, innerRadius = 0.75 } = $props();
+	// Props
+	export let data = { labels: [], datasets: [] };
+	// If the parent doesn't pass options, we use our defaults. Keep undefined
+	// as the sentinel for "not provided" so callers can pass an empty object
+	// intentionally if they want to override everything.
+	export let options = undefined;
+	export let plugins = [];
+	export let title;
 
-	function slug(label) {
-		if (typeof label !== 'string') return String(label);
-		return label.toLowerCase().replace(/\s+/g, '_');
+	// If the parent wants a full redraw instead of in-place update, toggle this
+	export let redraw = false;
+
+	let canvas;
+	let chart;
+
+	function deepClone(obj) {
+		try {
+			return JSON.parse(JSON.stringify(obj));
+		} catch (e) {
+			// Fallback: return the reference (Chart will attempt to work with it)
+			return obj;
+		}
 	}
 
-	const targetValues = $derived(segments.map((s) => Number(s.value) || 0));
-	const tweenOpts = {
-		duration: 400,
-		easing: (t) => t * (2 - t),
-		interpolate: (a, b) => (t) =>
-			Array.from(
-				{ length: Math.max(a.length, b.length) },
-				(_, i) => (a[i] ?? 0) + t * ((b[i] ?? 0) - (a[i] ?? 0))
-			)
-	};
-	const tweenedValues = tweened([], tweenOpts);
+	function applyDatasetDefaults(dataObj) {
+		if (!dataObj) return dataObj;
+		// Ensure datasets array exists
+		if (!Array.isArray(dataObj.datasets)) return dataObj;
 
-	$effect(() => {
-		const next = segments.map((s) => Number(s.value) || 0);
-		tweenedValues.set(next, tweenOpts);
-	});
+		// Apply defaults to each dataset: remove borders by default
+		dataObj.datasets = dataObj.datasets.map((ds) => {
+			// If dataset is a primitive or not an object, leave it
+			if (!ds || typeof ds !== 'object') return ds;
+			const copy = Object.assign({}, ds);
+			if (copy.borderWidth === undefined) copy.borderWidth = 0;
+			if (copy.borderColor === undefined) copy.borderColor = 'transparent';
+			return copy;
+		});
 
-	const chartData = $derived(
-		segments.map((s, i) => ({
-			name: slug(s.label),
-			label: s.label,
-			value: $tweenedValues[i] ?? Number(s.value) ?? 0,
-			color: s.color || '#e5e7eb'
-		}))
-	);
+		return dataObj;
+	}
 
-	const chartConfig = $derived.by(() => {
-		const config = { value: { label: title || 'Share' } };
-		for (const s of segments) {
-			const key = slug(s.label);
-			config[key] = { label: s.label, color: s.color || '#e5e7eb' };
-		}
-		return config;
-	});
-
-	// Use tweened values for center text so it animates with the chart
-	const highestIndex = $derived.by(() => {
-		const vals = $tweenedValues;
-		if (!vals.length && segments.length) {
-			let maxIdx = 0;
-			for (let i = 1; i < segments.length; i++) {
-				if (Number(segments[i].value) > Number(segments[maxIdx].value)) maxIdx = i;
+	// Default options used when the parent doesn't provide any `options` prop.
+	const defaultOptions = {
+		responsive: true,
+		plugins: {
+			legend: { display: false, position: 'bottom' },
+			title: { display: false },
+			tooltip: {
+				displayColors: true,
+				callbacks: {
+					label: function (context) {
+						const data = context.chart.data;
+						const value = context.parsed !== undefined ? context.parsed : context.raw;
+						// compute total of the first dataset (common for doughnut)
+						const total =
+							data.datasets[0] && Array.isArray(data.datasets[0].data)
+								? data.datasets[0].data.reduce((a, b) => a + (Number(b) || 0), 0)
+								: 0;
+						const pct = total ? ((Number(value) / total) * 100).toFixed(2) : '0.00';
+						return `${pct}%`;
+					}
+				},
+				labelColor: {
+					borderColor: 'transparent',
+					borderWidth: 0
+				},
+				boxPadding: 4
 			}
-			return maxIdx;
 		}
-		if (!vals.length) return -1;
-		let maxIdx = 0;
-		for (let i = 1; i < vals.length; i++) {
-			if (vals[i] > vals[maxIdx]) maxIdx = i;
+	};
+
+	function createChart() {
+		if (!canvas) return;
+		// Ensure any previous chart is removed
+		if (chart) {
+			try {
+				chart.destroy();
+			} catch (e) {}
+			chart = null;
 		}
-		return maxIdx;
+
+		const cfg = {
+			type: 'doughnut',
+			data: applyDatasetDefaults(deepClone(data) || { labels: [], datasets: [] }),
+			// Use provided options if set, otherwise defaultOptions
+			options: options === undefined ? defaultOptions : options,
+			plugins: plugins || []
+		};
+
+		chart = new Chart(canvas.getContext('2d'), cfg);
+		return chart;
+	}
+
+	// Create chart when component mounts
+	onMount(() => {
+		createChart();
 	});
-	const highestPercent = $derived.by(() => {
-		if (highestIndex < 0 || !segments[highestIndex]) return '0';
-		const val = $tweenedValues[highestIndex];
-		const num = val != null ? val : Number(segments[highestIndex].value) || 0;
-		return Math.min(100, num).toFixed(1);
+
+	// Clean up
+	onDestroy(() => {
+		if (chart) {
+			try {
+				chart.destroy();
+			} catch (e) {}
+			chart = null;
+		}
 	});
-	const highestLabel = $derived(highestIndex >= 0 && segments[highestIndex] ? segments[highestIndex].label : '');
+
+	// Reactively update chart when `data`, `options`, or `plugins` change
+	$: if (chart && data) {
+		// If caller requested full redraw, recreate chart
+		if (redraw) {
+			createChart();
+		} else {
+			// Update data and options in-place for smoother transitions
+			try {
+				chart.data = applyDatasetDefaults(deepClone(data));
+				// If options was not provided, ensure we use the component defaults
+				if (options === undefined) {
+					chart.options = defaultOptions;
+				} else {
+					chart.options = options;
+				}
+				if (plugins) chart.config.plugins = plugins;
+				chart.update();
+			} catch (e) {
+				// If update failed for structural reasons, recreate chart
+				createChart();
+			}
+		}
+	}
 </script>
 
-<section class="donut-chart-section flex flex-col rounded-xl bg-muted/40 px-3 pt-3 pb-0" data-donut-chart>
+<section class="">
 	{#if title}
 		<header class="align-left mb-4 text-xs font-semibold">{title}</header>
 	{/if}
-		<Chart.Container config={chartConfig} class="mx-auto w-full max-w-full min-h-0 flex-1 aspect-square" style="max-height:{maxHeight}px">
-		<PieChart
-			data={chartData}
-			key="name"
-			value="value"
-			c="color"
-			innerRadius={innerRadius}
-			outerRadius={1}
-			padding={0}
-			legend={false}
-			props={{ pie: { motion: 'tween' } }}
-		>
-			{#snippet aboveMarks()}
-				<Text
-					value={highestPercent + '%'}
-					textAnchor="middle"
-					verticalAnchor="middle"
-					class="fill-foreground text-3xl! font-bold"
-					dy={-8}
-				/>
-				<Text
-					value={highestLabel}
-					textAnchor="middle"
-					verticalAnchor="middle"
-					class="fill-muted-foreground! text-muted-foreground"
-					dy={8}
-				/>
-			{/snippet}
-			{#snippet tooltip()}
-				<Chart.Tooltip hideLabel class="donut-tooltip-content">
-					{#snippet formatter({ name, index, value, item, payload })}
-						{@const configKey = typeof name === 'string' ? slug(name) : (item?.name != null ? slug(String(item.name)) : '')}
-						{@const seg = segments.find((s) => slug(s.label) === configKey)}
-						{@const segmentConfig = chartConfig[configKey]}
-						{@const lineColor = segmentConfig?.color ?? seg?.color ?? item?.color ?? '#e5e7eb'}
-						{@const absolute = seg?.count ?? value}
-						{@const absoluteStr = seg?.absoluteLabel != null ? String(seg.absoluteLabel) : (typeof absolute === 'number' ? absolute.toLocaleString() : String(absolute))}
-						{@const showUnit = seg?.absoluteLabel == null && valueUnit}
-						{@const numValue = typeof value === 'number' ? value : Number(value) || 0}
-						{@const relativeStr = numValue.toLocaleString(undefined, { maximumFractionDigits: 1 }) + '%'}
-						{@const labelText = segmentConfig?.label ?? seg?.label ?? name ?? item?.name ?? '—'}
-						<div class="donut-tooltip-item">
-							<!-- Line 1: indicator + label + absolute value -->
-							<div class="donut-tooltip-row">
-								<span
-									class="donut-tooltip-indicator"
-									style="background:{lineColor};width:4px;min-width:4px;height:14px;flex-shrink:0;display:block;border-radius:2px;"
-									aria-hidden="true"
-								></span>
-								<span class="donut-tooltip-label">{labelText}</span>
-								<span class="donut-tooltip-absolute">{absoluteStr}{showUnit ? ' ' + valueUnit : ''}</span>
-							</div>
-							<!-- Line 2: relative % right-aligned -->
-							<div class="donut-tooltip-secondary">
-								<span class="donut-tooltip-relative">{relativeStr}</span>
-							</div>
-						</div>
-					{/snippet}
-				</Chart.Tooltip>
-			{/snippet}
-		</PieChart>
-	</Chart.Container>
-	{#if segments.length}
-		<div class="donut-legend" role="list" aria-label="Legend">
-			{#each segments as seg}
-				<div class="donut-legend-item" role="listitem">
-					<span
-						class="donut-legend-swatch"
-						style="background-color: {seg.color ?? '#e5e7eb'}"
-						aria-hidden="true"
-					></span>
-					<span class="text-muted-foreground">{seg.label}</span>
-				</div>
-			{/each}
-		</div>
-	{/if}
+	<canvas bind:this={canvas} style="display:block; max-width:100%;"></canvas>
 </section>
-
-<style>
-	.donut-legend {
-		margin-top: 0.5rem;
-		margin-bottom: 0.5rem;
-		display: flex !important;
-		flex-direction: column !important;
-		gap: 0.0625rem 0 !important;
-		text-align: left;
-		font-family: inherit;
-	}
-	.donut-legend-item {
-		display: flex !important;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.65rem;
-		font-family: inherit;
-	}
-	.donut-legend-swatch {
-		width: 0.5rem;
-		height: 0.5rem;
-		flex-shrink: 0;
-		border-radius: 2px;
-	}
-	/* Allow tooltip to escape chart bounds */
-	:global(.donut-chart-section .lc-tooltip-context-container),
-	:global(.donut-chart-section .lc-root-container) {
-		overflow: visible !important;
-	}
-	:global(.donut-tooltip-content) {
-		width: max-content !important;
-		min-width: 0 !important;
-		max-width: 280px !important;
-		font-family: inherit !important;
-	}
-	:global(.donut-tooltip-content *) {
-		font-family: inherit !important;
-	}
-	:global(.donut-tooltip-content .grid > div) {
-		display: block !important;
-	}
-	/* Tooltip item: column layout so Total row stacks below */
-	:global(.donut-tooltip-content .donut-tooltip-item) {
-		display: flex !important;
-		flex-direction: column !important;
-		gap: 0 !important;
-		min-width: 0 !important;
-		width: 100% !important;
-	}
-	/* Row: indicator + label + values */
-	:global(.donut-tooltip-content .donut-tooltip-row) {
-		display: flex !important;
-		align-items: center !important;
-		gap: 0.5rem !important;
-		min-height: 20px !important;
-	}
-	/* Colored indicator bar - force visibility; color from inline style */
-	:global(.donut-tooltip-content .donut-tooltip-indicator) {
-		width: 4px !important;
-		min-width: 4px !important;
-		height: 14px !important;
-		max-height: 14px !important;
-		flex-shrink: 0 !important;
-		display: block !important;
-		border-radius: 2px !important;
-	}
-	:global(.donut-tooltip-content .donut-tooltip-label) {
-		flex: 1 1 auto !important;
-		min-width: 0 !important;
-		color: var(--muted-foreground) !important;
-		font-size: 0.75rem !important;
-	}
-	:global(.donut-tooltip-content .donut-tooltip-absolute) {
-		font-weight: 500 !important;
-		font-variant-numeric: tabular-nums !important;
-		line-height: 1.25 !important;
-		margin-left: auto !important;
-	}
-	:global(.donut-tooltip-content .donut-tooltip-secondary) {
-		display: flex !important;
-		justify-content: flex-end !important;
-		padding-left: calc(4px + 0.5rem) !important; /* indent past indicator+gap */
-	}
-	:global(.donut-tooltip-content .donut-tooltip-relative) {
-		font-size: 0.65rem !important;
-		color: var(--muted-foreground) !important;
-		font-weight: 400 !important;
-		line-height: 1.25 !important;
-	}
-</style>

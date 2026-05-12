@@ -1,212 +1,195 @@
 <script>
-	import { onMount } from 'svelte';
-	import { Label } from '$lib/components/ui/label/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
 	import { toast } from 'svelte-sonner';
-	import { loggedIn, user } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
-	import { api } from '$stores/sessionManager.js';
-    import { Checkbox } from '$lib/components/ui/checkbox/index.js';
-    import { Slider } from "bits-ui";
+	import {
+		draftsTree,
+		submittedTree,
+		saveProposalSelection,
+		saveProposalAbstain,
+		clearProposalDraft,
+		draftHasSelection,
+		draftIsAbstaining,
+		revertProposalDraftToBaseline,
+		isProposalDraftDivergent,
+		getProposalBaseline
+	} from '$lib/draftVotes.js';
+	import { isAbstainAllowed } from '$lib/voteSchema.js';
+	import AbstainToggle from '$lib/AbstainToggle.svelte';
 
-	let { proposal, ballot } = $props();
-	let options = $derived(proposal.voteOptions);
-	let value = $derived(proposal.voterVote ? proposal.voterVote[0] : null);
-    let sliderValue =  $derived(proposal.voterVote ? proposal.voterVote[0] : null);
-	let loading = $state(true);
-	let error = $state(null);
-	let componentId = Math.random().toString(36).substring(2, 15);
-	// track option ids that were reverted so we can show a temporary visual indicator
-	let reverted = $state([]);
+	let { proposal, ballot, disabled = false } = $props();
 
-	// Function to handle vote change with optimistic update and rollback on failure
-	// prevValue is passed so we can revert if the API request fails
-	async function storeVote(newValue, prevValue) {
-		if (newValue === null || newValue === undefined) return;
-		loading = true;
-
-		try {
-			const voteStoreRequest = await api.fetch(fetch, '/vote/' + proposal._id, {
-				method: 'POST',
-				body: JSON.stringify({ vote: [newValue] }),
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-
-			if (voteStoreRequest.status === 200) {
-				const voteStored = await voteStoreRequest.json();
-				if (voteStored.changes) $user.pendingVotesCount = true;
-				toast.success('Vote updated successfully (not submitted!)');
-				// value already set optimistically; keep it
-			} else {
-				// try to read error information and show it directly
-				let errorData;
-				try {
-					errorData = await voteStoreRequest.json();
-				} catch (e) {
-					errorData = null;
-				}
-				const msg =
-					(errorData && errorData.message) || voteStoreRequest.statusText || 'Unknown error';
-
-				// Revert optimistic UI — set to undefined when there is no previous value so the radio clears
-				value = prevValue ?? undefined;
-				const prev = prevValue ? [String(prevValue)] : [];
-				const next = newValue ? [String(newValue)] : [];
-				const added = next.filter((id) => !prev.includes(id));
-				const removed = prev.filter((id) => !next.includes(id));
-				const changedIds = [...new Set([...added.map(String), ...removed.map(String)])];
-
-				if (changedIds.length) {
-					const current = reverted.map(String);
-					reverted = [...reverted, ...changedIds.filter((id) => !current.includes(id))];
-					setTimeout(() => {
-						reverted = reverted.filter((id) => !changedIds.includes(id));
-					}, 1200);
-				}
-
-				toast.error('Error storing vote: ' + msg);
-				console.error('Error storing vote (server):', msg, voteStoreRequest);
-				return;
-			}
-		} catch (err) {
-			// Revert optimistic UI — set to undefined when there is no previous value so the radio clears
-			value = prevValue ?? undefined;
-
-			const prev = prevValue ? [String(prevValue)] : [];
-			const next = newValue ? [String(newValue)] : [];
-			const added = next.filter((id) => !prev.includes(id));
-			const removed = prev.filter((id) => !next.includes(id));
-			const changedIds = [...new Set([...added.map(String), ...removed.map(String)])];
-
-			if (changedIds.length) {
-				const current = reverted.map(String);
-				reverted = [...reverted, ...changedIds.filter((id) => !current.includes(id))];
-				setTimeout(() => {
-					reverted = reverted.filter((id) => !changedIds.includes(String(id)));
-				}, 1200);
-			}
-
-			// extract message from possible shapes thrown by api.fetch / SvelteKit
-			let message = 'Unknown error';
-			try {
-				if (err && err.body) {
-					if (typeof err.body === 'string') {
-						message = err.body;
-					} else if (err.body.message) {
-						message = err.body.message;
-					} else {
-						message = JSON.stringify(err.body);
-					}
-				} else if (err && err.message) {
-					message = err.message;
-				}
-			} catch (e) {
-				if (err && err.message) message = err.message;
-			}
-
-			toast.error('Error storing vote: ' + message);
-			console.error('Error storing vote:', message, err);
-		} finally {
-			loading = false;
+	// Schema v2 introduces `valueRange: {min, max, step}` as the canonical
+	// shape for range-method questions. Pre-migration ballots still encode
+	// the range as numeric `voteOptions[].id` with a `voteIncrement` step;
+	// keep that fallback so a mixed-state backend doesn't break the UI.
+	const rangeDef = $derived.by(() => {
+		const vr = proposal?.valueRange;
+		if (vr && Number.isFinite(Number(vr.min)) && Number.isFinite(Number(vr.max))) {
+			return {
+				min: Number(vr.min),
+				max: Number(vr.max),
+				step: Number(vr.step) || 1
+			};
 		}
+		const numericIds = (proposal?.voteOptions ?? [])
+			.map((o) => Number(o.id))
+			.filter((n) => Number.isFinite(n));
+		return {
+			min: numericIds.length ? Math.min(...numericIds) : 0,
+			max: numericIds.length ? Math.max(...numericIds) : 100,
+			step: Number(proposal?.voteIncrement) || 1
+		};
+	});
+	const min = $derived(rangeDef.min);
+	const max = $derived(rangeDef.max);
+	const step = $derived(rangeDef.step);
+	const canAbstain = $derived(isAbstainAllowed(proposal));
+
+	const anchors = $derived(
+		(proposal?.voteOptions ?? [])
+			.filter((o) => Number.isFinite(Number(o.id)))
+			.sort((a, b) => Number(a.id) - Number(b.id))
+	);
+
+	// Drafts are seeded from /mine by the page's synchronous seedBallotFromMine
+	// call. No fallback to proposal.voterVote — see ProposalVoteLikert for
+	// why (the fallback defeats per-proposal Clear).
+	const draft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
+
+	const isAbstaining = $derived(draftIsAbstaining(draft));
+	const hasSelection = $derived(draftHasSelection(draft));
+	const storedValue = $derived(hasSelection ? Number(draft.selection[0]) : null);
+
+	// Slider / number input write at every tick while dragging or typing.
+	// Keep `pendingValue` as a local override so the UI follows the input
+	// instantly, then debounce the actual store write so we don't churn
+	// localStorage + stack toasts for every intermediate position. `null`
+	// means "no pending override — just show the stored value."
+	let pendingValue = $state(null);
+	let saveTimer = null;
+	const SAVE_DEBOUNCE_MS = 200;
+
+	const numericValue = $derived(pendingValue ?? storedValue);
+
+	function clamp(n) {
+		return Math.max(min, Math.min(max, Math.round((n - min) / step) * step + min));
 	}
 
-	onMount(async () => {
-		loading = false;
+	function setNumeric(n) {
+		if (disabled || isAbstaining) return;
+		const v = clamp(n);
+		pendingValue = v;
+		if (saveTimer) clearTimeout(saveTimer);
+		saveTimer = setTimeout(() => {
+			saveTimer = null;
+			const changed = saveProposalSelection(ballot._id, proposal._id, [v]);
+			if (changed) toast.success('Vote saved');
+			// Release the local override now that the store reflects the
+			// committed value — the derived chain takes over.
+			pendingValue = null;
+		}, SAVE_DEBOUNCE_MS);
+	}
+
+	function onAbstain() {
+		if (disabled) return;
+		const changed = saveProposalAbstain(ballot._id, proposal._id);
+		if (changed) toast.success('Recorded as abstaining');
+	}
+
+	function onResumeVoting() {
+		if (disabled) return;
+		clearProposalDraft(ballot._id, proposal._id);
+	}
+
+	function onClear() {
+		if (disabled) return;
+		const changed = clearProposalDraft(ballot._id, proposal._id);
+		if (changed) toast.success('Vote cleared');
+	}
+
+	const canRevert = $derived.by(() => {
+		void $submittedTree;
+		void $draftsTree;
+		if (getProposalBaseline(ballot._id, proposal._id) == null) return false;
+		return isProposalDraftDivergent(ballot._id, proposal._id);
 	});
+
+	function onRevert() {
+		if (disabled) return;
+		// Drop pending typed-but-not-yet-saved value so the slider snaps
+		// to the baseline instead of waiting out the debounce timer.
+		pendingValue = null;
+		if (saveTimer) {
+			clearTimeout(saveTimer);
+			saveTimer = null;
+		}
+		const changed = revertProposalDraftToBaseline(ballot._id, proposal._id);
+		if (changed) toast.success('Reverted to your submitted vote');
+	}
 </script>
 
-<Card.Root class="relative h-full">
-	<Card.Header>
-		<Card.Title>{value ? 'Your Vote' : 'Vote now!'}</Card.Title>
-		<Card.Description>
-			{#if ballot.voteWeighted}
-				<div class="mt-2 flex flex-col gap-1 text-xs">
-					<div>
-						<span class="font-semibold">Voting Power:</span>
-						{lovelaceToAda(ballot.votingPower)}
-					</div>
-				</div>
-			{/if}
-		</Card.Description>
-	</Card.Header>
-	<Card.Content>
-        <div class="mb-5 mt-5">
-            <Slider.Root
-    step={proposal.voteIncrement}
-    min={proposal.voteOptions[0].id}
-    max={proposal.voteOptions[proposal.voteOptions.length - 1].id}
-    bind:value={sliderValue}
-    type="single"
-    trackPadding={1}
-    class="relative flex touch-none select-none items-center w-full {value === 'abstain' ? 'opacity-50' : ''}"
-    onValueCommit={(e) => {
-        const prevValue = value;
-        const newValue = sliderValue;
-        value = newValue;
-        storeVote(newValue, prevValue);
-    }}
+<div class="relative">
+	<div class="mb-3 flex items-baseline justify-between gap-2">
+		<h3 class="text-base font-semibold">
+			{hasSelection ? 'Your Vote' : 'Vote Options'}
+		</h3>
+		{#if ballot.voteWeighted && !disabled && ballot.votingPower}
+			<span class="font-mono text-xs tabular-nums text-muted-foreground">
+				Voting Power: {lovelaceToAda(ballot.votingPower)}
+			</span>
+		{/if}
+	</div>
 
-  >
-    {#snippet children({ tickItems })}
-    <span
-    class="bg-slate-900 relative grow overflow-hidden rounded-full h-1.5 w-full"
->
-        <Slider.Range class="bg-primary absolute w-full" />
-      </span>
-      <Slider.Thumb
-        index={0}
-        class="border-primary/75 bg-background focus-visible:ring-ring block size-4 rounded-full border shadow transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50"
-      />
-      <Slider.ThumbLabel
-        index={0}
-        class="bg-slate-900 mb-3 text-nowrap rounded-md px-2 py-1 text-xs font-medium text-white"
-      >
-        {sliderValue}
-      </Slider.ThumbLabel>
-    
-      {#each tickItems as { index, value } (index)}
-        <Slider.Tick
-          {index}
-          class="bg-background z-1 h-2 w-[0px]"
-        />
-        {#if proposal.voteOptions.find((option) => option.id === value)}
-        <Slider.TickLabel
-          {index}
-          class="text-slate-500 data-selected:text-black mt-4 text-xs font-medium leading-none"
-          position="bottom"
-        >
-          {value}
-        </Slider.TickLabel>
-        {/if}
-      {/each}
-    {/snippet}
-  </Slider.Root>
+	<div class={isAbstaining ? 'pointer-events-none opacity-50' : disabled ? 'opacity-60' : ''}>
+		<div class="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+			<span class="shrink-0 font-mono tabular-nums">{min}</span>
+			<!-- Numeric input mirrors the slider — wide ranges (think
+			     -1M..+1M step 1) can't practically be set via the slider
+			     alone; a paired number input gives precise entry. -->
+			<input
+				type="number"
+				class="w-28 rounded-md border border-input bg-background px-2 py-1 text-center font-mono text-lg tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
+				{min}
+				{max}
+				{step}
+				disabled={disabled || isAbstaining}
+				value={numericValue ?? ''}
+				placeholder={isAbstaining ? '—' : 'Pick a value'}
+				oninput={(e) => {
+					const n = Number(e.currentTarget.value);
+					if (Number.isFinite(n)) setNumeric(n);
+				}}
+			/>
+			<span class="shrink-0 font-mono tabular-nums">{max}</span>
+		</div>
+		<input
+			type="range"
+			class="w-full accent-orange-500"
+			{min}
+			{max}
+			{step}
+			disabled={disabled || isAbstaining}
+			value={numericValue ?? Math.round((min + max) / 2)}
+			oninput={(e) => setNumeric(Number(e.currentTarget.value))}
+		/>
+		{#if anchors.length > 0}
+			<div class="mt-1 flex justify-between text-[10px] text-muted-foreground">
+				{#each anchors as a}
+					<span class="max-w-[30%] truncate" title={a.label}>{a.label}</span>
+				{/each}
+			</div>
+		{/if}
+	</div>
 
-
-    </div>
-
-        	<!-- new abstain logic -->
-			{#if proposal.abstainAllowed}
-            <div
-                class="mb-1 flex items-center space-x-2 mt-10 {value === 'abstain' ? '' : 'opacity-50'}"
-            >
-                <Checkbox id="abstain" value="abstain" disabled={loading} checked={value === "abstain"} onCheckedChange={(e) => {
-if(e) {
-    const newValue = "abstain";
-    const prevValue = value;
-    sliderValue = null;
-    value = newValue;
-    storeVote(newValue, prevValue);
-} 
-}}
-class={value === "abstain" ? "pointer-events-none" : ""}
-          />
-            <Label for="abstain" class="truncate leading-4">Abstain</Label>
-        </div>
-        {/if}
-	</Card.Content>
-</Card.Root>
-
+	<AbstainToggle
+		{isAbstaining}
+		{hasSelection}
+		{canAbstain}
+		{disabled}
+		{canRevert}
+		{onAbstain}
+		{onResumeVoting}
+		{onClear}
+		{onRevert}
+	/>
+</div>

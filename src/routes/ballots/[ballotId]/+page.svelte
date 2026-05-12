@@ -1,21 +1,8 @@
-<script>
-	import Badge from '$lib/BallotBadge.svelte';
-	import BallotDetails from '$lib/BallotDetails.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	let { data } = $props();
-	let { ballot } = data;
-</script>
-
-{#if ballot}
-	<div class="flex items-start gap-2">
-		<h1 class="text-3xl">{ballot.title}</h1>
-		<Badge status={ballot.status} />
-	</div>
-	<BallotDetails {ballot} />
-	<p class="mb-4">{ballot.description}</p>
-	<Button href={'/ballots/' + data.ballot._id + '/proposals'}>View Proposals</Button>
-{:else}
-	<p>Ballot not found.</p>
-{/if}
-
-<div class="mt-12"></div>
+<!--
+	Placeholder — this route's load fn issues a 307 redirect to
+	`/ballots/[id]/proposals`. The proposals list is now the canonical
+	ballot page (it carries title, details, provenance, status-panel /
+	eligibility shield, and the proposals themselves — the old detail
+	view was a waystation nothing linked to directly). Kept the file so
+	SvelteKit still resolves the route to `+page.js`.
+-->

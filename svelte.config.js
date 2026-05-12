@@ -9,6 +9,16 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const staticDir = path.join(__dirname, 'static');
 
+// Derive build mode from CLI args so each environment lands in its own
+// `build/<mode>` subdirectory. Vite defaults to mode=production when
+// `--mode` is omitted, so we mirror that here.
+const modeFlagIndex = process.argv.indexOf('--mode');
+const buildMode =
+	modeFlagIndex !== -1 && process.argv[modeFlagIndex + 1]
+		? process.argv[modeFlagIndex + 1]
+		: 'production';
+const buildOutDir = `build/${buildMode}`;
+
 // Get version from package.json
 let appVersion = '0.0.0';
 try {
@@ -55,9 +65,9 @@ const config = {
 	kit: {
 		// Using adapter-static since we're serving the app as static files from Express
 		adapter: adapter({
-			// Build output location
-			pages: 'build',
-			assets: 'build',
+			// Build output location, scoped per mode (build/production, build/preprod, …)
+			pages: buildOutDir,
+			assets: buildOutDir,
 			fallback: 'index.html'
 		}),
 

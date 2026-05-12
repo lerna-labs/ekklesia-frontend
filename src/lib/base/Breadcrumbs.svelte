@@ -86,7 +86,8 @@
 	}
 </script>
 
-<Breadcrumb.Root class="w-full bg-[#1E1E2F] text-white">
+{#if breadcrumbItems.length > 1}
+<Breadcrumb.Root class="w-full border-t border-slate-700 bg-[#1E1E2F] text-white">
 	<Breadcrumb.List
 		class="m-auto flex w-full max-w-3xl items-center overflow-hidden whitespace-nowrap p-4 pt-4 text-xs text-white *:gap-0"
 	>
@@ -112,37 +113,6 @@
 					</Breadcrumb.Link>
 				{/if}
 			</Breadcrumb.Item>
-
-			<!-- If we reach a certain number of items, show ellipsis instead of middle items -->
-			{#if breadcrumbItems.length > 5 && i === 1 && breadcrumbItems.length > 4}
-				<Breadcrumb.Separator class="mx-1 flex-shrink-0 text-slate-500">
-					<span class="text-xs">...</span>
-				</Breadcrumb.Separator>
-				{@const skip = true}
-				{#if skip}
-					{#each breadcrumbItems.slice(-2) as lastItem, j}
-						<Breadcrumb.Separator class="mx-1 flex-shrink-0 text-slate-500">
-							<ChevronRight class="h-3 w-3" />
-						</Breadcrumb.Separator>
-						<Breadcrumb.Item class="m-0 min-w-0 flex-shrink p-0 text-slate-500">
-							{#if lastItem.active}
-								<Breadcrumb.Page class="block truncate text-slate-500" title={lastItem.label}>
-									{lastItem.label}
-								</Breadcrumb.Page>
-							{:else}
-								<Breadcrumb.Link
-									href={lastItem.path}
-									class="block truncate text-slate-500 hover:text-slate-300"
-									title={lastItem.label}
-								>
-									{lastItem.label}
-								</Breadcrumb.Link>
-							{/if}
-						</Breadcrumb.Item>
-					{/each}
-				{/if}
-				{@const i = breadcrumbItems.length}
-			{/if}
 		{:else}
 			<Breadcrumb.Item class="m-0 p-0 text-slate-500">
 				<Breadcrumb.Link href="/" class="text-slate-500 hover:text-slate-300">Home</Breadcrumb.Link>
@@ -150,6 +120,7 @@
 		{/each}
 	</Breadcrumb.List>
 </Breadcrumb.Root>
+{/if}
 
 <style>
 	/* Ensure the breadcrumbs container stays on one line */

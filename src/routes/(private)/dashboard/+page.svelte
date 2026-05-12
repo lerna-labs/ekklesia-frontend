@@ -54,9 +54,7 @@
 	{/if}
 </section>
 
-{#if data.pendingVotes.length > 0}
-	<PendingVotes pendingVotes={data.pendingVotes} {pendingTransactions} />
-{/if}
+<PendingVotes ballots={data.ballots} />
 
 {#if pendingTransactions.length > 0}
 	<section class="mt-6" id="transaction-history">

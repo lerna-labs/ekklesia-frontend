@@ -3,6 +3,14 @@
 	import { page } from '$app/stores';
 	let { serverStatus } = $page.data;
 	let { children } = $props();
+
+	// The backend's health endpoint currently returns a lot of internals
+	// (node version, memory usage, uptime, database internals). None of
+	// that belongs in the public UI — the popover only surfaces fields a
+	// visitor actually needs to know: the network this deployment is
+	// talking to, the environment label, and the frontend build. Backend
+	// fingerprinting fields are intentionally ignored here; the backend
+	// should also stop returning them.
 </script>
 
 {#if serverStatus}
@@ -18,60 +26,38 @@
 				</div>
 			{/if}
 		</Popover.Trigger>
-		<Popover.Content class="w-[450px] text-xs">
-			<h1 class="mb-2 text-sm font-bold">Server Info</h1>
+		<Popover.Content class="w-[320px] text-xs">
+			<h1 class="mb-2 text-sm font-bold">Deployment</h1>
 
 			<div class="grid grid-cols-2 gap-x-4 gap-y-1">
-				<div><span class="font-semibold">Status:</span> {serverStatus.status}</div>
-				<div><span class="font-semibold">Message:</span> {serverStatus.message}</div>
-				<div><span class="font-semibold">Environment:</span> {serverStatus.environment}</div>
-				<div><span class="font-semibold">Network ID:</span> {serverStatus.networkId}</div>
-				<div class="whitespace-nowrap">
-					<span class="font-semibold">Timestamp:</span>
-					{new Date(serverStatus.timestamp).toLocaleString()}
-				</div>
+				{#if serverStatus.network}
+					<div><span class="font-semibold">Network:</span> {serverStatus.network}</div>
+				{/if}
+				{#if serverStatus.networkId != null}
+					<div><span class="font-semibold">Network ID:</span> {serverStatus.networkId}</div>
+				{/if}
+				{#if serverStatus.environment}
+					<div><span class="font-semibold">Environment:</span> {serverStatus.environment}</div>
+				{/if}
+				{#if serverStatus.status}
+					<div><span class="font-semibold">Status:</span> {serverStatus.status}</div>
+				{/if}
 			</div>
 
-			<h2 class="mb-1 mt-3 text-sm font-bold">Server</h2>
-			<div class="grid grid-cols-2 gap-x-4 gap-y-1">
-				<div class="whitespace-nowrap">
-					<span class="whitespace-nowrap font-semibold">Uptime:</span>
-					{serverStatus.server.uptime}
+			{#if serverStatus.frontend?.version || serverStatus.frontend?.buildTime}
+				<h2 class="mb-1 mt-3 text-sm font-bold">Frontend</h2>
+				<div class="grid grid-cols-2 gap-x-4 gap-y-1">
+					{#if serverStatus.frontend.version}
+						<div><span class="font-semibold">Version:</span> {serverStatus.frontend.version}</div>
+					{/if}
+					{#if serverStatus.frontend.buildTime}
+						<div class="whitespace-nowrap">
+							<span class="font-semibold">Build:</span>
+							{new Date(serverStatus.frontend.buildTime).toLocaleString()}
+						</div>
+					{/if}
 				</div>
-				<div><span class="font-semibold">Version:</span> {serverStatus.server.version}</div>
-				<div>
-					<span class="font-semibold">Node Version:</span>
-					{serverStatus.server.nodeVersion}
-				</div>
-			</div>
-
-			<h3 class="mb-1 mt-2 text-sm font-bold">Memory Usage</h3>
-			<div class="grid grid-cols-3 gap-x-2 gap-y-1">
-				<div><span class="font-semibold">RSS:</span> {serverStatus.server.memoryUsage.rss}</div>
-				<div>
-					<span class="font-semibold">Heap Total:</span>
-					{serverStatus.server.memoryUsage.heapTotal}
-				</div>
-				<div>
-					<span class="font-semibold">Heap Used:</span>
-					{serverStatus.server.memoryUsage.heapUsed}
-				</div>
-			</div>
-
-			<h2 class="mb-1 mt-3 text-sm font-bold">Frontend</h2>
-			<div class="grid grid-cols-2 gap-x-4 gap-y-1">
-				<div><span class="font-semibold">Version:</span> {serverStatus.frontend.version}</div>
-				<div class="whitespace-nowrap">
-					<span class="font-semibold">Build Time:</span>
-					{new Date(serverStatus.frontend.buildTime).toLocaleString()}
-				</div>
-			</div>
-
-			<h2 class="mb-1 mt-3 text-sm font-bold">Database</h2>
-			<div class="grid grid-cols-2 gap-x-4 gap-y-1">
-				<div><span class="font-semibold">Status:</span> {serverStatus.database.status}</div>
-				<div><span class="font-semibold">Message:</span> {serverStatus.database.message}</div>
-			</div>
+			{/if}
 		</Popover.Content>
 	</Popover.Root>
 {/if}

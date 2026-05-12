@@ -1,240 +1,233 @@
 <script>
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { onMount } from 'svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { toast } from 'svelte-sonner';
-	import { loggedIn, user } from '$stores/sessionManager';
 	import { lovelaceToAda } from './utils';
-	import { api } from '$stores/sessionManager.js';
-	let { proposal, ballot } = $props();
-	let options = $state(proposal.voteOptions);
-	let value = $derived(proposal.voterVote ?? []);
-	let loading = $state(true);
-	let error = $state(null);
-	let componentId = Math.random().toString(36).substring(2, 15);
-	// track option ids that were reverted so we can show a temporary visual indicator
-	let reverted = $state([]);
+	import {
+		draftsTree,
+		submittedTree,
+		saveProposalSelection,
+		saveProposalAbstain,
+		clearProposalDraft,
+		draftHasSelection,
+		draftIsAbstaining,
+		revertProposalDraftToBaseline,
+		isProposalDraftDivergent,
+		getProposalBaseline
+	} from '$lib/draftVotes.js';
+	import { isAbstainAllowed } from '$lib/voteSchema.js';
+	import AbstainToggle from '$lib/AbstainToggle.svelte';
+	import OptionDetails from '$lib/OptionDetails.svelte';
 
-	// determine if the proposal has an actual custom budget amount or if all options have the same cost (1)
-	let actualBudgetVote = $derived(
-		proposal.voteOptions.map((option) => option.cost || 0).reduce((a, b) => a + b, 0) !=
-			proposal.voteOptions.length
-			? true
-			: false
+	let { proposal, ballot, disabled = false } = $props();
+
+	// `preference` (no cost-cap) and `budget` (cost-cap) both render as a
+	// multi-choice checkbox list. Schema v2 also emits `multi-choice` as
+	// the voteType; cost-variance across options decides which treatment
+	// applies — uniform costs ⇒ preference, varying costs ⇒ budget.
+	const options = $derived(Array.isArray(proposal.voteOptions) ? proposal.voteOptions : []);
+	const canAbstain = $derived(isAbstainAllowed(proposal));
+	const voterBudget = $derived(Number(proposal?.voterBudget) || 0);
+	const capacityUnits = $derived(proposal?.data?.capacityUnits || null);
+
+	const voteType = $derived(String(proposal?.voteType ?? '').toLowerCase());
+	const optionCosts = $derived(options.map((o) => Number(o.cost) || 0));
+	const uniformCosts = $derived(
+		optionCosts.length === 0 || new Set(optionCosts).size === 1
+	);
+	const isBudget = $derived(
+		voteType === 'budget' || (voteType === 'multi-choice' && !uniformCosts)
 	);
 
-	// Function to handle vote change with optimistic update and rollback on failure
-	// prevValue is passed so we can revert if the API request fails
-	async function storeVote(newValue, prevValue) {
-		if (newValue === null || newValue === undefined) return;
-		loading = true;
+	// Drafts are seeded from /mine by the page's synchronous seedBallotFromMine
+	// call. No fallback to proposal.voterVote — see ProposalVoteLikert for
+	// why (the fallback defeats per-proposal Clear).
+	const draft = $derived($draftsTree?.[ballot._id]?.[proposal._id] ?? null);
 
-		try {
-			const voteStoreRequest = await api.fetch(fetch, '/vote/' + proposal._id, {
-				method: 'POST',
-				body: JSON.stringify({ vote: newValue }),
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
+	const isAbstaining = $derived(draftIsAbstaining(draft));
+	const hasSelection = $derived(draftHasSelection(draft));
+	const selected = $derived(hasSelection ? draft.selection : []);
 
-			if (voteStoreRequest.status === 200) {
-				const voteStored = await voteStoreRequest.json();
-				if (voteStored.changes) $user.pendingVotesCount = true;
-				toast.success('Vote updated successfully (not submitted!)');
-				// value already set optimistically; keep it
-			} else {
-				// try to read error information and show it directly so we reliably display server messages
-				let errorData;
-				try {
-					errorData = await voteStoreRequest.json();
-				} catch (e) {
-					errorData = null;
-				}
-				const msg =
-					(errorData && errorData.message) || voteStoreRequest.statusText || 'Unknown error';
+	// Cost-cap math (budget mode only). Falls back to 0 when an option has
+	// no declared cost so a malformed ballot doesn't blow up the sum.
+	function costOf(id) {
+		return Number(options.find((o) => o.id === id)?.cost) || 0;
+	}
+	const costUsed = $derived(
+		isBudget ? selected.reduce((sum, id) => sum + costOf(id), 0) : 0
+	);
+	const costRemaining = $derived(isBudget ? voterBudget - costUsed : 0);
+	const selectionsRemaining = $derived(
+		isBudget ? 0 : Math.max(0, voterBudget - selected.length)
+	);
 
-				// Revert optimistic UI immediately (same logic as in catch)
-				value = prevValue;
-				const prev = prevValue || [];
-				const next = newValue || [];
-				const added = next.filter((id) => !prev.includes(id));
-				const removed = prev.filter((id) => !next.includes(id));
-				const changedIds = [...new Set([...added, ...removed])];
-
-				if (changedIds.length) {
-					reverted = [...reverted, ...changedIds.filter((id) => !reverted.includes(id))];
-					setTimeout(() => {
-						reverted = reverted.filter((id) => !changedIds.includes(id));
-					}, 1200);
-				}
-
-				toast.error('Error storing vote: ' + msg);
-				console.error('Error storing vote (server):', msg, voteStoreRequest);
-				// bail out — we've handled the server error and reverted the UI
-				return;
-			}
-		} catch (err) {
-			// Revert optimistic UI
-			value = prevValue;
-
-			// determine which option ids changed so we can show a temporary visual indicator
-			const prev = prevValue || [];
-			const next = newValue || [];
-			const added = next.filter((id) => !prev.includes(id));
-			const removed = prev.filter((id) => !next.includes(id));
-			const changedIds = [...new Set([...added, ...removed])];
-
-			// mark changed ids as reverted (show visual cue) then clear after a short timeout
-			if (changedIds.length) {
-				reverted = [...reverted, ...changedIds.filter((id) => !reverted.includes(id))];
-				setTimeout(() => {
-					reverted = reverted.filter((id) => !changedIds.includes(id));
-				}, 1200);
-			}
-
-			// extract message from possible shapes thrown by api.fetch / SvelteKit
-			let message = 'Unknown error';
-			try {
-				if (err && err.body) {
-					// SvelteKit `error(status, message)` produces an error with a `body`.
-					// `body` may be an object like { message: '...' } or a string.
-					if (typeof err.body === 'string') {
-						message = err.body;
-					} else if (err.body.message) {
-						message = err.body.message;
-					} else {
-						message = JSON.stringify(err.body);
-					}
-				} else if (err && err.message) {
-					message = err.message;
-				}
-			} catch (e) {
-				// fall back
-				if (err && err.message) message = err.message;
-			}
-
-			toast.error('Error storing vote: ' + message);
-			console.error('Error storing vote:', message, err);
-		} finally {
-			loading = false;
-		}
+	// "engineer-months" → "engineer-month" when cost === 1; naive but
+	// works for the common plural-ending-s case.
+	function unitLabel(cost, units) {
+		if (!units) return null;
+		if (cost === 1 && units.endsWith('s')) return units.slice(0, -1);
+		return units;
 	}
 
-	onMount(async () => {
-		loading = false;
+	function persistSelection(next) {
+		// Preserve option-declaration order for stable rendering.
+		const ordered = options.map((o) => o.id).filter((id) => next.includes(id));
+		if (ordered.length === 0) {
+			clearProposalDraft(ballot._id, proposal._id);
+			return;
+		}
+		const changed = saveProposalSelection(ballot._id, proposal._id, ordered);
+		if (changed) toast.success('Vote saved');
+	}
+
+	function toggleOption(optionId, checked) {
+		if (disabled || isAbstaining) return;
+		const prev = selected;
+		if (checked) persistSelection([...prev, optionId]);
+		else persistSelection(prev.filter((v) => v !== optionId));
+	}
+
+	function isOptionLocked(optionId) {
+		if (disabled || isAbstaining) return true;
+		if (selected.includes(optionId)) return false;
+		if (isBudget) return costOf(optionId) > costRemaining;
+		return selected.length >= voterBudget;
+	}
+
+	function lockReason() {
+		return isBudget ? 'Over budget' : 'Max reached';
+	}
+
+	function onAbstain() {
+		if (disabled) return;
+		const changed = saveProposalAbstain(ballot._id, proposal._id);
+		if (changed) toast.success('Recorded as abstaining');
+	}
+
+	function onResumeVoting() {
+		if (disabled) return;
+		clearProposalDraft(ballot._id, proposal._id);
+	}
+
+	function onClear() {
+		if (disabled) return;
+		const changed = clearProposalDraft(ballot._id, proposal._id);
+		if (changed) toast.success('Vote cleared');
+	}
+
+	const canRevert = $derived.by(() => {
+		void $submittedTree;
+		void $draftsTree;
+		if (getProposalBaseline(ballot._id, proposal._id) == null) return false;
+		return isProposalDraftDivergent(ballot._id, proposal._id);
 	});
+
+	function onRevert() {
+		if (disabled) return;
+		const changed = revertProposalDraftToBaseline(ballot._id, proposal._id);
+		if (changed) toast.success('Reverted to your submitted vote');
+	}
 </script>
 
-<Card.Root class="relative h-full">
-	<Card.Header>
-		<Card.Title>{value ? 'Your Vote' : 'Vote now!'}</Card.Title>
-		<Card.Description>
-			<div class="mt-2 flex flex-col gap-1 text-xs">
-				{#if ballot.voteWeighted}
-					<div>
-						<span class="font-semibold">Voting Power:</span>
-						{lovelaceToAda(ballot.votingPower)}
-					</div>
-				{/if}
-				{#if actualBudgetVote}
-					<div>
-						<span class="font-semibold">Budget left:</span>
-						{proposal.voteOptions.length - (value?.length || 0)}
-					</div>
-				{:else}
-					<div>
-						<span class="font-semibold"> Options selected:</span>
-						{value?.length || 0} of {proposal.voterBudget}
-					</div>
-				{/if}
-			</div>
-		</Card.Description>
-	</Card.Header>
-	<Card.Content>
-		<div class="grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));">
-			{#each options as option, i}
-				<div
-					class="mb-1 flex items-center space-x-2"
-					class:revert-flash={reverted.includes(option.id)}
-					title={value.length >= proposal.voterBudget && !value?.includes(option.id)
-						? 'You have selected the maximum number of options.'
-						: option.label}
-				>
-					<Checkbox
-						id={'voteOption' + option.id}
-						value={option.id}
-						disabled={loading ||
-							(value.length >= proposal.voterBudget && !value?.includes(option.id))}
-						checked={value?.includes(option.id) || false}
-						onCheckedChange={(e) => {
-							const prevValue = value ? [...value] : [];
-							let newValue;
-							if (e) {
-								newValue = [...(prevValue || []), option.id];
-							} else {
-								newValue = (prevValue || []).filter((v) => v !== option.id);
-							}
-							// ensure the ids are stored in the order of options
-							newValue = proposal.voteOptions
-								.map((opt) => opt.id)
-								.filter((id) => newValue.includes(id));
-
-							// optimistic update: reflect change immediately
-							value = newValue;
-							storeVote(newValue, prevValue);
-						}}
-					/>
-					<Label for={'voteOption' + option.id} class="truncate leading-4">{option.label}</Label>
-				</div>
-			{/each}
-
-			<!-- new abstain logic -->
-			{#if proposal.abstainAllowed}
-				<div
-					class="mb-1 flex items-center space-x-2"
-					class:revert-flash={reverted.includes("abstain")}
-				>
-					<Checkbox id="abstain" value="abstain" disabled={loading} checked={value?.includes("abstain") || false} onCheckedChange={(e) => {
-						let newValue = ["abstain"]
-						const prevValue = value;
-						value = newValue;
-						storeVote(newValue, prevValue);
-					}}
-				/>
-				<Label for="abstain" class="truncate leading-4">Abstain</Label>
-			</div>
+<div class="relative">
+	<div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+		<h3 class="text-base font-semibold">
+			{hasSelection ? 'Your Vote' : 'Vote Options'}
+		</h3>
+		<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
+			{#if ballot.voteWeighted && !disabled && ballot.votingPower}
+				<span class="font-mono tabular-nums">
+					Voting Power: {lovelaceToAda(ballot.votingPower)}
+				</span>
+			{/if}
+			{#if isBudget}
+				<span class="font-mono tabular-nums">
+					Cost used: {costUsed} of {voterBudget}{capacityUnits ? ` ${capacityUnits}` : ''}
+					{#if costRemaining > 0 && !isAbstaining}
+						<span class="text-muted-foreground/80">· {costRemaining} remaining</span>
+					{:else if costRemaining === 0 && costUsed > 0 && !isAbstaining}
+						<span class="text-emerald-700">· fully allocated</span>
+					{/if}
+				</span>
+			{:else}
+				<span class="font-mono tabular-nums">
+					Options selected: {isAbstaining ? 0 : selected.length} of {voterBudget}
+					{#if selectionsRemaining > 0 && !isAbstaining}
+						<span class="text-muted-foreground/80">
+							· {selectionsRemaining} remaining
+						</span>
+					{/if}
+				</span>
 			{/if}
 		</div>
-	</Card.Content>
-</Card.Root>
+	</div>
 
-<style>
-	/* small shake to indicate the option was reverted */
-	.revert-flash {
-		animation: revertFlash 1.1s ease;
-	}
+	<div class={isAbstaining ? 'pointer-events-none opacity-50' : disabled ? 'opacity-60' : ''}>
+		<ul class="divide-y divide-slate-100 rounded-md border border-slate-200 bg-white">
+			{#each options as option}
+				{@const locked = isOptionLocked(option.id)}
+				{@const isChecked = selected.includes(option.id)}
+				{@const dim = locked && !isChecked}
+				<li class="flex items-start gap-3 px-3 py-2 {dim ? 'opacity-60' : ''}">
+					<Checkbox
+						id={'voteOption-' + proposal._id + '-' + option.id}
+						value={option.id}
+						disabled={locked}
+						checked={isChecked}
+						onCheckedChange={(c) => toggleOption(option.id, !!c)}
+						class="mt-0.5"
+					/>
+					<div class="min-w-0 flex-1">
+						<Label
+							for={'voteOption-' + proposal._id + '-' + option.id}
+							class="cursor-pointer leading-tight {locked ? 'cursor-not-allowed' : ''}"
+						>
+							{option.label}
+						</Label>
+						{#if option.description}
+							<p class="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+								{option.description}
+							</p>
+						{/if}
+					</div>
+					{#if isBudget && option.cost != null}
+						<span
+							class="shrink-0 whitespace-nowrap pt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground"
+						>
+							{option.cost}{#if capacityUnits}
+								<span class="ml-1 text-muted-foreground/80">
+									{unitLabel(option.cost, capacityUnits)}
+								</span>
+							{/if}
+						</span>
+					{/if}
+					{#if dim}
+						<span
+							class="mt-0.5 shrink-0 whitespace-nowrap rounded bg-amber-50 px-1.5 py-[1px] text-[9px] font-semibold uppercase tracking-wider text-amber-700"
+							title={isBudget
+								? 'This option costs more than your remaining budget.'
+								: 'You have selected the maximum number of options.'}
+						>
+							{lockReason()}
+						</span>
+					{/if}
+					<div class="mt-0.5 shrink-0">
+						<OptionDetails {option} {capacityUnits} />
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</div>
 
-	@keyframes revertFlash {
-		0% {
-			transform: translateX(0);
-		}
-		20% {
-			transform: translateX(-4px);
-		}
-		40% {
-			transform: translateX(4px);
-		}
-		60% {
-			transform: translateX(-2px);
-		}
-		80% {
-			transform: translateX(2px);
-		}
-		100% {
-			transform: translateX(0);
-			background-color: transparent;
-		}
-	}
-</style>
+	<AbstainToggle
+		{isAbstaining}
+		{hasSelection}
+		{canAbstain}
+		{disabled}
+		{canRevert}
+		{onAbstain}
+		{onResumeVoting}
+		{onClear}
+		{onRevert}
+	/>
+</div>

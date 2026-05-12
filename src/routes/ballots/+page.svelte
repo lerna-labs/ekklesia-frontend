@@ -7,6 +7,17 @@
 	import { XCircle } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	let { data } = $props();
+
+	// Surface ballots in most-actionable order: live first, then upcoming,
+	// then closed, then archived. Keeps the backend's ordering stable
+	// within each status bucket.
+	const STATUS_ORDER = { live: 0, upcoming: 1, closed: 2, archived: 3 };
+	const rankStatus = (s) => STATUS_ORDER[String(s || '').toLowerCase()] ?? 99;
+	const sortedBallots = $derived.by(() =>
+		[...(data.ballots ?? [])].sort(
+			(a, b) => rankStatus(a.status) - rankStatus(b.status)
+		)
+	);
 </script>
 
 <section class="">
@@ -14,31 +25,12 @@
 		<h1 class="mb-3">Ballots ({data.pagination.total})</h1>
 		<div class="flex justify-between gap-1">
 			<Search />
-			<!-- <Sort
-				showCost={ballot.voteFilters}
-				sortOptions={[
-					{ value: 'name', label: 'Name' },
-					{ value: 'commentCount', label: 'Comment Count' },
-					{ value: 'voteCount', label: 'Vote Count' }
-				]}
-			/>
-			<Filter filterOptions={data.filterOptions} voteFilters={ballot.voteFilters} /> -->
-			<!-- <ViewSwitch
-				onChange={(newView) => {
-					view = newView;
-				}}
-			/> -->
+			<BallotFilter {data} />
 		</div>
 	</header>
 
-	<!-- <div class="flex items-start gap-2">
-	<h1 class="text-3xl">Ballots</h1>
-	<Search placeholder="Search ballots..." />
-	<BallotFilter {data} />
-</div> -->
-
 	{#if data && data.ballots && data.ballots.length > 0}
-		{#each data.ballots as ballot}
+		{#each sortedBallots as ballot}
 			<BallotCard {ballot} />
 		{/each}
 		{#if data.pagination.totalPages > 1}

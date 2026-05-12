@@ -1,77 +1,74 @@
 <script>
-	import * as Card from '$lib/components/ui/card/index.js';
-	import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
-	import Badge from '$lib/BallotBadge.svelte';
-	import BallotDetails from './BallotDetails.svelte';
-	import VoteLabels from './VoteLabels.svelte';
+	import BrokerVoteFlow from '$lib/BrokerVoteFlow.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { user } from '$stores/sessionManager.js';
-	import { convertTimestamp } from '$lib/utils.js';
-	let { pendingVotes, pendingTransactions } = $props();
+	import * as Card from '$lib/components/ui/card/index.js';
+	import Badge from '$lib/BallotBadge.svelte';
+	import { draftsTree, submittedTree, divergentBallotChangeCount } from '$lib/draftVotes.js';
+
+	// Optional list of ballot documents for title resolution; dashboard
+	// passes this from its own `/dashboard/ballots` fetch so we can show
+	// "The XYZ ballot" instead of a bare ObjectId.
+	let { ballots = [] } = $props();
+
+	function ballotFor(id) {
+		return ballots.find((b) => String(b._id) === String(id));
+	}
+
+	// Only surface ballots whose drafts actually diverge from the submitted
+	// baseline — a returning voter who's been rehydrated with their prior
+	// selections shouldn't see every previously-voted ballot light up the
+	// dashboard's "unsubmitted drafts" panel.
+	const draftBallots = $derived.by(() => {
+		void $draftsTree;
+		void $submittedTree;
+		const ids = new Set([...Object.keys($draftsTree), ...Object.keys($submittedTree)]);
+		const out = [];
+		for (const ballotId of ids) {
+			const changedCount = divergentBallotChangeCount(ballotId);
+			if (changedCount === 0) continue;
+			out.push({
+				ballotId,
+				changedCount,
+				ballot: ballotFor(ballotId)
+			});
+		}
+		return out;
+	});
 </script>
 
 <section class="mt-6" id="pending-votes">
-	<h2>Your Pending Votes</h2>
-	{#if pendingVotes.length > 0}
-		<p class="mb-4">
-			You have pending votes that still need to be signed and submitted. Please review and submit
-			them by using your Cardano wallet or the CardanoSigner.
+	<h2>Your Unsubmitted Drafts</h2>
+	{#if draftBallots.length > 0}
+		<p class="mb-4 text-sm text-muted-foreground">
+			These drafts live in your browser until you sign and submit them on-chain. They don't
+			leave this device — switch browsers or clear your storage and they're gone. Submit a
+			ballot's votes through the broker below when you're ready to commit.
 		</p>
 
-		{#each pendingVotes as ballot}
+		{#each draftBallots as entry}
 			<Card.Root class="mb-4">
 				<Card.Header class="pt-5">
 					<Card.Title class="flex gap-2 text-xl">
-						{ballot.title}
-						<Badge status={ballot.status} />
+						{entry.ballot?.title ?? 'Ballot ' + entry.ballotId}
+						{#if entry.ballot?.status}
+							<Badge status={entry.ballot.status} />
+						{/if}
 					</Card.Title>
 					<Card.Description>
-						<BallotDetails {ballot} class="text-sm text-muted-foreground" />
+						{entry.changedCount} change{entry.changedCount === 1 ? '' : 's'} pending submission.
 					</Card.Description>
 				</Card.Header>
-				<Card.Content>
-					<div
-						class="mb-2 flex items-center justify-between text-sm font-semibold text-muted-foreground"
-					>
-						<div>Proposal</div>
-						<div>Your vote</div>
-					</div>
-					{#each ballot.proposals as proposal}
-						<div class="mb-2 flex items-start justify-between gap-3">
-							<div class="font-medium">
-								<a href={'/ballots/' + ballot._id + '/proposals/' + proposal._id} target="_blank">
-									{proposal.title}
-									<div class="mt-1 text-xs text-muted-foreground">
-										<span>Proposal ID:</span>
-										{proposal._id}
-									</div>
-								</a>
-							</div>
-							<VoteLabels vote={proposal.vote} />
-						</div>
-					{/each}
-				</Card.Content>
-				<Card.Footer class="block">
-					<div class=" flex gap-1">
-						{#if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
-							<Checkout {ballot} mode="checkout" buttonText="Re-Submit Votes" />
-						{:else}
-							<Checkout {ballot} mode="checkout" />
-						{/if}
-						<Button href={'/ballots/' + ballot._id + '/proposals'} size="sm">View Ballot</Button>
-					</div>
-					{#if pendingTransactions.map((tx) => tx.ballotId).includes(ballot._id)}
-						<div class="mt-4 block w-full text-sm text-red-500">
-							You have a pending multisig transaction for this ballot. If you re-submit the votes on
-							this ballot - changed or unchanged - the pending transaction will be released and all
-							required signers have to sign again.
-						</div>
+				<Card.Footer class="flex gap-1">
+					{#if entry.ballot?.source === 'hydra'}
+						<BrokerVoteFlow ballot={entry.ballot} buttonText="Submit Votes" />
 					{/if}
-					<div></div>
+					<Button href={'/ballots/' + entry.ballotId + '/proposals'} size="sm" variant="outline">
+						Review Ballot
+					</Button>
 				</Card.Footer>
 			</Card.Root>
 		{/each}
 	{:else}
-		<p class="text-muted-foreground">No pending votes.</p>
+		<p class="text-muted-foreground">No unsubmitted drafts.</p>
 	{/if}
 </section>

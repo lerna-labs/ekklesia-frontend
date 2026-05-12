@@ -1,12 +1,26 @@
 import { api } from '$stores/sessionManager.js';
+import { normalizeBallots } from '$lib/utils.js';
+
 export async function load({ fetch }) {
-	const ballotsUpcoming = await api.fetch(fetch, '/ballots?status=upcoming');
-	const ballotsLive = await api.fetch(fetch, '/ballots?status=live');
-	const ballotsClosed = await api.fetch(fetch, '/ballots?status=closed');
+	const [upcomingRes, liveRes, closedRes] = await Promise.all([
+		api.v1.fetch(fetch, '/ballots?status=upcoming'),
+		api.v1.fetch(fetch, '/ballots?status=live'),
+		api.v1.fetch(fetch, '/ballots?status=closed')
+	]);
+
+	const [upcomingBallots, liveBallots, closedBallots] = await Promise.all([
+		upcomingRes.json(),
+		liveRes.json(),
+		closedRes.json()
+	]);
+
+	normalizeBallots(upcomingBallots.data);
+	normalizeBallots(liveBallots.data);
+	normalizeBallots(closedBallots.data);
 
 	return {
-		liveBallots: await ballotsLive.json(),
-		closedBallots: await ballotsClosed.json(),
-		upcomingBallots: await ballotsUpcoming.json()
+		liveBallots,
+		closedBallots,
+		upcomingBallots
 	};
 }

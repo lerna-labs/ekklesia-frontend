@@ -1,11 +1,13 @@
 <script>
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
+	import { BRAND } from './branding.js';
 
-	// Default values
-	export let defaultTitle = 'Ekklesia';
-	export let defaultDescription = 'Secure blockchain voting system';
-	export let siteName = 'Ekklesia';
+	// Build-time defaults (overridable per-instance for one-off pages).
+	export let defaultTitle = BRAND.title;
+	export let defaultDescription = BRAND.description;
+	export let siteName = BRAND.name;
+	export let defaultOgImage = BRAND.ogImage;
 
 	// This will reactively update when $page changes
 	$: description = generatePageDescription($page.url.pathname, $page.data);
@@ -117,6 +119,12 @@
 
 		return defaultDescription;
 	}
+
+	// Resolve absolute OG image URL when BRAND.url is configured.
+	$: ogImage =
+		defaultOgImage.startsWith('/') && BRAND.url
+			? `${BRAND.url.replace(/\/$/, '')}${defaultOgImage}`
+			: defaultOgImage;
 </script>
 
 <svelte:head>
@@ -125,20 +133,26 @@
 
 	<!-- Open Graph / Facebook -->
 	<meta property="og:type" content="website" />
-	<meta property="og:url" content={browser ? window.location.href : ''} />
+	<meta property="og:url" content={browser ? window.location.href : BRAND.url} />
 	<meta
 		property="og:title"
 		content="{defaultTitle}{generatePageSuffix($page.url.pathname, $page.data)}"
 	/>
 	<meta property="og:description" content={description} />
 	<meta property="og:site_name" content={siteName} />
+	<meta property="og:image" content={ogImage} />
 
 	<!-- Twitter -->
 	<meta property="twitter:card" content="summary_large_image" />
-	<meta property="twitter:url" content={browser ? window.location.href : ''} />
+	<meta property="twitter:url" content={browser ? window.location.href : BRAND.url} />
 	<meta
 		property="twitter:title"
 		content="{defaultTitle}{generatePageSuffix($page.url.pathname, $page.data)}"
 	/>
 	<meta property="twitter:description" content={description} />
+	<meta property="twitter:image" content={ogImage} />
+	{#if BRAND.twitterHandle}
+		<meta name="twitter:site" content={BRAND.twitterHandle} />
+		<meta name="twitter:creator" content={BRAND.twitterHandle} />
+	{/if}
 </svelte:head>

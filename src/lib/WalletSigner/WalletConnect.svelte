@@ -1,13 +1,13 @@
 <script>
 	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { getWallets, enableWallet, checkNetwork, getSignerAddress } from './WalletConnect.js';
+	import { getWallets, enableWallet, getSignerAddress } from './WalletConnect.js';
 	import { onMount, createEventDispatcher } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	const dispatch = createEventDispatcher();
 	const NETWORK_ID = $derived.by(() => $page.data.serverStatus.networkId);
 
-	let { signType = 'stake', loading = $bindable(false) } = $props();
+	let { signType = 'stake', loading = $bindable(false), preselectedWallet = null } = $props();
 	let allWallets = $state([]);
 	let wallets = $derived.by(() => {
 		if (signType === 'pool') {
@@ -22,7 +22,6 @@
 	onMount(async () => {
 		const walletList = await getWallets();
 
-		// if no wallets available, show error
 		if (walletList.error) {
 			toast.error('No wallets available');
 			dispatch('nowallets', walletList.error);
@@ -30,6 +29,19 @@
 		}
 
 		allWallets = walletList;
+
+		// Auto-connect to the voter's remembered wallet when available,
+		// so a returning signer skips the picker and goes straight to
+		// the sign prompt. Falls through to manual selection if the
+		// remembered wallet isn't installed on this browser.
+		if (
+			preselectedWallet &&
+			allWallets.includes(preselectedWallet) &&
+			!connectedWallet &&
+			!loading
+		) {
+			connectWallet(preselectedWallet);
+		}
 	});
 
 	async function connectWallet(walletName) {
@@ -42,10 +54,11 @@
 			return;
 		}
 
+		// Pool voters enter their pool ID by hand — we don't probe the wallet.
 		let signerAddress;
-		if(signType !== 'pool') {
+		if (signType !== 'pool') {
 			signerAddress = await getSignerAddress(walletApi, signType);
-			if (signerAddress.error) {
+			if (signerAddress?.error) {
 				toast.error(signerAddress.error);
 				reset();
 				return;

@@ -1,123 +1,141 @@
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { error } from '@sveltejs/kit';
 import { writable, get } from 'svelte/store';
 import Cookies from 'js-cookie';
+
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Create a writable store to manage the session
+// Normalize to the root `/api` base so we can prefix `/v0` or `/v1` explicitly.
+// Accepts either `<origin>/api` or `<origin>/api/v0` in VITE_API_URL.
+const API_BASE = (API_URL || '').replace(/\/v0\/?$/, '').replace(/\/$/, '');
+const V0_BASE = `${API_BASE}/v0`;
+const V1_BASE = `${API_BASE}/v1`;
+
+// Create a writable store to manage the session. Named `user` for parity
+// with the shared-auth conventions used by the proposal module.
 export const loggedIn = writable(false);
 export const showLogin = writable(false);
-/** When set, Comments will open add/reply dialog after login. Shape: { replyTo: comment | null }. Cleared when dialog opens or login is closed. */
-export const pendingCommentAction = writable(null);
+// Set by click interceptors on `[data-walletsigner-action="navigateAfterLogin"]`
+// so that after a successful login we can `goto()` the originally requested URL.
+export const redirectAfterLogin = writable(null);
 export const user = writable(null);
 export const jwt = writable(null);
 
-// Set JWT in cookie and localStorage (if cookies are not available)
+// Runtime config served by the backend at GET /v1/config. Loaded once on app
+// boot by +layout.js. Lets ops switch explorer / IPFS gateway / network
+// without a frontend redeploy. Default values mirror the backend defaults so
+// a bare-local dev bring-up still renders something sensible.
+export const config = writable({
+	ipfsGatewayBase: 'https://ipfs.io/ipfs/',
+	explorerTxBase: 'https://cexplorer.io/tx/',
+	explorerAddressBase: 'https://cexplorer.io/address/',
+	network: 'preprod'
+});
+
+// Set JWT in cookie only. localStorage is intentionally NOT used: it would
+// be readable by any JS in the page origin, turning any future XSS into a
+// session-exfil vector. The cookie carries auth on every fetch via
+// `credentials: 'include'`.
 export function setJWT(token, expiresIn) {
 	if (typeof document !== 'undefined') {
-		// Determine environment and protocol
 		const isDev = import.meta.env.DEV;
 		const isSecureContext = window.location.protocol === 'https:';
 
-		// Configure cookie settings based on environment
 		const cookieOptions = {
 			expires: new Date(expiresIn),
 			path: '/',
-			// Only set secure flag if in production or using HTTPS
 			secure: !isDev || isSecureContext,
-			// Use 'lax' in development, 'strict' in production
 			sameSite: isDev ? 'lax' : 'strict'
 		};
 
 		Cookies.set('token', token, cookieOptions);
-
-		// Always store in localStorage as a fallback
-		localStorage.setItem('token', token);
 	}
 
-	// Update Svelte store
 	jwt.set(token);
 }
 
-// Get JWT from cookie or localStorage
+// Get JWT from cookie.
 export function getJWT() {
-	let token = null;
-
-	if (Cookies.get('token')) {
-		token = decodeURIComponent(Cookies.get('token'));
-	} else if (typeof window !== 'undefined' && localStorage.getItem('token')) {
-		token = localStorage.getItem('token');
-	}
-
-	// console.log('Token from cookie/localStorage:', token);
+	const cookieToken = Cookies.get('token');
+	const token = cookieToken ? decodeURIComponent(cookieToken) : null;
 	jwt.set(token);
 	return token;
 }
 
+async function apiFetch(base, fetch, url, options = {}) {
+	try {
+		const token = get(jwt) || getJWT();
+
+		const headers = new Headers(options.headers || {});
+		headers.set('Content-Type', 'application/json');
+
+		if (token) {
+			headers.set('Authorization', `Bearer ${token}`);
+		}
+
+		const response = await fetch(base + url, {
+			...options,
+			headers,
+			credentials: 'include'
+		});
+
+		if (response.status === 401) {
+			logout();
+			throw error(401, 'Token expired, please log in again');
+		}
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			if (response.status === 404) {
+				throw error(404, 'Not Found: The requested resource could not be found');
+			}
+			throw error(response.status, errorData.message || 'An error occurred');
+		}
+
+		return response;
+	} catch (err) {
+		if (err.status && err.body?.message) {
+			console.log('Re-throwing error:', err);
+			throw err;
+		}
+		throw error(500, err.message || 'An error occurred connecting to the API');
+	}
+}
+
+// Best-effort request that returns the Response on any HTTP status (no
+// throw) and null on network failure. Crucially, it does NOT log the
+// user out on 401 — callers use this for optional/enrichment reads
+// where "not authorized" should just mean "skip this side request."
+async function apiTryFetch(base, fetchFn, url, options = {}) {
+	try {
+		const token = get(jwt) || getJWT();
+		const headers = new Headers(options.headers || {});
+		headers.set('Content-Type', 'application/json');
+		if (token) headers.set('Authorization', `Bearer ${token}`);
+		return await fetchFn(base + url, {
+			...options,
+			headers,
+			credentials: 'include'
+		});
+	} catch {
+		return null;
+	}
+}
+
 // Handle connection failures gracefully
 export const api = {
-	fetch: async (fetch, url, options = {}) => {
-		try {
-			// Get the current JWT token
-			const token = get(jwt) || getJWT();
-
-			// Set up headers
-			const headers = new Headers(options.headers || {});
-			headers.set('Content-Type', 'application/json');
-
-			// Add Authorization header if we have a token
-			if (token) {
-				headers.set('Authorization', `Bearer ${token}`);
-			}
-
-			const response = await fetch(API_URL + url, {
-				...options,
-				headers,
-				credentials: 'include'
-			});
-
-			// Check if the token has expired
-			if (response.status === 401) {
-				// Token has expired, log out the user
-				logout();
-				throw error(401, 'Token expired, please log in again');
-			}
-
-			if (!response.ok) {
-				// Parse error body safely (API may return non-JSON, e.g. HTML or plain text)
-				const text = await response.text();
-				let message = 'An error occurred';
-				let errors = undefined;
-				try {
-					const data = text ? JSON.parse(text) : {};
-					message = data.message ?? message;
-					if (data.errors != null) errors = data.errors;
-				} catch {
-					if (text) message = text;
-				}
-				const body = errors != null ? { message, errors } : { message };
-				throw error(response.status, body);
-			}
-
-			return response;
-		} catch (err) {
-			// Properly handle the error to display the SvelteKit error page
-			if (err.status && err.body.message) {
-				// If it's already a properly formatted error, just re-throw it
-				console.log('Re-throwing error:', err);
-				throw err;
-			} else {
-				// Create a proper SvelteKit error
-				throw error(500, err.message || 'An error occurred connecting to the API');
-			}
-		}
+	fetch: (fetch, url, options = {}) => apiFetch(V0_BASE, fetch, url, options),
+	tryFetch: (fetch, url, options = {}) => apiTryFetch(V0_BASE, fetch, url, options),
+	v1: {
+		fetch: (fetch, url, options = {}) => apiFetch(V1_BASE, fetch, url, options),
+		tryFetch: (fetch, url, options = {}) => apiTryFetch(V1_BASE, fetch, url, options)
 	}
 };
 
 export const logout = async () => {
 	try {
 		// Call the backend logout endpoint to clear server-side session
-		const response = await fetch(`${API_URL}/session`, {
+		const response = await fetch(`${V0_BASE}/session`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
@@ -157,7 +175,19 @@ export const logout = async () => {
 		loggedIn.set(false);
 		user.set(null);
 
-		// Redirect to the home page after logout
-		goto('/');
+		// If the voter is on an auth-required page (currently just the
+		// dashboard), bounce them to the homepage — staying put would show
+		// a blank / 401 state. On any public page (ballots, proposals,
+		// results, voter directory, home), keep them where they are and
+		// just re-run loads so the page re-renders in its logged-out
+		// state. Less disruptive to someone who just wanted to drop auth.
+		const pathname =
+			typeof window !== 'undefined' ? window.location.pathname : '/';
+		const PRIVATE_PREFIXES = ['/dashboard'];
+		if (PRIVATE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
+			goto('/');
+		} else {
+			invalidateAll();
+		}
 	}
 };

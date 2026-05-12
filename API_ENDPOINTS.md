@@ -1,369 +1,260 @@
 # API Endpoints Documentation
 
-This document lists all API endpoints used throughout the codebase, organized by route and the components that use them.
+Canonical map of every backend endpoint this frontend consumes, split by
+version. Legacy ballot writes (`/api/v0/*` for `ballots`, `proposals`,
+`vote`, `votes`, `voters`, `transactions`, `dashboard`) now return 410 —
+the frontend must never call them, and UI code routes writes through
+the v1 broker surface instead.
 
-## Base API Configuration
+## API versioning and wrapper
 
-- **Base URL**: Configured via `VITE_API_URL` environment variable
-- **Authentication**: Bearer token via `Authorization` header (managed by `sessionManager.js`)
-- **API Helper**: All endpoints (except external ones) use `api.fetch()` from `src/stores/sessionManager.js`
-
----
-
-## Routes and Endpoints
-
-### `/` (Home Route)
-
-**File**: `src/routes/+page.js`
-
-| Endpoint                      | Method | Description         | Query Parameters     |
-| ----------------------------- | ------ | ------------------- | -------------------- |
-| `/ballots?status=upcoming`    | GET    | Get upcoming ballots | `status=upcoming`    |
-| `/ballots?status=live`        | GET    | Get live ballots     | `status=live`         |
-| `/ballots?status=closed`      | GET    | Get closed ballots   | `status=closed`       |
-
-**Components Using This Route**:
-
-- `src/routes/+page.svelte` - Displays home page with ballot listings
+- **Base URL**: `VITE_API_URL` is the `/api` root (never includes
+  `/v0` or `/v1`). For back-compat the wrapper strips a trailing
+  `/v0` from a legacy `.env` value.
+- **Wrapper**: `src/stores/sessionManager.js` exports `api.fetch(fetch,
+  path, opts)` (prepends `/v0`) and `api.v1.fetch(fetch, path, opts)`
+  (prepends `/v1`). Both attach the JWT Bearer header, send
+  `credentials: 'include'`, and auto-logout on 401.
 
 ---
 
-### `+layout.js` (Global Layout)
+## Reads — v1 (Hydra-aware)
 
-**File**: `src/routes/+layout.js`
+### `GET /api/v1/ballots`
 
-| Endpoint              | Method | Description                              | Authentication Required |
-| --------------------- | ------ | ---------------------------------------- | ----------------------- |
-| `/dashboard/`         | GET    | Validate JWT token and get session data  | Yes                      |
-| `VITE_SERVER_STATUS`  | GET    | Get server status (external endpoint)    | No                       |
+Unified listing. Returns both legacy and Hydra ballots with a
+`source: "legacy" | "hydra"` discriminator. Supports `?status=`,
+`?voterType=`, `?search=`, `?page=`, `?limit=`, and `?source=`.
 
-**Components Using This Route**:
+Used by `src/routes/+page.js`, `src/routes/ballots/+page.js`.
 
-- `src/routes/+layout.svelte` - Global layout wrapper
+### `GET /api/v1/ballots/:id`
 
----
+Unified detail; dispatcher resolves legacy + Hydra ballots through a
+single call. Response wraps the payload in `{ data }`. For Hydra
+ballots the `hydra` sub-object includes `endpoint`, `headId`,
+`headStatus`, `ballotCid`, `instancePolicyId`, `prepareTxHash`, and
+(best-effort) live `headInfo` / `ballot` enrichment from the
+instance.
 
-### `/ballots` (Ballots Listing)
+Used by `src/routes/ballots/[ballotId]/+page.js`,
+`src/routes/ballots/[ballotId]/proposals/+page.js`,
+`src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.js`,
+`src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.js`,
+`src/lib/TransactionDetails.svelte`.
 
-**File**: `src/routes/ballots/+page.js`
+### `GET /api/v1/results/ballot/:ballotId`
 
-| Endpoint              | Method | Description                              | Query Parameters                                    |
-| --------------------- | ------ | ---------------------------------------- | --------------------------------------------------- |
-| `/ballots`             | GET    | Get paginated ballots list               | `voterType`, `status`, `search`, `page`, `limit` |
-| `/ballots/voterTypes`  | GET    | Get available voter types for filtering  | None                                                |
+Every proposal's result in one call. Each row carries
+`source: "provisional" | "final"`, `ballotSource`, `finalizedAt`,
+`results[]`, `resultsByGroup?`, plus Hydra finalize fields
+(`hydraResultsHash`, `hydraFinalizeTxHash`, etc.) once the ballot is
+finalized.
 
-**Components Using This Route**:
+Used by `src/lib/results.js::fetchBallotResults` (via
+`BallotProvenance.svelte` for the close receipt).
 
-- `src/routes/ballots/+page.svelte` - Ballots listing page with filters
+### `GET /api/v1/results/proposal/:proposalId`
 
----
+Single proposal's result. Returns 404 when no tally has run yet.
 
-### `/ballots/[ballotId]` (Ballot Detail)
+Used by `src/lib/results.js::fetchProposalResult` (via the results
+page load function + focus-only 30s poller).
 
-**File**: `src/routes/ballots/[ballotId]/+page.js`
+### `GET /api/v1/config`
 
-| Endpoint              | Method | Description            | Parameters              |
-| --------------------- | ------ | ---------------------- | ----------------------- |
-| `/ballots/{ballotId}` | GET    | Get ballot details by ID | `ballotId` (route param) |
+Public runtime config: `{ ipfsGatewayBase, explorerTxBase,
+explorerAddressBase, network }`.
 
-**Components Using This Route**:
-
-- `src/routes/ballots/[ballotId]/+page.svelte` - Ballot detail page
-
-**Components Also Using This Endpoint**:
-
-- `src/lib/TransactionDetails.svelte` - Fetches ballot data for transaction details dialog
-- `src/routes/ballots/[ballotId]/proposals/+page.js` - Fetches ballot data for proposals page
-- `src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.js` - Fetches ballot data for proposal detail
-- `src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.js` - Fetches ballot data for results page
-
----
-
-### `/ballots/[ballotId]/proposals` (Proposals Listing)
-
-**File**: `src/routes/ballots/[ballotId]/proposals/+page.js`
-
-| Endpoint                           | Method | Description                              | Parameters                                                                                                                              |
-| ---------------------------------- | ------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `/ballots/{ballotId}`              | GET    | Get ballot details                       | `ballotId` (route param)                                                                                                                              |
-| `/ballots/{ballotId}/proposals`    | GET    | Get paginated proposals for ballot       | `ballotId` (route param), `search`, `tags`, `categories`, `sort`, `direction`, `hasVoted`, `thresholdReached`, `page`, `limit`                      |
-| `/ballots/{ballotId}/tags`         | GET    | Get available tags for filtering         | `ballotId` (route param)                                                                                                                              |
-| `/ballots/{ballotId}/categories`   | GET    | Get available categories for filtering   | `ballotId` (route param)                                                                                                                              |
-
-**Components Using This Route**:
-
-- `src/routes/ballots/[ballotId]/proposals/+page.svelte` - Proposals listing page with filters
+Used by `src/lib/config.js::loadFrontendConfig` → seeds the `config`
+store; consumed by `ConfirmationModal.svelte`, `BallotProvenance.svelte`,
+`AuditMyVote.svelte`, `BallotDetails.svelte`.
 
 ---
 
-### `/ballots/[ballotId]/proposals/[proposalId]` (Proposal Detail)
+## Reads — v0 (kept alive for the pieces v1 hasn't covered yet)
 
-**File**: `src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.js`
+### `GET /api/v0/ballots/voterTypes`
 
-| Endpoint                                        | Method | Description         | Parameters                          |
-| ----------------------------------------------- | ------ | ------------------- | ----------------------------------- |
-| `/ballots/{ballotId}`                           | GET    | Get ballot details  | `ballotId` (route param)            |
-| `/ballots/{ballotId}/proposals?search={proposalId}` | GET    | Get proposal by ID  | `ballotId`, `proposalId` (route params) |
+Aggregate of valid voter types for the ballots listing filter. No v1
+equivalent today.
 
-**Components Using This Route**:
+Used by `src/routes/ballots/+page.js`.
 
-- `src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.svelte` - Proposal detail page
+### `GET /api/v0/ballots/:id/proposals`
 
-**Components Also Using Proposal Endpoints**:
+Paginated proposals for a ballot. Supports `?search`, `?tags`,
+`?categories`, `?sort`, `?direction`, `?hasVoted`, `?thresholdReached`,
+`?page`, `?limit`.
 
-- `src/lib/ProposalVoteBudget.svelte` - Submits votes for budget proposals
-- `src/lib/ProposalVoteDefault.svelte` - Submits votes for default proposals
-- `src/lib/Comments.svelte` - Fetches and posts comments for proposals
-- `src/lib/TransactionVotes.svelte` - Fetches proposal short data for transaction votes
+Used by the proposals listing + proposal detail load functions.
 
----
+### `GET /api/v0/ballots/:id/tags` and `/categories`
 
-### `/ballots/[ballotId]/proposals/[proposalId]/results` (Proposal Results)
+Filter options. No v1 equivalent.
 
-**File**: `src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.js`
+Used by the proposals listing load function.
 
-| Endpoint                                        | Method | Description         | Parameters                          |
-| ----------------------------------------------- | ------ | ------------------- | ----------------------------------- |
-| `/ballots/{ballotId}`                           | GET    | Get ballot details  | `ballotId` (route param)            |
-| `/ballots/{ballotId}/proposals?search={proposalId}` | GET    | Get proposal by ID  | `ballotId`, `proposalId` (route params) |
+### `GET /api/v0/proposals/:id/comments`, `GET /api/v0/proposals/:id/short`
 
-**Components Using This Route**:
+Comments listing + short-proposal lookup.
 
-- `src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.svelte` - Proposal results page
+Used by `src/lib/Comments.svelte`, `src/lib/TransactionVotes.svelte`.
 
----
+### `GET /api/v0/voters`, `GET /api/v0/voters/:id`
 
-### `/dashboard` (Private Dashboard)
+Voter directory.
 
-**File**: `src/routes/(private)/dashboard/+page.js`
+Used by `src/routes/voter-directory/+page.js` and `[voterId]/+page.js`.
 
-| Endpoint            | Method | Description                  | Authentication Required |
-| ------------------- | ------ | ---------------------------- | ----------------------- |
-| `/dashboard/`       | GET    | Get authenticated voter data | Yes                      |
-| `/dashboard/ballots` | GET    | Get voter's ballots          | Yes                      |
-| `/transactions`     | GET    | Get voter's transactions     | Yes                      |
-| `/dashboard/pending` | GET    | Get voter's pending votes    | Yes                      |
+### `GET /api/v0/dashboard/`
 
-**Components Using This Route**:
+Voter-facing session summary: `userId`, `lastLogin`, `multiSig`,
+`pendingVotesCount`.
 
-- `src/routes/(private)/dashboard/+page.svelte` - Dashboard page
+### `GET /api/v0/session/`
 
-**Components Also Using `/dashboard/` Endpoint**:
+Session read enriched with `nativeScript`, `pendingPackages`, and
+`isAdmin`. Merged with `/dashboard/` by `src/lib/config.js::
+refreshUserSession` on every page load and after login so the `user`
+store carries both.
 
-- `src/routes/+layout.js` - Validates JWT token on app load
-- `src/lib/WalletSigner/WalletSigner.svelte` - Fetches voter data after login
+### `GET /api/v0/dashboard/ballots`, `GET /api/v0/dashboard/pending`, `GET /api/v0/transactions`
+
+Dashboard reads for the voter's own activity.
+
+Used by `src/routes/(private)/dashboard/+page.js`. `dashboard/pending`
+is also consumed by `src/lib/broker.js::getPendingBallotVotes` to shape
+the `votes[]` body for `/v1/votes/:ballotId/draft`.
 
 ---
 
-### `/voter-directory` (Voter Directory)
+## Writes — v1 broker (Hydra ballots)
 
-**File**: `src/routes/voter-directory/+page.js`
+The three-step pipeline for casting votes on Hydra-backed ballots.
+See `src/lib/broker.js` for the helpers and
+`src/lib/BrokerVoteFlow.svelte` / `src/lib/BallotCosignerPrompt.svelte`
+for the UI.
 
-| Endpoint  | Method | Description              | Query Parameters                      |
-| --------- | ------ | ------------------------- | ------------------------------------- |
-| `/voters`  | GET    | Get paginated voters list | `search`, `page`, `limit`, `sort`, `direction` |
+### `POST /api/v1/votes/:ballotId/draft`
 
-**Components Using This Route**:
+Body: `{ votes: [{ questionId, selection | ranking | weights }],
+responderRole?, nativeScript?, calidusDeclaration? }`. For multisig
+voters the backend auto-pulls `nativeScript` from the cached User doc
+when the body omits it; the frontend sends it anyway as
+belt-and-suspenders. For pool voters with a CIP-151 Calidus hot key,
+the frontend sends `calidusDeclaration: { calidusId }`.
 
-- `src/routes/voter-directory/+page.svelte` - Voter directory listing page
+Returns `{ package: { id, status, nonce }, merkleRoot,
+signingPayloadHex, multisig }`.
 
----
+### `POST /api/v1/votes/:ballotId/signature`
 
-### `/voter-directory/[voterId]` (Voter Detail)
+Body: `{ packageId, witness: { coseSign1Hex, coseKeyHex } }`. The
+backend's `normalizeWitness` helper derives the keyHash / raw pub key /
+raw ed25519 signature server-side, so the frontend never needs WASM.
 
-**File**: `src/routes/voter-directory/[voterId]/+page.js`
+For key-based voters this triggers Hydra submission inline and returns
+`{ submitted: true, package: { hydraTxId, ipfsCid, confirmedAt, ... } }`.
+For multisig, `submitted: false` + an updated `multisig` summary until
+the threshold is met.
 
-| Endpoint            | Method | Description            | Parameters              |
-| ------------------- | ------ | ---------------------- | ----------------------- |
-| `/voters/{voterId}`  | GET    | Get voter details by ID | `voterId` (route param) |
+### `POST /api/v1/votes/:ballotId/submit`
 
-**Components Using This Route**:
+Idempotent manual retry for packages stuck in `awaiting-submission`
+after a transient Hydra failure. Body: `{ packageId }`.
 
-- `src/routes/voter-directory/[voterId]/+page.svelte` - Voter detail page
+### `GET /api/v1/votes/:ballotId/package/:packageId`
 
----
+Current package view, enriched with `merkleRoot`, `signingPayloadHex`,
+`signedPayloadJson`, and `multisig` summary.
 
-## Component-Specific Endpoints
+### `GET /api/v1/votes/:ballotId/packages`
 
-### Voting Components
+Lists the authenticated user's packages on a ballot. Default filter
+returns active states only (`draft`, `awaiting-signatures`,
+`awaiting-submission`). `?includeTerminal=true` broadens;
+`?status=<state>` pins; `?limit=N` caps.
 
-#### `src/lib/ProposalVoteBudget.svelte`
+Used by `src/lib/broker.js::listPackages`, consumed by
+`BallotCosignerPrompt.svelte` (active packages for cosigner entry) and
+`AuditMyVote.svelte` (confirmed packages for provenance rendering).
 
-| Endpoint              | Method | Description                    | Body                        |
-| --------------------- | ------ | ------------------------------ | --------------------------- |
-| `/vote/{proposalId}`  | POST   | Store vote for budget proposal | `{ vote: Array<optionId> }` |
+### Broker error envelope
 
-#### `src/lib/ProposalVoteDefault.svelte`
-
-| Endpoint              | Method | Description                      | Body                      |
-| --------------------- | ------ | -------------------------------- | ------------------------- |
-| `/vote/{proposalId}`  | POST   | Store vote for default proposal  | `{ vote: [optionId] }`    |
-
----
-
-### Comments Component
-
-#### `src/lib/Comments.svelte`
-
-| Endpoint                        | Method | Description              | Parameters                                |
-| ------------------------------- | ------ | ------------------------ | ----------------------------------------- |
-| `/proposals/{proposalId}/comments` | GET    | Get comments for a proposal | `proposalId` (prop)                       |
-| `/comment`                      | POST   | Post a new comment       | Body: `{ comment: string, proposalId: string }` |
-
----
-
-### Transaction Components
-
-#### `src/lib/TransactionDetails.svelte`
-
-| Endpoint              | Method | Description                      | Parameters                        |
-| --------------------- | ------ | -------------------------------- | --------------------------------- |
-| `/ballots/{ballotId}` | GET    | Get ballot data for transaction  | `ballotId` (from transaction data) |
-
-#### `src/lib/TransactionVotes.svelte`
-
-| Endpoint                      | Method | Description            | Parameters                      |
-| ----------------------------- | ------ | ---------------------- | ------------------------------- |
-| `/proposals/{proposalId}/short` | GET    | Get short proposal data | `proposalId` (from vote data)   |
+All `/api/v1/votes/*` endpoints return `{ status: "error", code,
+message }` on failure, where `code` is one of `BAD_INPUT`,
+`ELIGIBILITY_DENIED`, `PACKAGE_NOT_FOUND`, `FORBIDDEN`,
+`PACKAGE_TERMINAL`, `SIGNATURE_INVALID`, `NONCE_STALE`,
+`HYDRA_UPSTREAM`, `INTERNAL`.
 
 ---
 
-### Wallet Signer Components
+## Writes — v0 (auth + comments, not frozen)
 
-#### `src/lib/WalletSigner/WalletSigner.js`
+### `POST /api/v0/session`, `PUT /api/v0/session`, `DELETE /api/v0/session`
 
-This file contains utility functions used by wallet signer components:
+Login nonce / signature-verify / logout. Unchanged. The `POST` +
+`PUT` pair also accepts a `scriptAddress` body for multisig login.
 
-**`getPayload(requestUrl, signerAddress, signType, scriptAddress)`**
+Used by `src/lib/WalletSigner/WalletSigner.js` (dynamic requestUrl),
+`src/stores/sessionManager.js::logout`.
 
-- **Endpoint**: Dynamic (passed as `requestUrl`)
-- **Method**: POST
-- **Body**: `{ signerAddress, signType, scriptAddress? }`
-- **Used by**:
-  - `src/lib/WalletSigner/SignerCS.svelte` - CardanoSigner flow
-  - `src/lib/WalletSigner/SignerWallet.svelte` - Wallet connection flow
+### `POST /api/v0/comment`
 
-**`submitSignature(requestUrl, signerAddress, signType, signature, data, scriptAddress)`**
+Post a comment on a proposal.
 
-- **Endpoint**: Dynamic (passed as `requestUrl`)
-- **Method**: PUT
-- **Body**: `{ signerAddress, signature, signType, data, scriptAddress? }`
-- **Used by**:
-  - `src/lib/WalletSigner/SignerCS.svelte` - CardanoSigner flow
-  - `src/lib/WalletSigner/SignerWallet.svelte` - Wallet connection flow
-
-#### Wallet Signer Dynamic Endpoints
-
-The wallet signer components use dynamic endpoints based on mode and ballot:
-
-**Login Mode**:
-
-- `/session` - POST (get payload) / PUT (submit signature)
-
-**Vote Submission Mode**:
-
-- `/dashboard/{ballotId}/checkout` - POST (get payload) / PUT (submit signature)
-- `/dashboard/{ballotId}/checkout/multisig` - POST (get payload) / PUT (submit signature) [if multisig enabled]
-- `/dashboard/{ballotId}/checkout/{transactionId}` - POST (get payload) / PUT (submit signature) [if transaction ID provided]
-- `/dashboard/{ballotId}/checkout/multisig/{transactionId}` - POST (get payload) / PUT (submit signature) [if multisig + transaction ID]
-
-**Components Using These Endpoints**:
-
-- `src/lib/WalletSigner/WalletSigner.svelte` - Main wallet signer component
-- `src/lib/WalletSigner/SignerCS.svelte` - CardanoSigner implementation
-- `src/lib/WalletSigner/SignerWallet.svelte` - Wallet connection implementation
+Used by `src/lib/Comments.svelte`.
 
 ---
 
-## Session Management Endpoints
+## Writes that now return 410 (must not be called)
 
-### `src/stores/sessionManager.js`
+The backend's `v0Freeze` middleware 410s all write methods under these
+prefixes on v0: `/ballots`, `/proposals`, `/vote`, `/votes`, `/voters`,
+`/transactions`, `/dashboard`. The frontend used to exercise:
 
-| Endpoint   | Method | Description                      | Authentication Required |
-| ---------- | ------ | -------------------------------- | ----------------------- |
-| `/session` | DELETE | Logout and clear server-side session | Yes                      |
+- `POST /api/v0/vote/:proposalId` — per-proposal pending-vote
+  storage. Gated out in `ProposalVote.svelte` for `source === 'legacy'`
+  ballots (which are the only ballots the v0 writes covered, and they
+  are now read-only archives).
+- `POST/PUT /api/v0/dashboard/:ballotId/checkout[/multisig][/:tx]` —
+  the old vote-submission flow. Replaced by the three-step broker for
+  Hydra ballots. Removed from `PendingVotes.svelte`; the old
+  `WalletSigner.svelte` component is retained for login only.
 
-**Note**: The `api.fetch()` function in this file is a wrapper that:
-
-- Automatically prepends `VITE_API_URL` to all endpoints
-- Adds `Authorization: Bearer {token}` header when token is available
-- Handles 401 errors by logging out the user
-- Throws SvelteKit errors for non-2xx responses
-
----
-
-## External/Static Endpoints
-
-### `src/stores/versionStore.js`
-
-| Endpoint        | Method | Description                      | Notes                                    |
-| --------------- | ------ | -------------------------------- | ---------------------------------------- |
-| `/version.json` | GET    | Get application version info     | Static file, cache-busted with timestamp |
+If you need to test the 410 behavior directly, any of those paths will
+return it.
 
 ---
 
-## Summary by Endpoint
+## Status / version / external
 
-### Ballots
-
-- `GET /ballots` - List ballots (with filters)
-- `GET /ballots?status={status}` - List ballots by status
-- `GET /ballots/voterTypes` - Get voter types
-- `GET /ballots/{ballotId}` - Get ballot details
-- `GET /ballots/{ballotId}/proposals` - List proposals for ballot
-- `GET /ballots/{ballotId}/tags` - Get tags for ballot
-- `GET /ballots/{ballotId}/categories` - Get categories for ballot
-
-### Proposals
-
-- `GET /ballots/{ballotId}/proposals?search={proposalId}` - Get proposal by ID
-- `GET /proposals/{proposalId}/comments` - Get comments for proposal
-- `GET /proposals/{proposalId}/short` - Get short proposal data
-- `POST /vote/{proposalId}` - Store vote for proposal
-- `POST /comment` - Post a comment
-
-### Voters
-
-- `GET /voters` - List voters (with filters)
-- `GET /voters/{voterId}` - Get voter details
-
-### Dashboard (Authenticated)
-
-- `GET /dashboard/` - Get voter data / validate session
-- `GET /dashboard/ballots` - Get voter's ballots
-- `GET /dashboard/pending` - Get pending votes
-- `POST /dashboard/{ballotId}/checkout` - Get payload for vote submission
-- `PUT /dashboard/{ballotId}/checkout` - Submit signed votes
-- `POST /dashboard/{ballotId}/checkout/multisig` - Get payload for multisig vote submission
-- `PUT /dashboard/{ballotId}/checkout/multisig` - Submit multisig signed votes
-
-### Transactions
-
-- `GET /transactions` - Get voter's transactions
-
-### Session
-
-- `POST /session` - Get payload for login
-- `PUT /session` - Submit signature for login
-- `DELETE /session` - Logout
+- `GET ${VITE_SERVER_STATUS}` — external status probe used by the
+  root layout. Not under `/api`.
+- `GET /version.json` — static asset served by the frontend. Written
+  at build time by `svelte.config.js`.
 
 ---
 
-## Notes
+## Component → endpoint map (quick reference)
 
-1. **Authentication**: Most endpoints require authentication via Bearer token in the `Authorization` header. The token is managed by `sessionManager.js` and stored in cookies/localStorage.
-
-2. **Error Handling**: All API calls through `api.fetch()` automatically handle:
-
-   - 401 errors (token expired) - logs out user
-   - 404 errors - throws SvelteKit error
-   - Other non-2xx responses - throws SvelteKit error with server message
-
-3. **Query Parameters**: Many endpoints support pagination (`page`, `limit`) and filtering parameters. See individual endpoint descriptions for details.
-
-4. **Dynamic Endpoints**: Wallet signer components use dynamic endpoint construction based on:
-
-   - Mode (login vs vote submission)
-   - Ballot ID
-   - MultiSig support
-   - Transaction ID (for resubmissions)
+| Component / module | Endpoint(s) |
+|---|---|
+| `src/routes/+layout.js` | `GET /v1/config`, `GET /v0/dashboard/`, `GET /v0/session/` |
+| `src/routes/+page.js` | `GET /v1/ballots?status=…` |
+| `src/routes/ballots/+page.js` | `GET /v1/ballots`, `GET /v0/ballots/voterTypes` |
+| `src/routes/ballots/[ballotId]/+page.js` | `GET /v1/ballots/:id` |
+| `src/routes/ballots/[ballotId]/proposals/+page.js` | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals`, `GET /v0/ballots/:id/tags`, `GET /v0/ballots/:id/categories` |
+| `src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.js` | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals?search=:id` |
+| `src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.js` | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals?search=:id`, `GET /v1/results/proposal/:id` |
+| `src/routes/(private)/dashboard/+page.js` | `GET /v0/dashboard/`, `GET /v0/dashboard/ballots`, `GET /v0/transactions`, `GET /v0/dashboard/pending` |
+| `src/routes/voter-directory/+page.js`, `[voterId]/+page.js` | `GET /v0/voters`, `GET /v0/voters/:id` |
+| `src/lib/Comments.svelte` | `GET /v0/proposals/:id/comments`, `POST /v0/comment` |
+| `src/lib/TransactionDetails.svelte` | `GET /v1/ballots/:id` |
+| `src/lib/TransactionVotes.svelte` | `GET /v0/proposals/:id/short` |
+| `src/lib/ProposalVoteDefault.svelte`, `ProposalVoteBudget.svelte` | `POST /v0/vote/:id` (only reachable on non-legacy ballots; the new broker doesn't use this path for Hydra writes — it's only per-proposal draft staging) |
+| `src/lib/broker.js` | `GET /v1/votes/:ballotId/packages`, `GET /v1/votes/:ballotId/package/:id`, `POST /v1/votes/:ballotId/draft`, `POST /v1/votes/:ballotId/signature`, `POST /v1/votes/:ballotId/submit`, `GET /v0/dashboard/pending` |
+| `src/lib/BrokerVoteFlow.svelte`, `BallotCosignerPrompt.svelte`, `AuditMyVote.svelte` | (via `broker.js` helpers) |
+| `src/lib/BallotProvenance.svelte` | `GET /v1/results/ballot/:id` |
+| `src/lib/WalletSigner/*` | `POST /v0/session`, `PUT /v0/session` (login only — no longer used for vote submission) |
