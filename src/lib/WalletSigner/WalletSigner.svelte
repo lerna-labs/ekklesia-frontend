@@ -78,7 +78,15 @@
 			if (get(loggedIn)) return;
 			e.preventDefault();
 			e.stopPropagation();
-			redirectAfterLogin.set(el.href);
+			// Refuse foreign-origin targets so a stray injected/authored anchor
+			// can't turn login completion into an off-site redirect.
+			try {
+				const target = new URL(el.href, window.location.origin);
+				if (target.origin !== window.location.origin) return;
+				redirectAfterLogin.set(target.pathname + target.search + target.hash);
+			} catch {
+				return;
+			}
 			showLogin.set(true);
 		};
 		window.addEventListener('click', handleClick, true);
@@ -139,8 +147,10 @@
 		// When no explicit target was captured, stay on the current page and
 		// just re-run loads so protected content populates.
 		const path = get(redirectAfterLogin);
-		if (path) {
-			redirectAfterLogin.set(null);
+		redirectAfterLogin.set(null);
+		// Defense-in-depth: only follow same-origin absolute paths. `//host/...`
+		// is protocol-relative and would escape the origin, so reject it.
+		if (path && path.startsWith('/') && !path.startsWith('//')) {
 			await goto(path);
 		} else {
 			await invalidateAll();

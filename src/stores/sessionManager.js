@@ -32,44 +32,32 @@ export const config = writable({
 	network: 'preprod'
 });
 
-// Set JWT in cookie and localStorage (if cookies are not available)
+// Set JWT in cookie only. localStorage is intentionally NOT used: it would
+// be readable by any JS in the page origin, turning any future XSS into a
+// session-exfil vector. The cookie carries auth on every fetch via
+// `credentials: 'include'`.
 export function setJWT(token, expiresIn) {
 	if (typeof document !== 'undefined') {
-		// Determine environment and protocol
 		const isDev = import.meta.env.DEV;
 		const isSecureContext = window.location.protocol === 'https:';
 
-		// Configure cookie settings based on environment
 		const cookieOptions = {
 			expires: new Date(expiresIn),
 			path: '/',
-			// Only set secure flag if in production or using HTTPS
 			secure: !isDev || isSecureContext,
-			// Use 'lax' in development, 'strict' in production
 			sameSite: isDev ? 'lax' : 'strict'
 		};
 
 		Cookies.set('token', token, cookieOptions);
-
-		// Always store in localStorage as a fallback
-		localStorage.setItem('token', token);
 	}
 
-	// Update Svelte store
 	jwt.set(token);
 }
 
-// Get JWT from cookie or localStorage
+// Get JWT from cookie.
 export function getJWT() {
-	let token = null;
-
-	if (Cookies.get('token')) {
-		token = decodeURIComponent(Cookies.get('token'));
-	} else if (typeof window !== 'undefined' && localStorage.getItem('token')) {
-		token = localStorage.getItem('token');
-	}
-
-	// console.log('Token from cookie/localStorage:', token);
+	const cookieToken = Cookies.get('token');
+	const token = cookieToken ? decodeURIComponent(cookieToken) : null;
 	jwt.set(token);
 	return token;
 }
