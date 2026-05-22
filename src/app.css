@@ -24,6 +24,18 @@
     --destructive-foreground: 210 40% 98%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    /* Sticky header chrome — themable per deployment via theme.json
+       (`header-background` / `header-foreground`). Foreground auto-derives
+       from background when not explicitly set; see src/lib/base/theme.js. */
+    --header-background: 240 22% 15%;       /* #1E1E2F */
+    --header-foreground: 0 0% 100%;          /* white */
+    /* Brand accent palette — replaces raw orange-* class usages across the
+       app. Five shades cover bg/hover/fg + soft-bg/soft-fg highlight pairs. */
+    --brand: 24.6 95% 53.1%;                /* orange-500 #F97316 */
+    --brand-hover: 20.5 90.2% 48.2%;        /* orange-600 #EA580C */
+    --brand-fg: 0 0% 100%;                  /* white */
+    --brand-soft: 33.3 100% 96.5%;          /* orange-50 #FFF7ED */
+    --brand-soft-fg: 15 75.3% 27.8%;        /* orange-900 #7C2D12 */
 	--sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -105,21 +117,25 @@
   }
 }
 
-.buzzing {
-  animation: pulse 1s infinite;
-}
+/* Live-ballot pulse. Gated behind prefers-reduced-motion so users who've
+   opted out of motion still see the badge but without the looping animation. */
+@media (prefers-reduced-motion: no-preference) {
+  .buzzing {
+    animation: pulse 1s infinite;
+  }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7);
-  }
-  70% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7);
+    }
+    70% {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 10px rgba(0, 255, 0, 0);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(0, 255, 0, 0);
+    }
   }
 }

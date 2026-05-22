@@ -13,4 +13,6 @@
 	}
 </script>
 
-<Badge class="bg-slate-500">{label}</Badge>
+<!-- Voter type is informational (not a state), so it picks up the
+     themed `secondary` surface tokens rather than a fixed neutral. -->
+<Badge variant="secondary">{label}</Badge>

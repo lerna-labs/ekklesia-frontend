@@ -67,7 +67,7 @@
 	<Card.Root class="mt-4">
 		<button
 			type="button"
-			class="w-full cursor-pointer rounded-t text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+			class="w-full cursor-pointer rounded-t text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
 			onclick={() => (expanded = !expanded)}
 			aria-expanded={expanded}
 			aria-controls="ballot-provenance-detail"

@@ -37,10 +37,10 @@
 				type="button"
 				onclick={copyId}
 				title="Click to copy full Voter ID"
-				class="group inline-flex items-center gap-2 font-mono text-base font-semibold leading-tight hover:text-orange-600 sm:text-lg"
+				class="group inline-flex items-center gap-2 font-mono text-base font-semibold leading-tight hover:text-brand sm:text-lg"
 			>
 				<span>{shortenString(userId, 24, true)}</span>
-				<Copy class="h-4 w-4 text-slate-400 transition-colors group-hover:text-orange-600" />
+				<Copy class="h-4 w-4 text-slate-400 transition-colors group-hover:text-brand" />
 			</button>
 		</Card.Title>
 		<Card.Description class="pt-1">

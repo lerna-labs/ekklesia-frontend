@@ -5,6 +5,7 @@
 // tabulates.
 
 import { Landmark, Crown, UserCircle, Users } from 'lucide-svelte';
+import { brandColor } from '$lib/base/brandColor.js';
 
 export const GROUP_ACCENTS = {
 	indigo: {
@@ -50,8 +51,9 @@ export function groupIdentity(key, fallbackLabel) {
 
 // Saturated, mid-weight colors that hold up on white at small donut sizes.
 // Curated so adjacent hues don't blur into each other even without a border.
-const OTHER_OPTION_COLORS = [
-	'#ea580c', // orange-600
+// Slot 0 reads the deployment's `--brand-hover` at call time; slots 1+ are
+// intentionally fixed distinct hues, independent of brand.
+const OTHER_OPTION_COLORS_SECONDARY = [
 	'#4f46e5', // indigo-600
 	'#0891b2', // cyan-600
 	'#c026d3', // fuchsia-600
@@ -71,5 +73,7 @@ export function optionColor(label, i) {
 	if (l === 'yes') return '#059669'; // emerald-600
 	if (l === 'no') return '#dc2626'; // red-600
 	if (l === 'abstain') return '#475569'; // slate-600
-	return OTHER_OPTION_COLORS[i % OTHER_OPTION_COLORS.length];
+	const idx = i % (OTHER_OPTION_COLORS_SECONDARY.length + 1);
+	if (idx === 0) return brandColor('brand-hover');
+	return OTHER_OPTION_COLORS_SECONDARY[idx - 1];
 }

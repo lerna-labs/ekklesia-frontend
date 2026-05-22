@@ -74,7 +74,7 @@
 		<div class="relative">
 			<SlidersHorizontal />
 			{#if filtersActive}
-				<span class="buzz absolute -right-2 -top-1 h-2 w-2 rounded-full bg-orange-500"></span>
+				<span class="buzz absolute -right-2 -top-1 h-2 w-2 rounded-full bg-brand"></span>
 			{/if}
 		</div>
 	</Popover.Trigger>

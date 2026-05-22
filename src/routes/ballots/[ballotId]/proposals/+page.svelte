@@ -271,11 +271,7 @@
 
 	{#if !$loggedIn && ballot.status === 'live'}
 		<div class="mt-3 flex flex-wrap items-center gap-3">
-			<Button
-				size="sm"
-				class="bg-orange-600 text-white hover:bg-orange-700"
-				onclick={() => showLogin.set(true)}
-			>
+			<Button size="sm" onclick={() => showLogin.set(true)}>
 				<WalletMinimalIcon class="h-4 w-4" aria-hidden="true" />
 				Log in to vote
 			</Button>
@@ -363,7 +359,7 @@
 	     (in app.css) absorbs any 100vw-vs-scrollbar-gutter difference on
 	     platforms that reserve gutter space. -->
 	<div
-		class="sticky bottom-0 z-40 mx-[calc(50%_-_50vw)] w-screen border-t-2 border-orange-500 bg-white/95 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.12)] backdrop-blur"
+		class="sticky bottom-0 z-40 mx-[calc(50%_-_50vw)] w-screen border-t-2 border-brand bg-white/95 shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.12)] backdrop-blur"
 		role="region"
 		aria-label="Ballot submission"
 	>

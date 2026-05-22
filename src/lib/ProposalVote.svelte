@@ -80,10 +80,10 @@
 	{:else if isLive}
 		{#if !$loggedIn}
 			<div
-				class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
+				class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-brand bg-gradient-to-br from-brand-soft to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
 			>
 				<div
-					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white"
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-fg"
 				>
 					<WalletMinimalIcon class="h-5 w-5" aria-hidden="true" />
 				</div>
@@ -94,11 +94,7 @@
 						wallet to cast your vote.
 					</p>
 				</div>
-				<Button
-					size="sm"
-					class="bg-orange-600 text-white hover:bg-orange-700"
-					onclick={() => showLogin.set(true)}
-				>
+				<Button size="sm" onclick={() => showLogin.set(true)}>
 					<WalletMinimalIcon class="h-4 w-4" aria-hidden="true" />
 					Connect Wallet
 				</Button>

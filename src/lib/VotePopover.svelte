@@ -72,9 +72,8 @@
 			<div class="pt-2">
 				<Button
 					href={'/ballots/' + ballot._id + '/proposals/' + proposal._id + '/results'}
-					variant="primary"
 					size="sm"
-					class="m-auto w-full bg-orange-600 text-white"
+					class="m-auto w-full"
 				>
 					View {ballot.status == 'live' ? 'Preliminary' : 'Final'} Results
 				</Button>

@@ -1,0 +1,21 @@
+{
+	"primary": "#0F172A",
+	"primary-foreground": "#F8FAFC",
+	"secondary": "#F1F5F9",
+	"secondary-foreground": "#0F172A",
+	"accent": "#F1F5F9",
+	"accent-foreground": "#0F172A",
+	"destructive": "#DC2626",
+	"destructive-foreground": "#F8FAFC",
+	"ring": "#020817",
+	"header-background": "#1E1E2F",
+	"header-foreground": "#FFFFFF",
+	"brand": "#F97316",
+	"brand-hover": "#EA580C",
+	"brand-fg": "#FFFFFF",
+	"brand-soft": "#FFF7ED",
+	"brand-soft-fg": "#7C2D12",
+	"radius": "0.5rem",
+	"font-heading": "Inter",
+	"font-body": "Inter"
+}

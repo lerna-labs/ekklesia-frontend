@@ -20,7 +20,7 @@
 				{@render children()}
 			{:else}
 				<div
-					class="w-full bg-orange-600 p-2 text-center text-xs font-semibold uppercase text-white"
+					class="w-full bg-brand p-2 text-center text-xs font-semibold uppercase text-brand-fg"
 				>
 					{serverStatus.network}
 				</div>

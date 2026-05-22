@@ -19,6 +19,11 @@
  *     use known keys, with HSL triplets / valid radius / non-empty
  *     font-family strings.
  *
+ * Reference documentation lives alongside the tree: `content/README.md`
+ * (overlay + theming guide) and `content/_default/theme.sample.json`
+ * (copy-pasteable example). Both are recognized here as docs files and
+ * skipped — they are not loaded at runtime.
+ *
  * Run via `npm run lint:content`. Exits 1 on any error, 0 otherwise.
  */
 
@@ -137,10 +142,19 @@ const COLOR_KEYS = [
 	'accent-foreground',
 	'destructive',
 	'destructive-foreground',
-	'ring'
+	'ring',
+	'header-background',
+	'header-foreground',
+	'brand',
+	'brand-hover',
+	'brand-fg',
+	'brand-soft',
+	'brand-soft-fg'
 ];
 const THEME_KEYS = new Set([...COLOR_KEYS, 'radius', 'font-heading', 'font-body']);
-const HSL_TRIPLET = /^\d+(?:\.\d+)?\s+\d+(?:\.\d+)?%\s+\d+(?:\.\d+)?%$/;
+// Accepts #RGB, #RGBA, #RRGGBB, #RRGGBBAA — alpha is parsed but discarded
+// at apply time (Tailwind's <alpha-value> handles opacity utilities).
+const HEX_COLOR = /^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const RADIUS = /^\d+(?:\.\d+)?(rem|em|px)$/;
 
 // ---------- walker ----------
@@ -251,10 +265,10 @@ function lintTheme(absPath) {
 			continue;
 		}
 		if (COLOR_KEYS.includes(key)) {
-			if (typeof value !== 'string' || !HSL_TRIPLET.test(value)) {
+			if (typeof value !== 'string' || !HEX_COLOR.test(value)) {
 				err(
 					rel,
-					`"${key}" must be an HSL triplet like "222 47% 11%" (got ${JSON.stringify(value)})`
+					`"${key}" must be a hex color like "#0F172A" (got ${JSON.stringify(value)})`
 				);
 			}
 		} else if (key === 'radius') {
@@ -279,7 +293,12 @@ try {
 	process.exit(2);
 }
 
+// Docs files that live in the tree but aren't loaded at runtime. Skipped
+// silently so the lint stays clean.
+const DOC_FILES = new Set(['README.md', 'theme.sample.json']);
+
 for (const f of files) {
+	if (DOC_FILES.has(basename(f))) continue;
 	if (f.endsWith('.md')) lintMarkdown(f);
 	else if (basename(f) === 'theme.json') lintTheme(f);
 	else warn(relative(ROOT, f), 'unexpected file (only .md and theme.json are recognized)');
@@ -301,8 +320,9 @@ if (errors.length) {
 	console.error(`\n${c.red(c.bold(`✗ content lint failed with ${errors.length} error(s)`))}`);
 	process.exit(1);
 }
+const linted = files.filter((f) => !DOC_FILES.has(basename(f)));
 console.log(
 	c.dim(
-		`✓ content ok — ${files.filter((f) => f.endsWith('.md')).length} markdown, ${files.filter((f) => basename(f) === 'theme.json').length} theme${warnings.length ? `, ${warnings.length} warning(s)` : ''}`
+		`✓ content ok — ${linted.filter((f) => f.endsWith('.md')).length} markdown, ${linted.filter((f) => basename(f) === 'theme.json').length} theme${warnings.length ? `, ${warnings.length} warning(s)` : ''}`
 	)
 );

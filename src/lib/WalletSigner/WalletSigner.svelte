@@ -174,7 +174,12 @@
 
 <AlertDialog.Root bind:open on:openChange={close}>
 	<AlertDialog.Trigger>
-		<Button size="sm" class={dark ? 'bg-white text-black hover:bg-gray-200' : ''}>
+		<Button
+			size="sm"
+			class={dark
+				? 'bg-header-foreground text-header hover:bg-header-foreground/85'
+				: ''}
+		>
 			<WalletMinimalIcon class="size-4 shrink-0" aria-hidden="true" />
 			{mode == 'login' ? 'Connect Wallet' : buttonText}
 		</Button>

@@ -169,17 +169,17 @@
 	}
 
 	/* Authored links — same brand treatment as MarkdownBrief so voters
-	   reading a rationale see "supporting links" stand out. Orange-600
-	   text with a softer orange-300 underline; on hover the underline
-	   pulls up to match. */
+	   reading a rationale see "supporting links" stand out. Brand text
+	   with a soft (50% opacity) brand underline; on hover the underline
+	   pulls up to match the text. */
 	:global(.markdown-content a) {
-		color: rgb(234 88 12); /* orange-600 */
+		color: hsl(var(--brand-hover));
 		text-decoration: underline;
 		text-underline-offset: 2px;
-		text-decoration-color: rgb(253 186 116); /* orange-300 */
+		text-decoration-color: hsl(var(--brand) / 0.5);
 	}
 	:global(.markdown-content a:hover) {
-		text-decoration-color: rgb(234 88 12);
+		text-decoration-color: hsl(var(--brand-hover));
 	}
 
 	/* Trailing ExternalLink glyph injected by `applyExternalLinkDecoration`.
