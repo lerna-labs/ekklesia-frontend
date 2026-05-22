@@ -58,7 +58,7 @@
 {command}
 </pre>
 </button>
-<Button class="mt-2 w-full" variant="secondary" size="sm" onclick={copyDataHex}>
+<Button class="mt-2 w-full" variant="outline" size="sm" onclick={copyDataHex}>
   Copy Data Hex
 </Button>
 

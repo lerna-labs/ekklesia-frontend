@@ -101,7 +101,7 @@
 		<div class="relative">
 			<ArrowUpDown />
 			{#if sortActive}
-				<span class="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-orange-500"></span>
+				<span class="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-brand"></span>
 			{/if}
 		</div>
 	</Popover.Trigger>

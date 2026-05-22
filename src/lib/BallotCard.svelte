@@ -31,7 +31,7 @@
 			{#if isLong}
 				<button
 					onclick={() => (expanded = !expanded)}
-					class="mt-2 text-xs font-medium text-orange-500 hover:text-orange-700"
+					class="mt-2 text-xs font-medium text-brand hover:text-brand-hover"
 				>
 					{expanded ? 'Show less' : 'Show more'}
 				</button>

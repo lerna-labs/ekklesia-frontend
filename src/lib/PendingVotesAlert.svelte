@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 </script>
 
-<Button class="bg-orange-600 hover:bg-orange-700" size="sm" href="/dashboard/#pending-votes">
+<Button size="sm" href="/dashboard/#pending-votes">
 	<div class="ring-animation">
 		<BellRing />
 	</div>

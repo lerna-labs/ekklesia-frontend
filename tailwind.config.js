@@ -64,6 +64,17 @@ const config = {
 					border: "hsl(var(--sidebar-border))",
 					ring: "hsl(var(--sidebar-ring))",
         		},
+				header: {
+					DEFAULT: "hsl(var(--header-background) / <alpha-value>)",
+					foreground: "hsl(var(--header-foreground) / <alpha-value>)",
+				},
+				brand: {
+					DEFAULT: "hsl(var(--brand) / <alpha-value>)",
+					hover: "hsl(var(--brand-hover) / <alpha-value>)",
+					fg: "hsl(var(--brand-fg) / <alpha-value>)",
+					soft: "hsl(var(--brand-soft) / <alpha-value>)",
+					"soft-fg": "hsl(var(--brand-soft-fg) / <alpha-value>)",
+				},
 			},
 			borderRadius: {
 				xl: "calc(var(--radius) + 4px)",
