@@ -5,6 +5,7 @@
 	import BallotBadge from '$lib/BallotBadge.svelte';
 	import ProposalVote from '$lib/ProposalVote.svelte';
 	import ProposalDetails from '$lib/ProposalDetails.svelte';
+	import ProposalModuleLink from '$lib/ProposalModuleLink.svelte';
 	import BallotDetails from '$lib/BallotDetails.svelte';
 	import BallotEligibilityBanner from '$lib/BallotEligibilityBanner.svelte';
 	import { convertTimestamp } from '$lib/utils';
@@ -167,6 +168,8 @@
 		</ul>
 	</section>
 {/if}
+
+<ProposalModuleLink {proposal} />
 
 <div id="results"></div>
 <div class="mt-[72px]"></div>
