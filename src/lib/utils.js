@@ -48,6 +48,16 @@ export function credentialLabel(kind) {
 	return CREDENTIAL_LABELS[k] ?? (k ? k.charAt(0).toUpperCase() + k.slice(1) : '');
 }
 
+// Friendly display name for a voter — the backend's resolved `name`
+// (DRep registered name for `drep…` ids, Cardano $handle for `stake…` ids)
+// when present, else null. Treat empty/whitespace as unresolved so callers
+// can cleanly fall back to the bech32 id.
+export function voterDisplayName(voter) {
+	if (!voter) return null;
+	const raw = typeof voter.name === 'string' ? voter.name.trim() : '';
+	return raw.length > 0 ? raw : null;
+}
+
 // Resolve the list of credential kinds a ballot accepts, preferring a
 // top-level `acceptedCredentials` field (the ideal future shape) and
 // falling back to the Hydra ballot definition's nested value if that's
