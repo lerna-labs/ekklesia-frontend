@@ -3,15 +3,19 @@ question: "Which wallets are supported?"
 order: 30
 ---
 
-The following CIP-95 compatible wallets are supported for voting on Ekklesia:
+Wallet requirements depend on the voter type for a given ballot:
 
-- **Browser extensions:** [Eternl](https://eternl.io/),
-  [Yoroi](https://yoroi-wallet.com/), [Lace](https://www.lace.io/),
-  [Vespr](https://vespr.xyz/)
-- **Hardware wallets:** [Ledger](https://www.ledger.com/),
-  [Keystone](https://keyst.one/)
-- **Mobile wallets:** [Eternl](https://eternl.io/),
-  [Yoroi](https://yoroi-wallet.com/), [Vespr](https://vespr.xyz/)
+- **Address, token, and NFT holders** — any Cardano wallet with CIP-30 message
+  signing (CIP-8). Most browser wallets work, including
+  [Eternl](https://eternl.io/), [Yoroi](https://yoroi-wallet.com/),
+  [Lace](https://www.lace.io/), and [Vespr](https://vespr.xyz/).
+- **DReps** — a wallet that supports **CIP-95** governance key signing.
+- **SPOs** — sign with your cold key or a
+  [Calidus key (CIP-151)](https://cips.cardano.org/cip/CIP-0151).
+
+Hardware wallets like [Ledger](https://www.ledger.com/) and
+[Keystone](https://keyst.one/) work when paired with a compatible browser
+extension.
 
 You can also vote offline using the
 [CardanoSigner](https://github.com/gitmachtl/cardano-signer) — most MultiSigs
