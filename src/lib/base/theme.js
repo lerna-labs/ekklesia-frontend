@@ -30,6 +30,8 @@
  *     "brand-fg":             "#FFFFFF",      // text on `--brand`
  *     "brand-soft":           "#FFF7ED",      // soft tinted background
  *     "brand-soft-fg":        "#7C2D12",      // text on `--brand-soft`
+ *     "network-warning":      "#F97316",      // testnet-banner bg (kept loud, not brand-tied)
+ *     "network-warning-foreground": "#FFFFFF",// optional — auto-derived from bg if omitted
  *     "radius":               "0.5rem",
  *     "font-heading":         "Inter",        // Google Fonts family name
  *     "font-body":            "Inter"
@@ -57,7 +59,9 @@ const COLOR_TOKENS = [
 	'brand-hover',
 	'brand-fg',
 	'brand-soft',
-	'brand-soft-fg'
+	'brand-soft-fg',
+	'network-warning',
+	'network-warning-foreground'
 ];
 
 const FONT_WEIGHTS = '400;500;600;700';
@@ -170,6 +174,13 @@ export function applyTheme() {
 	if (theme['header-background'] && !theme['header-foreground']) {
 		const auto = contrastForeground(theme['header-background']);
 		if (auto) root.style.setProperty('--header-foreground', auto);
+	}
+
+	// Same auto-derive for the testnet-warning banner: a deployment can set
+	// just `network-warning` and get a readable foreground for free.
+	if (theme['network-warning'] && !theme['network-warning-foreground']) {
+		const auto = contrastForeground(theme['network-warning']);
+		if (auto) root.style.setProperty('--network-warning-foreground', auto);
 	}
 
 	if (theme.radius) root.style.setProperty('--radius', theme.radius);

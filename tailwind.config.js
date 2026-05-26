@@ -75,6 +75,10 @@ const config = {
 					soft: "hsl(var(--brand-soft) / <alpha-value>)",
 					"soft-fg": "hsl(var(--brand-soft-fg) / <alpha-value>)",
 				},
+				"network-warning": {
+					DEFAULT: "hsl(var(--network-warning) / <alpha-value>)",
+					foreground: "hsl(var(--network-warning-foreground) / <alpha-value>)",
+				},
 			},
 			borderRadius: {
 				xl: "calc(var(--radius) + 4px)",

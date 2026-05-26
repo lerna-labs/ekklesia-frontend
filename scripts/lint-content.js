@@ -149,7 +149,9 @@ const COLOR_KEYS = [
 	'brand-hover',
 	'brand-fg',
 	'brand-soft',
-	'brand-soft-fg'
+	'brand-soft-fg',
+	'network-warning',
+	'network-warning-foreground'
 ];
 const THEME_KEYS = new Set([...COLOR_KEYS, 'radius', 'font-heading', 'font-body']);
 // Accepts #RGB, #RGBA, #RRGGBB, #RRGGBBAA — alpha is parsed but discarded

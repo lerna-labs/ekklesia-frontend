@@ -123,6 +123,25 @@ export function lovelaceToAdaCompact(lovelace) {
 	return Math.round(ada) + ' ADA';
 }
 
+// Compact formatter for an amount ALREADY denominated in ADA — e.g.
+// proposal facet values like "Total Budget", which the proposals module
+// supplies as a plain ADA figure (NOT lovelace). Distinct from
+// `lovelaceToAdaCompact`, which divides a lovelace integer by 1e6 first;
+// running a facet value through that scales a 65-million-ADA budget down
+// to "65.41 ADA". Two-decimal abbreviation: 65_405_000 → "65.41M ADA".
+export function adaCompact(ada) {
+	const n = Number(ada);
+	if (!Number.isFinite(n) || n === 0) return '0 ADA';
+	const abs = Math.abs(n);
+	// Drop a trailing ".00" entirely and a lone trailing zero ("65.40" →
+	// "65.4") so round figures don't carry dead precision.
+	const trim = (s) => s.replace(/\.?0+$/, '');
+	if (abs >= 1e9) return trim((n / 1e9).toFixed(2)) + 'B ADA';
+	if (abs >= 1e6) return trim((n / 1e6).toFixed(2)) + 'M ADA';
+	if (abs >= 1e3) return trim((n / 1e3).toFixed(2)) + 'K ADA';
+	return n.toLocaleString() + ' ADA';
+}
+
 // Format a percentage where tiny-but-nonzero values shouldn't look like 0.
 // Returns a string including the `%` suffix.
 export function formatPercent(value, decimals = 2) {

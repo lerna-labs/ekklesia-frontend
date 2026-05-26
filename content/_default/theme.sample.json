@@ -15,6 +15,8 @@
 	"brand-fg": "#FFFFFF",
 	"brand-soft": "#FFF7ED",
 	"brand-soft-fg": "#7C2D12",
+	"network-warning": "#F97316",
+	"network-warning-foreground": "#FFFFFF",
 	"radius": "0.5rem",
 	"font-heading": "Inter",
 	"font-body": "Inter"

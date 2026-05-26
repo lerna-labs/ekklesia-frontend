@@ -78,8 +78,8 @@ guide.
 These five replace the raw `orange-*` Tailwind classes that used to be
 scattered through 20+ components. Set them and your brand colour flows through
 the scroll progress strip, vote CTAs, ProposalVote highlights, version-update
-banner, network-warning banner, filter/sort badges, markdown links, ranked
-result rank-1 bar, and "View Results" buttons.
+banner, filter/sort badges, markdown links, ranked result rank-1 bar, and
+"View Results" buttons.
 
 | Key                | Controls                                              |
 | ---                | ---                                                   |
@@ -88,6 +88,19 @@ result rank-1 bar, and "View Results" buttons.
 | `brand-fg`         | Text/icons on `brand` surfaces                        |
 | `brand-soft`       | Soft tinted bg (callout panels, gradient highlights)  |
 | `brand-soft-fg`    | Text/icons on `brand-soft` surfaces                   |
+
+#### Testnet-warning banner
+
+The strip that warns voters they're on a non-production network (preprod) is
+themed **separately from `brand`** on purpose: it must stay a loud, obviously
+cautionary colour even when a deployment's brand accent is a low-contrast hue.
+The banner only renders on testnet builds (`VITE_NETWORK_ID == 0`); on mainnet
+it never appears, so these keys have no effect there.
+
+| Key                          | Controls                                            |
+| ---                          | ---                                                 |
+| `network-warning`            | Testnet-banner background                           |
+| `network-warning-foreground` | Banner text. **Auto-derived** (white on dark, black on light) when omitted. |
 
 #### Geometry & typography
 

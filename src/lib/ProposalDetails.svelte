@@ -1,12 +1,15 @@
 <script>
 	let { proposal, ballot } = $props();
 	import { config } from '$stores/sessionManager.js';
-	import { lovelaceToAda } from '$lib/utils.js';
+	import { adaCompact } from '$lib/utils.js';
 	import { ChevronDown } from 'lucide-svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 
 	// Facet values live on the proposal's snapshot; the ballot declares
-	// the schema (key, label, type, unit). We join the two to produce
-	// human-readable key:value rows.
+	// the schema (key, label, type, unit, multi). We join the two into
+	// display rows — scalar facets carry a formatted `display` string;
+	// multi-value facets carry an `entries` array, rendered one chip per
+	// entry so list values don't collapse into an unreadable comma-run.
 	const facetValues = $derived.by(() => {
 		const schema = ballot?.facets ?? [];
 		const values = proposal?.externalProposal?.snapshot?.facets ?? {};
@@ -14,19 +17,32 @@
 		return schema
 			.filter((f) => values[f.key] != null)
 			.map((f) => {
-				let display = values[f.key];
+				const raw = values[f.key];
+
+				// Multi-value facets (e.g. Strategy Pillar) arrive as a
+				// comma-joined string or an array. Split into discrete
+				// entries so each renders as its own chip.
+				if (f.multi) {
+					const entries = (Array.isArray(raw) ? raw : String(raw).split(','))
+						.map((s) => String(s).trim())
+						.filter(Boolean);
+					return { key: f.key, label: f.label, entries };
+				}
+
+				// Single-value facet — format the scalar for inline display.
+				let display = raw;
 				if (f.type === 'number' && f.unit === 'ADA' && typeof display === 'number') {
-					display = lovelaceToAda(display);
+					// Facet ADA values are plain ADA figures, not lovelace —
+					// format compactly without the lovelace→ADA division.
+					display = adaCompact(display);
 				} else if (f.type === 'number' && f.unit && typeof display === 'number') {
 					display = display.toLocaleString() + ' ' + f.unit;
 				} else if (typeof display === 'number') {
 					display = display.toLocaleString();
 				}
-				if (typeof display === 'string' && f.multi && display.includes(',')) {
-					display = display.split(',').join(', ');
-				}
-				return { key: f.key, label: f.label, display };
-			});
+				return { key: f.key, label: f.label, display: String(display) };
+			})
+			.filter((fv) => (fv.entries ? fv.entries.length > 0 : true));
 	});
 
 	const authors = $derived.by(() => {
@@ -82,10 +98,23 @@
 				/>
 			</button>
 			{#if facetsOpen}
-				<dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
-					{#each facetValues as fv}
-						<dt class="font-semibold text-muted-foreground">{fv.label}</dt>
-						<dd>{fv.display}</dd>
+				<dl class="mt-1.5 grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1.5">
+					{#each facetValues as fv (fv.key)}
+						{#if fv.entries}
+							<div class="col-span-2">
+								<dt class="mb-1 font-semibold text-muted-foreground">{fv.label}</dt>
+								<dd class="flex flex-wrap gap-1">
+									{#each fv.entries as entry}
+										<Badge variant="secondary" class="pointer-events-none font-normal">
+											{entry}
+										</Badge>
+									{/each}
+								</dd>
+							</div>
+						{:else}
+							<dt class="font-semibold text-muted-foreground">{fv.label}</dt>
+							<dd class="font-medium text-foreground">{fv.display}</dd>
+						{/if}
 					{/each}
 				</dl>
 			{/if}
