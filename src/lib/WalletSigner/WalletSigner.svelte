@@ -113,7 +113,7 @@
 
 	// store token
 	async function storeToken(event) {
-		const { token, expiresIn, walletName, calidusID } = event.detail;
+		const { token, expiresIn, walletName, calidusID, drepIdHex } = event.detail;
 		setJWT(token, expiresIn);
 		loggedIn.set(true);
 		toast.success('Login successful');
@@ -128,6 +128,9 @@
 		if (calidusID && userData?.userId) {
 			saveCalidusID(userData.userId, calidusID);
 			userData.calidusID = calidusID;
+		}
+		if (drepIdHex) {
+			userData.drepIdHex = drepIdHex;
 		}
 		user.set(userData);
 

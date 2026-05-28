@@ -116,6 +116,10 @@
 		if (signType === 'pool' && poolId) {
 			signer = payload.calidusID;
 		}
+		let drepIdHex;
+		if (signType === 'drep') {
+			drepIdHex = payload.userIdHex;
+		}
 		const signature = await signData(connectedWallet, signer, payload.dataHex, signType);
 		if (signature?.error) {
 			toast.error(signature.error);
@@ -148,11 +152,8 @@
 				token: submitResponse.token,
 				expiresIn: submitResponse.expiresIn,
 				maxAge: submitResponse.maxAge,
-				// `payload.calidusID` is only on the POST /session response;
-				// surface it to the parent so it can be persisted onto
-				// $user — without it, the broker sign step has no signer
-				// address for pool voters. See $lib/calidusCache.js.
-				calidusID: payload?.calidusID
+				calidusID: payload?.calidusID,
+				drepIdHex: drepIdHex
 			});
 		} else {
 			dispatch('success', submitResponse);
