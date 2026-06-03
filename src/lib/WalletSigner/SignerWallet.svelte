@@ -81,10 +81,10 @@
 	async function login() {
 		loading = true;
 		let payload;
-		let url = '/session';
-		if (multiSigCheck) {
-			url = '/session/multisig';
-		}
+		// Backend consolidated /session/multisig into /session on 2026-02-28; the
+		// multisig path is now selected by the `scriptAddress` body field that
+		// getPayload() already attaches.
+		const url = '/session';
 
 		// replace connected wallet address with pool id
 		if (signType === 'pool' && poolId) {
@@ -127,7 +127,9 @@
 			return;
 		}
 		let url = mode === 'login' ? '/session' : '/dashboard/' + ballot._id + '/checkout';
-		if (multiSigCheck) {
+		// Dashboard checkout still routes multisig via the `/multisig` suffix;
+		// the session endpoint no longer does — script address is in the body.
+		if (multiSigCheck && mode !== 'login') {
 			url += '/multisig';
 		}
 		const submitResponse = await submitSignature(
