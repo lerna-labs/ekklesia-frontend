@@ -77,9 +77,18 @@ export function acceptedCredentialsOf(ballot) {
 
 // v1 ballots expose `id`; legacy consumers read `_id`. Alias so downstream
 // components that reference `_id` keep working against v1 responses.
+//
+// Also normalizes `resultsCalculationMode` so downstream consumers can treat
+// the field as always-defined. Unknown values fall back to 'standard' to
+// keep a typo in admin data from accidentally altering the results UI;
+// 'standard' is the documented default and matches the current behavior on
+// every existing ballot.
+const KNOWN_RESULTS_MODES = new Set(['standard', 'participation']);
 export function normalizeBallot(ballot) {
 	if (!ballot) return ballot;
 	if (ballot._id == null && ballot.id != null) ballot._id = ballot.id;
+	const mode = String(ballot.resultsCalculationMode ?? '').toLowerCase();
+	ballot.resultsCalculationMode = KNOWN_RESULTS_MODES.has(mode) ? mode : 'standard';
 	return ballot;
 }
 

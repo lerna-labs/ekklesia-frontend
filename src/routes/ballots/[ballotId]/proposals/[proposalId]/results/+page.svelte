@@ -155,6 +155,26 @@
 				group.totalAllowedVoterCount ?? participation?.voterCount?.[key] ?? null;
 			const totalVotingPower =
 				group.totalVotingPower ?? participation?.totalVotingPower?.[key] ?? null;
+			// Participation pool per
+			// BACKEND_RESULTS_CALCULATION_MODE_V1_RESPONSE.md §2: voters in
+			// this group who cast ≥1 non-abstain vote anywhere on the
+			// ballot. The canonical fields are `voterCount` /
+			// `totalVotingPower` on `ballotParticipation` (despite the
+			// naming, these are NOT eligibility — true eligibility lives
+			// only on the v0 ballot endpoint today). Null when the result
+			// document hasn't been generated yet; the renderer falls back
+			// gracefully.
+			const participatingVoters = participation?.voterCount?.[key] ?? null;
+			const participatingPower = participation?.totalVotingPower?.[key] ?? null;
+			// Pool ∩ explicit-abstainers-on-this-proposal. Per
+			// BACKEND_RESULTS_CALCULATION_MODE_V1_RESPONSE.md §3 this is
+			// the ONLY correct subtractor for the participation-mode
+			// denominator — the raw `resultsByGroup[g].results[abstain]`
+			// row includes all-abstain voters who were never in the pool
+			// to begin with and would over-shrink the denominator.
+			const abstainersIntersect = result?.participatingAbstainers ?? null;
+			const participatingAbstainCount = abstainersIntersect?.voterCount?.[key] ?? null;
+			const participatingAbstainPower = abstainersIntersect?.totalVotingPower?.[key] ?? null;
 			return {
 				key,
 				label: groupLabel(key),
@@ -162,6 +182,10 @@
 				activePower,
 				totalAllowedVoterCount,
 				totalVotingPower,
+				participatingVoters,
+				participatingPower,
+				participatingAbstainCount,
+				participatingAbstainPower,
 				rows: sorted,
 				scale: group.scale ?? null,
 				ranked: group.ranked ?? null,
@@ -170,6 +194,12 @@
 			};
 		});
 	});
+
+	// Participation mode subsumes the per-question abstain panel — the
+	// per-group cards carry the same information (abstain segment + count)
+	// in context. Suppress the standalone panel to avoid double-counting
+	// readers' attention.
+	const participationMode = $derived(ballot?.resultsCalculationMode === 'participation');
 
 	// Once the authority has certified, the tally won't change again unless a
 	// new cert version is published (rare, and a refresh picks it up). Stop
@@ -280,7 +310,7 @@
 				</div>
 			</div>
 		{/if}
-		{#if result.abstainedByRole}
+		{#if result.abstainedByRole && !participationMode}
 			<div class="mb-6">
 				<AbstainedByRolePanel abstainedByRole={result.abstainedByRole} />
 			</div>

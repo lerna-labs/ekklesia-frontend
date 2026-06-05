@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import DonutChart from '$lib/charts/DonutChart.svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { optionColor, GROUP_ACCENTS, groupIdentity } from './groupResults.js';
@@ -116,11 +117,15 @@
 		return proposal.voteOptions.find((o) => String(o.id) === String(id)) ?? null;
 	}
 
-	// Sort dimension for the budget cumulative cutoff. Defaults to "count"
-	// so the initial read matches the rest of the card's voter-count bias;
-	// toggling to "power" lets an auditor see how a whale voter reshapes
-	// the cutoff when the two dimensions diverge significantly.
-	let dimension = $state('count');
+	// Sort dimension for the budget cumulative cutoff. Weighted ballots
+	// default to "power" — that's the authoritative dimension for those
+	// votes, so a viewer's first read should match how the outcome will
+	// be measured. Toggling to "count" surfaces whale/headcount disparity,
+	// which is the secondary read. Unweighted ballots default (and stay)
+	// at "count" since power is meaningless. Read once via `untrack` —
+	// re-reactivity would re-snap the toggle every time the parent passed
+	// a new `ballot` object and stomp on a viewer's manual selection.
+	let dimension = $state(untrack(() => (ballot?.voteWeighted ? 'power' : 'count')));
 
 	// Re-sort rows locally by the active dimension so the top of the
 	// list always reads as "leading" under whichever dimension the user

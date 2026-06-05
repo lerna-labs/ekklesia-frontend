@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import Histogram from '$lib/charts/Histogram.svelte';
 	import { GROUP_ACCENTS, groupIdentity } from './groupResults.js';
@@ -54,8 +55,12 @@
 	const ABSTAIN_COLOR = '#1e293b';
 
 	// A ballot-weighted scale proposal gets two views: by voters and by
-	// voting power. Default to voters; a tiny pill toggles between.
-	let dimension = $state('count');
+	// voting power. Weighted ballots default to "power" since that's the
+	// authoritative dimension; "count" toggle surfaces whale/headcount
+	// disparity. Unweighted ballots stay at "count" (power is irrelevant
+	// and the toggle is hidden anyway). `untrack` keeps the initial-read
+	// non-reactive so the toggle survives prop re-supplies.
+	let dimension = $state(untrack(() => (ballot?.voteWeighted ? 'power' : 'count')));
 	const accent = $derived(GROUP_ACCENTS[groupIdentity(group.key, group.label).accent]);
 
 	const histogramColor = $derived(accent.stroke);

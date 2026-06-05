@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
 	import { ListOrdered } from 'lucide-svelte';
@@ -66,8 +67,12 @@
 	const RANKED_ACCENT = brandColor('brand-hover');
 
 	// Dimension toggle mirrors the scale card: count vs voting power. Only
-	// available when the ballot is weighted.
-	let dimension = $state('count');
+	// available when the ballot is weighted. Weighted ballots default to
+	// "power" — the authoritative dimension — leaving "count" as the
+	// secondary read that exposes whale/headcount disparity. `untrack`
+	// pins the initial value so a re-supplied `ballot` prop can't stomp
+	// a user's manual toggle.
+	let dimension = $state(untrack(() => (ballot?.voteWeighted ? 'power' : 'count')));
 
 	// Rank-position palette. Rank 1 leads with the deployment's brand colour
 	// (the "winner" position); subsequent ranks step into curated contrasting

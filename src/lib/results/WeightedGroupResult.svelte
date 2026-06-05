@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { GROUP_ACCENTS, groupIdentity, optionColor } from './groupResults.js';
 	import { formatPercent, lovelaceToAdaCompact } from '$lib/utils.js';
@@ -40,7 +41,11 @@
 	const budget = $derived(Number(weighted?.budget) || 0);
 	const answeringBallots = $derived(Number(weighted?.answeringBallots) || 0);
 
-	let dimension = $state('count');
+	// Weighted ballots default to "power" (the authoritative dimension);
+	// "count" toggle surfaces whale/headcount disparity. Unweighted
+	// ballots stay at "count" though the dimension toggle is also hidden
+	// in that case. `untrack` keeps the prop read non-reactive.
+	let dimension = $state(untrack(() => (ballot?.voteWeighted ? 'power' : 'count')));
 
 	function totalFor(opt) {
 		return dimension === 'power'

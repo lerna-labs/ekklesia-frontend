@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { GROUP_ACCENTS, groupIdentity } from './groupResults.js';
 	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
@@ -74,7 +75,10 @@
 	const accent = $derived(GROUP_ACCENTS[groupIdentity(group.key, group.label).accent]);
 	const ratedColor = $derived(accent.stroke);
 
-	let dimension = $state('count');
+	// Weighted ballots default to "power" so the headline read matches
+	// the authoritative dimension; "count" toggle surfaces the whale vs
+	// headcount story. `untrack` pins the initial-only read.
+	let dimension = $state(untrack(() => (ballot?.voteWeighted ? 'power' : 'count')));
 
 	function gradeColor(i, total) {
 		// Red → yellow → green across the rating spectrum. Low grades
