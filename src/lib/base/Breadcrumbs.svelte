@@ -90,10 +90,16 @@
 <!-- Breadcrumbs live inside the sticky header chrome and inherit its
      background + foreground tokens. Inactive items + chevron separators
      are alpha-stepped so they remain legible against any header bg while
-     still reading as secondary. -->
+     still reading as secondary.
+
+     On narrow viewports the trail switches from `overflow-hidden` (which
+     silently chopped the rightmost — usually most important — items) to
+     a horizontally-scrollable strip. Per-item `max-w` shrinks on small
+     screens so the active page stays at least partly visible without
+     having to scroll. -->
 <Breadcrumb.Root class="bg-header text-header-foreground w-full border-t border-header-foreground/15">
 	<Breadcrumb.List
-		class="text-header-foreground m-auto flex w-full max-w-3xl items-center overflow-hidden whitespace-nowrap p-4 pt-4 text-xs *:gap-0"
+		class="breadcrumb-scroll text-header-foreground m-auto flex w-full max-w-3xl items-center overflow-x-auto whitespace-nowrap p-4 pt-4 text-xs *:gap-0"
 	>
 		{#each breadcrumbItems as item, i}
 			{#if i > 0}
@@ -104,13 +110,16 @@
 
 			<Breadcrumb.Item class="m-0 min-w-0 flex-shrink p-0">
 				{#if item.active}
-					<Breadcrumb.Page class="text-header-foreground block truncate" title={item.label}>
+					<Breadcrumb.Page
+						class="text-header-foreground block max-w-[12rem] truncate sm:max-w-[18rem]"
+						title={item.label}
+					>
 						{item.label}
 					</Breadcrumb.Page>
 				{:else}
 					<Breadcrumb.Link
 						href={item.path}
-						class="text-header-foreground/70 hover:text-header-foreground block truncate transition-colors"
+						class="text-header-foreground/70 hover:text-header-foreground block max-w-[8rem] truncate transition-colors sm:max-w-[12rem]"
 						title={item.label}
 					>
 						{item.label}
@@ -127,28 +136,29 @@
 {/if}
 
 <style>
-	/* Ensure the breadcrumbs container stays on one line */
-	:global(.breadcrumb-list) {
-		display: flex;
-		flex-wrap: nowrap;
-		overflow-x: hidden;
-		scroll-behavior: smooth;
-		max-width: 100%;
+	/* Slim, low-contrast scrollbar so the strip stays a thin chrome
+	   element rather than a heavy desktop scrollbar. Hidden entirely on
+	   small touch viewports where horizontal scrolling is gestural.
+	   `:global()` because `.breadcrumb-scroll` rides on a shadcn child
+	   component's <ol> — Svelte's scoping can't track classes through
+	   the prop boundary. */
+	:global(.breadcrumb-scroll) {
+		scrollbar-width: thin;
+		scrollbar-color: hsl(var(--header-foreground) / 0.2) transparent;
 	}
-
-	/* Make items truncate with ellipsis */
-	:global(.breadcrumb-item) {
-		max-width: 200px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	:global(.breadcrumb-scroll::-webkit-scrollbar) {
+		height: 4px;
 	}
-
-	/* Make the active item (last one) prioritized */
-	:global(.breadcrumb-page) {
-		max-width: 300px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	:global(.breadcrumb-scroll::-webkit-scrollbar-thumb) {
+		background-color: hsl(var(--header-foreground) / 0.2);
+		border-radius: 9999px;
+	}
+	@media (max-width: 640px) {
+		:global(.breadcrumb-scroll) {
+			scrollbar-width: none;
+		}
+		:global(.breadcrumb-scroll::-webkit-scrollbar) {
+			display: none;
+		}
 	}
 </style>

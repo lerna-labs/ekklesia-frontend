@@ -130,6 +130,11 @@ export function lovelaceToAda(lovelace) {
 // "340K ADA" / "5 ADA". Sub-ADA values defer to `lovelaceToAda` so precision
 // isn't lost for tiny amounts. Use when horizontal space is scarce (legends,
 // chart axis ticks, dense cards).
+//
+// Note for renderers: the "B" magnitude letter can read as a "8" in the
+// default sans-serif when it sits flush against digits ("3.3B" → "3.38").
+// Templates rendering this string should consider weight or colour
+// differentiation on the magnitude letter — `AdaValue.svelte` does this.
 export function lovelaceToAdaCompact(lovelace) {
 	const n = Number(lovelace);
 	if (!Number.isFinite(n) || n === 0) return '0 ADA';

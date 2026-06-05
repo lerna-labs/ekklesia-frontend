@@ -2,8 +2,9 @@
 	import { untrack } from 'svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { optionColor } from './groupResults.js';
-	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
+	import { formatPercent } from '$lib/utils.js';
 	import OptionDetails from '$lib/OptionDetails.svelte';
+	import AdaValue from './AdaValue.svelte';
 	import { Info } from 'lucide-svelte';
 
 	/**
@@ -158,6 +159,17 @@
 	}
 	const yesOption = $derived(yesRow ? optionFor(yesRow.id) : null);
 	const noOption = $derived(noRow ? optionFor(noRow.id) : null);
+
+	// Render the "% of denominator" cell for a cohort against whatever the
+	// currently-active dimension is. Folds the count/power switch + denom
+	// pick + format step into one call so the (now duplicated) desktop
+	// table and stacked mobile cards stay in sync.
+	function shareOf(countPart, powerPart) {
+		const isPower = dimension === 'power' && hasWeight;
+		const part = isPower ? powerPart : countPart;
+		const whole = isPower ? denomPower : denomVoters;
+		return formatPercent(pct(part, whole), 1);
+	}
 </script>
 
 <GroupCardShell {group} {ballot}>
@@ -251,28 +263,25 @@
 						{/if}
 					{/each}
 				</div>
-				<div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px]">
+				<!-- Legend reads as a colour key only; the precise per-cohort
+				     counts and shares live in the table / cards below, so
+				     duplicating them here in 10px type just creates noise.
+				     "Excluded" stays on the Abstain swatch because the bar
+				     itself can't communicate that cohort's special status. -->
+				<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
 					{#each segments as seg (seg.key)}
 						{#if seg.value > 0}
 							<span
-								class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-muted-foreground"
+								class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-muted-foreground"
 							>
 								<span
-									class="inline-block h-2 w-2 rounded-sm"
+									class="inline-block h-2.5 w-2.5 rounded-sm"
 									style="background-color: {seg.color};"
 									aria-hidden="true"
 								></span>
 								<span class="font-medium text-slate-700">{seg.label}</span>
-								<span class="font-mono tabular-nums">{seg.value}</span>
-								{#if seg.inDenom}
-									<span class="font-mono tabular-nums">
-										({formatPercent(
-											pct(seg.value, dimension === 'power' && hasWeight ? denomPower : denomVoters),
-											1
-										)})
-									</span>
-								{:else}
-									<span class="italic">excluded</span>
+								{#if !seg.inDenom}
+									<span class="italic">(excluded)</span>
 								{/if}
 							</span>
 						{/if}
@@ -280,7 +289,13 @@
 				</div>
 			</div>
 
-			<table class="mb-3 w-full border-collapse text-xs">
+			<!-- Tabular layout for sm+ — preserves column alignment when the
+			     full table fits. Each cohort gets the standard four-column
+			     read (Cohort / Voters / Voting power / Vote share). "Vote
+			     share" is each cohort's percentage of the participation-
+			     pool denominator; the footnote below the table explains
+			     how the denominator is constructed. -->
+			<table class="mb-3 hidden w-full border-collapse text-xs sm:table">
 				<thead>
 					<tr
 						class="border-t border-slate-200 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
@@ -290,7 +305,7 @@
 						{#if hasWeight}
 							<th class="py-2 text-right font-semibold">Voting power</th>
 						{/if}
-						<th class="py-2 pl-4 text-right font-semibold">% of denominator</th>
+						<th class="py-2 pl-4 text-right font-semibold">Vote share</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -311,17 +326,11 @@
 						<td class="py-2 text-right font-mono tabular-nums">{yesCount}</td>
 						{#if hasWeight}
 							<td class="py-2 text-right font-mono tabular-nums">
-								{lovelaceToAda(yesPower)}
+								<AdaValue lovelace={yesPower} label="Yes voting power" />
 							</td>
 						{/if}
 						<td class="py-2 pl-4 text-right font-mono tabular-nums">
-							{formatPercent(
-								pct(
-									dimension === 'power' && hasWeight ? yesPower : yesCount,
-									dimension === 'power' && hasWeight ? denomPower : denomVoters
-								),
-								1
-							)}
+							{shareOf(yesCount, yesPower)}
 						</td>
 					</tr>
 					<tr class="border-t border-slate-100 align-middle">
@@ -341,17 +350,11 @@
 						<td class="py-2 text-right font-mono tabular-nums">{noCount}</td>
 						{#if hasWeight}
 							<td class="py-2 text-right font-mono tabular-nums">
-								{lovelaceToAda(noPower)}
+								<AdaValue lovelace={noPower} label="No voting power" />
 							</td>
 						{/if}
 						<td class="py-2 pl-4 text-right font-mono tabular-nums">
-							{formatPercent(
-								pct(
-									dimension === 'power' && hasWeight ? noPower : noCount,
-									dimension === 'power' && hasWeight ? denomPower : denomVoters
-								),
-								1
-							)}
+							{shareOf(noCount, noPower)}
 						</td>
 					</tr>
 					<tr class="border-t border-slate-100 align-middle">
@@ -368,17 +371,11 @@
 						<td class="py-2 text-right font-mono tabular-nums">{didNotVoteVoters}</td>
 						{#if hasWeight}
 							<td class="py-2 text-right font-mono tabular-nums">
-								{lovelaceToAda(didNotVotePower)}
+								<AdaValue lovelace={didNotVotePower} label="Did-not-vote voting power" />
 							</td>
 						{/if}
 						<td class="py-2 pl-4 text-right font-mono tabular-nums">
-							{formatPercent(
-								pct(
-									dimension === 'power' && hasWeight ? didNotVotePower : didNotVoteVoters,
-									dimension === 'power' && hasWeight ? denomPower : denomVoters
-								),
-								1
-							)}
+							{shareOf(didNotVoteVoters, didNotVotePower)}
 						</td>
 					</tr>
 					<tr class="border-t-2 border-slate-300 align-middle">
@@ -396,7 +393,7 @@
 						<td class="py-2 pt-3 text-right font-mono tabular-nums">{abstainCount}</td>
 						{#if hasWeight}
 							<td class="py-2 pt-3 text-right font-mono tabular-nums">
-								{lovelaceToAda(abstainPower)}
+								<AdaValue lovelace={abstainPower} label="Abstain voting power" />
 							</td>
 						{/if}
 						<td class="py-2 pl-4 pt-3 text-right text-muted-foreground">—</td>
@@ -410,13 +407,118 @@
 						<td class="py-2 text-right font-mono text-xs tabular-nums">{denomVoters}</td>
 						{#if hasWeight}
 							<td class="py-2 text-right font-mono text-xs tabular-nums">
-								{lovelaceToAdaCompact(denomPower)}
+								<AdaValue lovelace={denomPower} label="Denominator voting power" />
 							</td>
 						{/if}
 						<td class="py-2 pl-4 text-right font-mono text-xs tabular-nums">100.0%</td>
 					</tr>
 				</tbody>
 			</table>
+
+			<!-- Stacked cohort cards for <sm. The columns of the desktop table
+			     become a labelled grid inside each card so the same four
+			     readings (Voters / Voting power / Vote share) stay legible
+			     without forcing horizontal scroll on narrow phones. -->
+			{#snippet cohortCard(opts)}
+				<div
+					class="rounded-md border border-slate-200 bg-white p-3 {opts.emphasis
+						? 'border-slate-300 bg-slate-50/60'
+						: ''}"
+				>
+					<div class="mb-2 flex items-start gap-2">
+						<span
+							class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+							style="background-color: {opts.color};"
+							aria-hidden="true"
+						></span>
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+								<span class="font-medium">{opts.label}</span>
+								{#if opts.optionDetail}
+									<OptionDetails option={opts.optionDetail} />
+								{/if}
+								{#if opts.note}
+									<span class="text-[10px] italic text-muted-foreground">{opts.note}</span>
+								{/if}
+							</div>
+						</div>
+					</div>
+					<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+						<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+							Voters
+						</dt>
+						<dd class="text-right font-mono tabular-nums">{opts.voters}</dd>
+						{#if hasWeight && opts.powerLovelace != null}
+							<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+								Voting power
+							</dt>
+							<dd class="text-right font-mono tabular-nums">
+								<AdaValue
+									lovelace={opts.powerLovelace}
+									label="{opts.label} voting power"
+								/>
+							</dd>
+						{/if}
+						<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+							Vote share
+						</dt>
+						<dd class="text-right font-mono tabular-nums">{opts.share}</dd>
+					</dl>
+				</div>
+			{/snippet}
+
+			<div class="mb-3 space-y-2 sm:hidden">
+				{@render cohortCard({
+					label: 'Yes',
+					color: optionColor('yes'),
+					optionDetail: yesOption,
+					voters: yesCount,
+					powerLovelace: yesPower,
+					share: shareOf(yesCount, yesPower)
+				})}
+				{@render cohortCard({
+					label: 'No',
+					color: optionColor('no'),
+					optionDetail: noOption,
+					voters: noCount,
+					powerLovelace: noPower,
+					share: shareOf(noCount, noPower)
+				})}
+				{@render cohortCard({
+					label: 'Did not vote on this proposal',
+					color: '#94a3b8',
+					voters: didNotVoteVoters,
+					powerLovelace: didNotVotePower,
+					share: shareOf(didNotVoteVoters, didNotVotePower)
+				})}
+				{@render cohortCard({
+					label: 'Abstain',
+					color: '#1e293b',
+					note: 'excluded from share',
+					voters: abstainCount,
+					powerLovelace: abstainPower,
+					share: '—'
+				})}
+				<div
+					class="rounded-md border border-slate-300 bg-slate-100/70 p-3 text-xs"
+				>
+					<div class="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+						Denominator
+					</div>
+					<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
+						<dt class="text-muted-foreground">Voters</dt>
+						<dd class="text-right font-mono tabular-nums">{denomVoters}</dd>
+						{#if hasWeight}
+							<dt class="text-muted-foreground">Voting power</dt>
+							<dd class="text-right font-mono tabular-nums">
+								<AdaValue lovelace={denomPower} label="Denominator voting power" />
+							</dd>
+						{/if}
+						<dt class="text-muted-foreground">Vote share</dt>
+						<dd class="text-right font-mono tabular-nums">100.0%</dd>
+					</dl>
+				</div>
+			</div>
 
 			<div
 				class="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50/60 p-3 text-[11px] text-slate-700"

@@ -14,8 +14,8 @@
 
 <Card.Root class="z-1000 relative mb-4">
 	<Card.Header class="pt-5">
-		<Card.Title class="flex gap-2 text-xl">
-			{ballot.title}
+		<Card.Title class="flex flex-wrap items-center gap-x-2 gap-y-1 text-lg leading-snug sm:text-xl">
+			<span class="break-words">{ballot.title}</span>
 			<Badge status={ballot.status} />
 			<SourceBadge source={ballot.source} />
 		</Card.Title>

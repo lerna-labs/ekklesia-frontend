@@ -77,7 +77,7 @@
 				href={$config.ipfsGatewayBase + proposal.ipfsHash}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="link inline-block max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap align-bottom"
+				class="link inline-block max-w-[60vw] overflow-hidden text-ellipsis whitespace-nowrap align-bottom sm:max-w-[200px]"
 				title={proposal.ipfsHash}
 			>
 				{proposal.ipfsHash}

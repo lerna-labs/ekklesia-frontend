@@ -191,8 +191,8 @@
 			{/if}
 		{/if}
 
-		<div class="flex items-center justify-between">
-			<div class="flex gap-1">
+		<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+			<div class="flex flex-wrap gap-1">
 				<Button
 					href={`/ballots/${ballot._id}/proposals/${proposal._id}`}
 					size="sm"

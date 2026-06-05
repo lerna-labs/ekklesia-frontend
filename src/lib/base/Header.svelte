@@ -20,16 +20,16 @@
 </script>
 
 <header
-	class="text-header-foreground relative m-auto mb-4 flex max-w-3xl items-center justify-end p-4 pb-0 pt-4"
+	class="text-header-foreground relative m-auto mb-4 flex max-w-3xl items-center justify-end gap-2 p-4 pb-0 pt-4"
 >
-	<a href="/" class="flex-1">
+	<a href="/" class="min-w-0 flex-1">
 		{#if useWordmark}
-			<h1 class="mb-0 mt-0 p-0 text-3xl font-medium">{BRAND.name}</h1>
+			<h1 class="mb-0 mt-0 truncate p-0 text-2xl font-medium sm:text-3xl">{BRAND.name}</h1>
 		{:else}
 			<img
 				src={candidates[logoIndex]}
 				alt={BRAND.name}
-				class="block h-10 w-auto"
+				class="block h-8 w-auto max-w-full sm:h-10"
 				onerror={onLogoError}
 			/>
 		{/if}

@@ -50,10 +50,10 @@
 				<Pagination.PrevButton
 					onclick={goToPrevious}
 					disabled={currentPage <= 1}
-					class="hidden sm:flex"
+					aria-label="Previous page"
 				>
 					<ChevronLeft class="size-4" />
-					<span class="hidden sm:block">Previous</span>
+					<span class="hidden sm:inline">Previous</span>
 				</Pagination.PrevButton>
 			</Pagination.Item>
 
@@ -79,9 +79,9 @@
 				<Pagination.NextButton
 					onclick={goToNext}
 					disabled={currentPage >= totalPages}
-					class="hidden sm:flex"
+					aria-label="Next page"
 				>
-					<span class="hidden sm:block">Next</span>
+					<span class="hidden sm:inline">Next</span>
 					<ChevronRight class="size-4" />
 				</Pagination.NextButton>
 			</Pagination.Item>

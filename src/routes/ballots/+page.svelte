@@ -20,11 +20,16 @@
 	);
 </script>
 
-<section class="">
-	<header class="mb-4 items-center justify-between sm:flex">
+<section>
+	<!-- Below sm the title takes its own line, then a full-width search bar
+	     with the filter popover trigger anchored at the right edge as an
+	     icon-only button. At sm+ the original inline layout returns. -->
+	<header class="mb-4 sm:flex sm:items-center sm:justify-between">
 		<h1 class="mb-3">Ballots ({data.pagination.total})</h1>
-		<div class="flex justify-between gap-1">
-			<Search />
+		<div class="flex items-center gap-1 sm:justify-between">
+			<div class="min-w-0 flex-1 sm:flex-initial">
+				<Search />
+			</div>
 			<BallotFilter {data} />
 		</div>
 	</header>

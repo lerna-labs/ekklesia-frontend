@@ -23,10 +23,12 @@
 {/if}
 
 <section class="relative mt-6">
-	<header class="mb-4 items-center justify-between sm:flex">
+	<header class="mb-4 sm:flex sm:items-center sm:justify-between">
 		<h2 class="mb-3">Active Voters ({data.pagination.total})</h2>
-		<div class="flex justify-between gap-1">
-			<Search />
+		<div class="flex items-center gap-1 sm:justify-between">
+			<div class="min-w-0 flex-1 sm:flex-initial">
+				<Search />
+			</div>
 			<Sort
 				sortOptions={[
 					{ label: 'Votes', value: 'votes' },

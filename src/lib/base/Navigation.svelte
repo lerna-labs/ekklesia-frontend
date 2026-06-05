@@ -9,7 +9,7 @@
 	import { fade } from 'svelte/transition';
 </script>
 
-<nav class="flex gap-1">
+<nav class="flex shrink-0 gap-1">
 	{#if $draftCount > 0}
 		<div in:fade={{ duration: 300 }} out:fade={{ duration: 300 }} class="flex items-center">
 			<PendingVotesAlert />
@@ -20,13 +20,17 @@
 	{:else}
 		<!-- Dashboard pill inverts header-foreground (text colour on header bg
 		     becomes the pill bg; pill text becomes header bg). Auto-contrast
-		     against whatever the deployment picks. -->
+		     against whatever the deployment picks. Voter ID hides on the
+		     narrowest viewports so the wordmark stays legible — the User
+		     icon still signals "you're logged in / open dashboard". -->
 		<Button
 			href="/dashboard"
 			size="sm"
 			class="bg-header-foreground text-header hover:bg-header-foreground/85"
+			aria-label="Dashboard"
 		>
-			<User /> {shortenString($user?.voterId, 10, true)}
+			<User />
+			{shortenString($user?.voterId, 10, true)}
 		</Button>
 		<Button
 			size="sm"

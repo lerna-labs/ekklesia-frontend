@@ -35,8 +35,8 @@
 	});
 </script>
 
-<div class="flex gap-2 text-xl">
-	<h1 class="mb-1">{proposal.title}</h1>
+<div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xl">
+	<h1 class="mb-1 break-words">{proposal.title}</h1>
 	<BallotBadge status={ballot.status} />
 </div>
 

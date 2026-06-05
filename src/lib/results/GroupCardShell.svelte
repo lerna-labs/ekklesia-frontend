@@ -49,25 +49,27 @@
 <Card.Root class="relative overflow-hidden">
 	<div class="absolute inset-y-0 left-0 w-1 {palette.bar}" aria-hidden="true"></div>
 
-	<div class="pl-4">
-		<Card.Header class="pb-3">
-			<div class="flex items-start justify-between gap-3">
-				<div class="flex items-center gap-3">
+	<div class="pl-3 sm:pl-4">
+		<Card.Header class="px-4 pb-3 sm:px-6">
+			<div class="flex items-start justify-between gap-2 sm:gap-3">
+				<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 					<div
-						class="flex h-9 w-9 items-center justify-center rounded-md ring-1 ring-inset {palette.chip} {palette.icon}"
+						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md ring-1 ring-inset {palette.chip} {palette.icon}"
 					>
 						{#if identity.Icon}
 							{@const Icon = identity.Icon}
 							<Icon class="h-5 w-5" aria-hidden="true" />
 						{/if}
 					</div>
-					<div>
+					<div class="min-w-0">
 						<div
 							class="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
 						>
 							{identity.role}
 						</div>
-						<div class="text-lg font-semibold leading-tight">{group.label}</div>
+						<div class="break-words text-base font-semibold leading-tight sm:text-lg">
+							{group.label}
+						</div>
 					</div>
 				</div>
 
@@ -81,10 +83,12 @@
 			</div>
 		</Card.Header>
 
-		<Card.Content class="pt-0">
-			<div class="grid gap-6 pb-5 md:grid-cols-[auto_1fr] md:items-center">
-				<!-- Participation ring + stats -->
-				<div class="flex items-center gap-4 min-w-0">
+		<Card.Content class="px-4 pt-0 sm:px-6">
+			<div class="grid gap-5 pb-5 sm:gap-6 md:grid-cols-[auto_1fr] md:items-center">
+				<!-- Participation ring + stats. The stats column relies on
+				     `min-w-0` + `break-words` so wide "12,345 / 678,901" pairs
+				     wrap rather than overflow at narrow viewports. -->
+				<div class="flex min-w-0 items-center gap-3 sm:gap-4">
 					<div class="relative shrink-0" style="width: {RING.size}px; height: {RING.size}px;">
 						<svg viewBox="0 0 {RING.size} {RING.size}" class="block">
 							<circle
@@ -128,26 +132,26 @@
 						</div>
 					</div>
 
-					<div class="space-y-2">
-						<div>
+					<div class="min-w-0 space-y-2">
+						<div class="min-w-0">
 							<div
 								class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
 							>
 								Voters
 							</div>
-							<div class="whitespace-nowrap font-mono text-sm tabular-nums">
+							<div class="break-words font-mono text-sm tabular-nums">
 								{group.activeVoters}{#if hasTurnoutDenom}<span class="text-muted-foreground">{' / '}{group.totalAllowedVoterCount}</span>{/if}
 							</div>
 						</div>
 
 						{#if hasWeight}
-							<div>
+							<div class="min-w-0">
 								<div
 									class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
 								>
 									Voting power
 								</div>
-								<div class="whitespace-nowrap font-mono text-sm tabular-nums">
+								<div class="break-words font-mono text-sm tabular-nums">
 									{lovelaceToAdaCompact(group.activePower)}{#if hasPowerDenom}<span class="text-muted-foreground">{' / '}{lovelaceToAdaCompact(group.totalVotingPower)}</span>{/if}
 								</div>
 								{#if hasPowerDenom}

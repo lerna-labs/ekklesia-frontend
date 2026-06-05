@@ -290,11 +290,20 @@
 <section class="mt-6">
 	<header class="mb-4">
 		<h2 class="mb-3">Proposals ({data.pagination.total})</h2>
-		<div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-			<div class="min-w-0 max-w-xs flex-1">
-				<Search />
+		<!-- Search + facet controls. Below sm the search bar takes the full
+		     row with the facet popovers next to it; the optional
+		     "Not voted first" toggle flows underneath on its own line. At
+		     sm+ everything sits inline. -->
+		<div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-2">
+			<div class="flex items-center gap-2 sm:min-w-0 sm:max-w-xs sm:flex-1">
+				<div class="min-w-0 flex-1">
+					<Search />
+				</div>
+				<div class="sm:hidden">
+					<FacetControls facets={ballot.facets} applied={data.applied} />
+				</div>
 			</div>
-			<div class="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
+			<div class="flex flex-wrap items-center gap-x-4 gap-y-2 sm:ml-auto">
 				{#if showUndraftedToggle}
 					<label
 						class="inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap text-xs text-muted-foreground"
@@ -304,7 +313,9 @@
 						<Label for="undraftedFirst" class="cursor-pointer">Not voted first</Label>
 					</label>
 				{/if}
-				<FacetControls facets={ballot.facets} applied={data.applied} />
+				<div class="hidden sm:block">
+					<FacetControls facets={ballot.facets} applied={data.applied} />
+				</div>
 			</div>
 		</div>
 	</header>

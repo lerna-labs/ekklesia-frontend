@@ -83,9 +83,12 @@
 <div class="flex shrink-0 items-center gap-1">
 	{#if filterableFacets.length > 0}
 		<Popover.Root>
-			<Popover.Trigger class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+			<Popover.Trigger
+				class={buttonVariants({ variant: 'outline', size: 'sm' })}
+				aria-label="Filters"
+			>
 				<SlidersHorizontal class="h-3.5 w-3.5" />
-				Filters
+				<span class="hidden sm:inline">Filters</span>
 				{#if hasActiveFilters}
 					<span
 						class="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[10px] text-brand-fg"
@@ -94,7 +97,7 @@
 					</span>
 				{/if}
 			</Popover.Trigger>
-			<Popover.Content class="w-[280px] text-sm">
+			<Popover.Content class="w-[min(calc(100vw-2rem),280px)] text-sm">
 				<div class="mb-2 flex items-center justify-between">
 					<span class="text-sm font-bold">Filters</span>
 					{#if hasActiveFilters}
@@ -147,17 +150,21 @@
 	{/if}
 
 	<Popover.Root>
-		<Popover.Trigger class={buttonVariants({ variant: 'outline', size: 'sm' })}>
+		<Popover.Trigger
+			class={buttonVariants({ variant: 'outline', size: 'sm' })}
+			aria-label="Sort"
+		>
 			<ArrowUpDown class="h-3.5 w-3.5" />
-			Sort
+			<span class="hidden sm:inline">Sort</span>
 			{#if hasExplicitSort}
-				<span class="ml-1 text-xs text-muted-foreground">
+				<span class="ml-1 hidden text-xs text-muted-foreground sm:inline">
 					({activeSortLabel()}
 					{activeSort.direction === 'asc' ? '↑' : '↓'})
 				</span>
+				<span class="ml-1 inline-flex h-2 w-2 shrink-0 rounded-full bg-brand sm:hidden" aria-hidden="true"></span>
 			{/if}
 		</Popover.Trigger>
-		<Popover.Content class="w-[260px] text-sm">
+		<Popover.Content class="w-[min(calc(100vw-2rem),260px)] text-sm">
 			<div class="mb-2 flex items-center justify-between">
 				<span class="text-sm font-bold">Sort by</span>
 				{#if hasExplicitSort}

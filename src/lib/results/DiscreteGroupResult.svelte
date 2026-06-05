@@ -3,8 +3,9 @@
 	import DonutChart from '$lib/charts/DonutChart.svelte';
 	import GroupCardShell from './GroupCardShell.svelte';
 	import { optionColor, GROUP_ACCENTS, groupIdentity } from './groupResults.js';
-	import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
+	import { formatPercent } from '$lib/utils.js';
 	import OptionDetails from '$lib/OptionDetails.svelte';
+	import AdaValue from './AdaValue.svelte';
 
 	/**
 	 * Per-group visualization for discrete-choice vote types: `default`,
@@ -185,7 +186,7 @@
 <GroupCardShell {group} {ballot}>
 	{#snippet visualization()}
 		{#if hasVotes}
-			<div class="grid grid-cols-2 gap-4 md:gap-6">
+			<div class="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6">
 				<div class="flex flex-col items-center">
 					<div
 						class="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
@@ -211,7 +212,7 @@
 							<DonutChart data={powerDonut} title="" />
 						</div>
 						<div class="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-							{lovelaceToAda(totalGroupPower)}
+							<AdaValue lovelace={totalGroupPower} label="Total voting power" />
 						</div>
 					</div>
 				{/if}
@@ -264,7 +265,7 @@
 							<span class="font-mono tabular-nums">({formatPercent(expressedPct, 1)})</span>
 							{#if hasWeight}
 								<span class="ml-1 font-mono tabular-nums text-muted-foreground/60">
-									{lovelaceToAdaCompact(expressedPower)}
+									<AdaValue lovelace={expressedPower} label="Expressed voting power" />
 								</span>
 							{/if}
 						</span>
@@ -281,7 +282,7 @@
 							<span class="font-mono tabular-nums">({formatPercent(abstainPct, 1)})</span>
 							{#if hasWeight}
 								<span class="ml-1 font-mono tabular-nums text-muted-foreground/60">
-									{lovelaceToAdaCompact(abstainPower)}
+									<AdaValue lovelace={abstainPower} label="Abstain voting power" />
 								</span>
 							{/if}
 						</span>
@@ -343,7 +344,10 @@
 					{/if}
 				</div>
 			{/if}
-			<table class="w-full border-collapse text-xs">
+			<!-- Tabular layout for sm+ — preserves column alignment when the
+			     full table fits. Up to five columns with budget mode
+			     (Option / Cost / Voters / Voting power / Cumulative). -->
+			<table class="hidden w-full border-collapse text-xs sm:table">
 				<thead>
 					<tr
 						class="border-t border-slate-200 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
@@ -379,7 +383,6 @@
 						{@const powerPctRow = totalGroupPower
 							? (row.votingPower / totalGroupPower) * 100
 							: 0}
-						{@const leading = row.id === leadingId}
 						{@const color = colorByOptionId.get(String(row.id))}
 						{@const rowIdx = tableRows.indexOf(row)}
 						{@const cum = isBudget ? cumulativeCosts[rowIdx] : null}
@@ -430,7 +433,7 @@
 										aria-hidden="true"
 									></span>
 									<span class="relative z-10 font-mono tabular-nums">
-										{lovelaceToAda(row.votingPower)}
+										<AdaValue lovelace={row.votingPower} label="{row.label} voting power" />
 										<span class="ml-1 text-muted-foreground">
 											{formatPercent(powerPctRow, 1)}
 										</span>
@@ -460,6 +463,103 @@
 					{/each}
 				</tbody>
 			</table>
+
+			<!-- Stacked option cards for <sm. Same per-row content, restacked
+			     so the proportional-bar overlay reads as a horizontal accent
+			     under the row rather than as competing column-width art. -->
+			<div class="space-y-2 sm:hidden">
+				{#each tableRows as row}
+					{@const countPct = totalGroupCount ? (row.count / totalGroupCount) * 100 : 0}
+					{@const powerPctRow = totalGroupPower
+						? (row.votingPower / totalGroupPower) * 100
+						: 0}
+					{@const color = colorByOptionId.get(String(row.id))}
+					{@const rowIdx = tableRows.indexOf(row)}
+					{@const cum = isBudget ? cumulativeCosts[rowIdx] : null}
+					{@const abstain = isAbstainRow(row)}
+					{@const opt = optionFor(row.id)}
+					{@const dominant = dimension === 'power' && hasWeight ? powerPctRow : countPct}
+					<div
+						class="relative overflow-hidden rounded-md border border-slate-200 bg-white p-3 {cum?.overBudget
+							? 'border-amber-300 bg-amber-50/40'
+							: ''}"
+					>
+						<!-- Inset progress accent — same opacity/colour idea as the
+						     table-row overlay, but horizontal at the bottom edge so
+						     it doesn't compete with the labelled rows. -->
+						<span
+							class="pointer-events-none absolute inset-x-0 bottom-0 h-1"
+							style="width: {Math.min(100, dominant)}%; background-color: {color}; opacity: 0.45;"
+							aria-hidden="true"
+						></span>
+						<div class="mb-2 flex items-start gap-2">
+							<span
+								class="mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+								style="background-color: {color};"
+								aria-hidden="true"
+							></span>
+							<div class="min-w-0 flex-1">
+								<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+									<span class="break-words font-medium">{row.label}</span>
+									{#if opt && !abstain}
+										<OptionDetails option={opt} {capacityUnits} />
+									{/if}
+								</div>
+							</div>
+						</div>
+						<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+							{#if isBudget}
+								<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+									Cost
+								</dt>
+								<dd class="text-right font-mono tabular-nums">
+									{#if abstain}
+										<span class="text-muted-foreground">—</span>
+									{:else}
+										{costOf(row.id)}{capacityUnits ? ` ${capacityUnits}` : ''}
+									{/if}
+								</dd>
+							{/if}
+							<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+								Voters
+							</dt>
+							<dd class="text-right font-mono tabular-nums">
+								{row.count}
+								<span class="ml-1 text-muted-foreground">{formatPercent(countPct, 1)}</span>
+							</dd>
+							{#if hasWeight}
+								<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+									Voting power
+								</dt>
+								<dd class="text-right font-mono tabular-nums">
+									<AdaValue lovelace={row.votingPower} label="{row.label} voting power" />
+									<span class="ml-1 text-muted-foreground">{formatPercent(powerPctRow, 1)}</span>
+								</dd>
+							{/if}
+							{#if isBudget}
+								<dt class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+									Cumulative
+								</dt>
+								<dd
+									class="text-right font-mono tabular-nums {cum?.overBudget
+										? 'font-semibold text-amber-700'
+										: ''}"
+									title={cum?.overBudget
+										? 'Cumulative cost exceeds the voter budget'
+										: null}
+								>
+									{#if cum?.value == null}
+										<span class="text-muted-foreground">—</span>
+									{:else}
+										{cum.value}
+										<span class="ml-1 text-[10px] text-muted-foreground">/ {voterBudget}</span>
+									{/if}
+								</dd>
+							{/if}
+						</dl>
+					</div>
+				{/each}
+			</div>
 			{#if isBudget}
 				<p class="mt-2 text-[10px] italic text-muted-foreground">
 					The Cumulative column assumes a top-{dimension === 'power'
