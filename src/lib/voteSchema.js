@@ -154,6 +154,27 @@ function rankCountOf(proposal) {
 }
 
 /**
+ * The min/max number of options a multi-choice (preference / budget) proposal
+ * accepts. Schema v2 carries `minSelections` / `maxSelections`; legacy
+ * `preference` ballots encoded the upper bound in `voterBudget`. A bare
+ * `voterBudget` is NOT a reliable cap on schema-v2 `multi-choice` — the
+ * backend emits a stray `voterBudget: 1` there — so prefer the explicit
+ * fields and only fall back to `voterBudget` when `maxSelections` is absent.
+ * A selection draft always needs at least one pick (the empty case is an
+ * abstain / cleared draft, handled earlier).
+ *
+ * @param {{ minSelections?: number, maxSelections?: number, voterBudget?: number, voteOptions?: Array<unknown> }} proposal
+ * @returns {{ min: number, max: number }}
+ */
+function selectionBoundsOf(proposal) {
+	const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+	const max =
+		Number(proposal?.maxSelections) || Number(proposal?.voterBudget) || optionCount || Infinity;
+	const min = Math.max(1, Number(proposal?.minSelections) || 0);
+	return { min, max };
+}
+
+/**
  * True when the voter's draft for a proposal satisfies the per-method
  * completeness contract the broker enforces. Used by the ballot submit panel
  * to gate the Submit button so a partial Likert / Ranked / Weighted draft
@@ -185,10 +206,12 @@ export function draftIsComplete(proposal, draft) {
 		case VOTE_METHODS.SINGLE_CHOICE:
 		case VOTE_METHODS.RANGE:
 			return sel.length === 1;
-		case VOTE_METHODS.MULTI_CHOICE:
-			// Preference / budget allow partial selection — any non-empty
-			// pick is a valid submission.
-			return sel.length >= 1;
+		case VOTE_METHODS.MULTI_CHOICE: {
+			// Preference / budget allow a range of picks — satisfy the
+			// ballot's minSelections..maxSelections bounds.
+			const { min, max } = selectionBoundsOf(proposal);
+			return sel.length >= min && sel.length <= max;
+		}
 		case VOTE_METHODS.RANKED:
 			return sel.length === rankCountOf(proposal);
 		case VOTE_METHODS.WEIGHTED: {
@@ -222,6 +245,12 @@ export function incompleteDraftReason(proposal, draft) {
 	const sel = draft.selection;
 	const method = methodForProposal(proposal);
 	switch (method) {
+		case VOTE_METHODS.MULTI_CHOICE: {
+			const { min, max } = selectionBoundsOf(proposal);
+			if (sel.length < min) return `Choose at least ${min}`;
+			if (sel.length > max) return `Choose at most ${max}`;
+			return null;
+		}
 		case VOTE_METHODS.RANKED: {
 			const need = rankCountOf(proposal);
 			return `Ranked ${sel.length} of ${need}`;

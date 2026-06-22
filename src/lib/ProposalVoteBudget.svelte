@@ -30,6 +30,18 @@
 	const voterBudget = $derived(Number(proposal?.voterBudget) || 0);
 	const capacityUnits = $derived(proposal?.data?.capacityUnits || null);
 
+	// Preference (multi-choice) cap on *how many* options a voter may pick.
+	// Schema v2 carries this as `maxSelections`; legacy `preference` ballots
+	// encoded it in `voterBudget`. Fall back to that, then to "every option"
+	// so a ballot that omits both (or sends a stray voterBudget like 1 — which
+	// the backend emits for multi-choice and which is NOT a selection cap)
+	// doesn't lock the voter to a single pick. Budget mode ignores this and
+	// caps on Σcost instead.
+	const maxSelections = $derived(
+		Number(proposal?.maxSelections) || voterBudget || options.length
+	);
+	const minSelections = $derived(Math.max(0, Number(proposal?.minSelections) || 0));
+
 	const voteType = $derived(String(proposal?.voteType ?? '').toLowerCase());
 	const optionCosts = $derived(options.map((o) => Number(o.cost) || 0));
 	const uniformCosts = $derived(
@@ -58,7 +70,16 @@
 	);
 	const costRemaining = $derived(isBudget ? voterBudget - costUsed : 0);
 	const selectionsRemaining = $derived(
-		isBudget ? 0 : Math.max(0, voterBudget - selected.length)
+		isBudget ? 0 : Math.max(0, maxSelections - selected.length)
+	);
+	// How many more picks are needed to satisfy a minSelections > 1 floor.
+	// 0 once the minimum is met. Only meaningful for a non-trivial minimum —
+	// "choose at least 1" is just noise on the (common) min-1 ballot, where
+	// the empty state and abstain toggle already make the ask clear.
+	const selectionsShort = $derived(
+		isBudget || isAbstaining || minSelections <= 1
+			? 0
+			: Math.max(0, minSelections - selected.length)
 	);
 
 	// "engineer-months" → "engineer-month" when cost === 1; naive but
@@ -91,7 +112,7 @@
 		if (disabled || isAbstaining) return true;
 		if (selected.includes(optionId)) return false;
 		if (isBudget) return costOf(optionId) > costRemaining;
-		return selected.length >= voterBudget;
+		return selected.length >= maxSelections;
 	}
 
 	function lockReason() {
@@ -151,8 +172,10 @@
 				</span>
 			{:else}
 				<span class="font-mono tabular-nums">
-					Options selected: {isAbstaining ? 0 : selected.length} of {voterBudget}
-					{#if selectionsRemaining > 0 && !isAbstaining}
+					Options selected: {isAbstaining ? 0 : selected.length} of {maxSelections}
+					{#if selectionsShort > 0}
+						<span class="text-amber-700">· choose at least {minSelections}</span>
+					{:else if selectionsRemaining > 0 && !isAbstaining}
 						<span class="text-muted-foreground/80">
 							· {selectionsRemaining} remaining
 						</span>
