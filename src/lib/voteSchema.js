@@ -61,9 +61,18 @@ export const ERROR_CODES = Object.freeze({
 });
 
 /**
- * Resolve the Hydra `method` a legacy ekklesia `voteType` maps onto. The
- * backend is moving toward emitting explicit methods; until every ballot
- * is migrated, existing voteTypes continue to flow through:
+ * The canonical schema-v2 method names, used to short-circuit
+ * `methodForProposal` when the backend already emits an explicit method in
+ * the `voteType` field (the migrated path).
+ */
+const V2_METHOD_VALUES = new Set(Object.values(VOTE_METHODS));
+
+/**
+ * Resolve the Hydra `method` a proposal's `voteType` maps onto.
+ *
+ * Schema-v2 ballots carry the explicit Hydra method directly in `voteType`
+ * (e.g. `multi-choice`, `range`, `single-choice`) — those pass straight
+ * through. Pre-v2 ballots carry a legacy ekklesia voteType that we map:
  *
  *   default     → binary (2 options) OR single-choice (n options).
  *                 Deprecated voteType kept for pre-v2 ballots.
@@ -78,11 +87,18 @@ export const ERROR_CODES = Object.freeze({
  *                 abstain.
  *   weighted    → weighted. Point-allocation summing to voterBudget.
  *
+ * NOTE: this MUST recognize the v2 method strings — `ProposalVote.svelte`
+ * already routes `voteType: 'multi-choice'` / `'range'` to the right vote
+ * component, so if this fell through to the legacy default a multi-choice
+ * proposal would be gated as `single-choice` and reject any pick beyond one.
+ *
  * @param {{ voteType?: string, voteOptions?: Array<unknown> }} proposal
  * @returns {VoteMethod}
  */
 export function methodForProposal(proposal) {
 	const type = String(proposal?.voteType ?? 'default').toLowerCase();
+	// Migrated ballots already carry the explicit Hydra method.
+	if (V2_METHOD_VALUES.has(type)) return /** @type {VoteMethod} */ (type);
 	switch (type) {
 		case 'preference':
 		case 'budget':
