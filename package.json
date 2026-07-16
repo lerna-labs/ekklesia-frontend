@@ -12,11 +12,13 @@
 		"build:preprod": "vite build --mode preprod && node scripts/brand-build-output.js preprod",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"changeset": "changeset",
 		"format": "prettier --write .",
 		"lint": "npm run lint:content && prettier --check . && eslint .",
 		"lint:content": "node scripts/lint-content.js"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.31.1",
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@lucide/svelte": "^0.503.0",
