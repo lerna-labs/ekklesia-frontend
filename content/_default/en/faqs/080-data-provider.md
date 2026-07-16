@@ -1,5 +1,5 @@
 ---
-question: "Which data provider does Ekklesia use?"
+question: 'Which data provider does Ekklesia use?'
 order: 80
 ---
 

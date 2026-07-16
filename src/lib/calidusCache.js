@@ -30,32 +30,32 @@
 const PREFIX = 'ekklesia-calidus-';
 
 export function saveCalidusID(userId, calidusID) {
-	if (typeof localStorage === 'undefined') return;
-	if (!userId || !calidusID) return;
-	try {
-		localStorage.setItem(PREFIX + userId, calidusID);
-	} catch {
-		// quota errors are non-fatal — the ID is recoverable from the
-		// next POST /session round-trip if the voter logs in again.
-	}
+  if (typeof localStorage === 'undefined') return;
+  if (!userId || !calidusID) return;
+  try {
+    localStorage.setItem(PREFIX + userId, calidusID);
+  } catch {
+    // quota errors are non-fatal — the ID is recoverable from the
+    // next POST /session round-trip if the voter logs in again.
+  }
 }
 
 export function loadCalidusID(userId) {
-	if (typeof localStorage === 'undefined') return null;
-	if (!userId) return null;
-	try {
-		return localStorage.getItem(PREFIX + userId) || null;
-	} catch {
-		return null;
-	}
+  if (typeof localStorage === 'undefined') return null;
+  if (!userId) return null;
+  try {
+    return localStorage.getItem(PREFIX + userId) || null;
+  } catch {
+    return null;
+  }
 }
 
 export function clearCalidusID(userId) {
-	if (typeof localStorage === 'undefined') return;
-	if (!userId) return;
-	try {
-		localStorage.removeItem(PREFIX + userId);
-	} catch {
-		// ignore
-	}
+  if (typeof localStorage === 'undefined') return;
+  if (!userId) return;
+  try {
+    localStorage.removeItem(PREFIX + userId);
+  } catch {
+    // ignore
+  }
 }

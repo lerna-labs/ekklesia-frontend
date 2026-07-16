@@ -1,123 +1,123 @@
 <script>
-	import { page } from '$app/stores';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import { getWallets, enableWallet, getSignerAddress } from './WalletConnect.js';
-	import { onMount, createEventDispatcher } from 'svelte';
-	import { toast } from 'svelte-sonner';
-	const dispatch = createEventDispatcher();
-	const NETWORK_ID = $derived.by(() => $page.data.serverStatus.networkId);
+  import { page } from '$app/stores';
+  import { Button } from '$lib/components/ui/button/index.js';
+  import { getWallets, enableWallet, getSignerAddress } from './WalletConnect.js';
+  import { onMount, createEventDispatcher } from 'svelte';
+  import { toast } from 'svelte-sonner';
+  const dispatch = createEventDispatcher();
+  const NETWORK_ID = $derived.by(() => $page.data.serverStatus.networkId);
 
-	let { signType = 'stake', loading = $bindable(false), preselectedWallet = null } = $props();
-	let allWallets = $state([]);
-	let wallets = $derived.by(() => {
-		if (signType === 'pool') {
-			return allWallets.filter((wallet) => wallet.includes('eternl'));
-		}
-		return allWallets;
-	});
-	let selectedWallet = $state(undefined);
-	let connectedWallet = $state(undefined);
-	let walletApi = $state(undefined);
+  let { signType = 'stake', loading = $bindable(false), preselectedWallet = null } = $props();
+  let allWallets = $state([]);
+  let wallets = $derived.by(() => {
+    if (signType === 'pool') {
+      return allWallets.filter((wallet) => wallet.includes('eternl'));
+    }
+    return allWallets;
+  });
+  let selectedWallet = $state(undefined);
+  let connectedWallet = $state(undefined);
+  let walletApi = $state(undefined);
 
-	onMount(async () => {
-		const walletList = await getWallets();
+  onMount(async () => {
+    const walletList = await getWallets();
 
-		if (walletList.error) {
-			toast.error('No wallets available');
-			dispatch('nowallets', walletList.error);
-			return;
-		}
+    if (walletList.error) {
+      toast.error('No wallets available');
+      dispatch('nowallets', walletList.error);
+      return;
+    }
 
-		allWallets = walletList;
+    allWallets = walletList;
 
-		// Auto-connect to the voter's remembered wallet when available,
-		// so a returning signer skips the picker and goes straight to
-		// the sign prompt. Falls through to manual selection if the
-		// remembered wallet isn't installed on this browser.
-		if (
-			preselectedWallet &&
-			allWallets.includes(preselectedWallet) &&
-			!connectedWallet &&
-			!loading
-		) {
-			connectWallet(preselectedWallet);
-		}
-	});
+    // Auto-connect to the voter's remembered wallet when available,
+    // so a returning signer skips the picker and goes straight to
+    // the sign prompt. Falls through to manual selection if the
+    // remembered wallet isn't installed on this browser.
+    if (
+      preselectedWallet &&
+      allWallets.includes(preselectedWallet) &&
+      !connectedWallet &&
+      !loading
+    ) {
+      connectWallet(preselectedWallet);
+    }
+  });
 
-	async function connectWallet(walletName) {
-		loading = true;
-		selectedWallet = walletName;
-		walletApi = await enableWallet(selectedWallet, NETWORK_ID);
-		if (walletApi.error) {
-			toast.error(walletApi.error);
-			reset();
-			return;
-		}
+  async function connectWallet(walletName) {
+    loading = true;
+    selectedWallet = walletName;
+    walletApi = await enableWallet(selectedWallet, NETWORK_ID);
+    if (walletApi.error) {
+      toast.error(walletApi.error);
+      reset();
+      return;
+    }
 
-		// Pool voters enter their pool ID by hand — we don't probe the wallet.
-		let signerAddress;
-		if (signType !== 'pool') {
-			signerAddress = await getSignerAddress(walletApi, signType);
-			if (signerAddress?.error) {
-				toast.error(signerAddress.error);
-				reset();
-				return;
-			}
-		}
+    // Pool voters enter their pool ID by hand — we don't probe the wallet.
+    let signerAddress;
+    if (signType !== 'pool') {
+      signerAddress = await getSignerAddress(walletApi, signType);
+      if (signerAddress?.error) {
+        toast.error(signerAddress.error);
+        reset();
+        return;
+      }
+    }
 
-		loading = false;
-		connectedWallet = walletName;
-		toast.success('Wallet connected successfully');
-		dispatch('connected', {
-			api: walletApi,
-			walletName: selectedWallet,
-			address: signerAddress,
-			signType
-		});
-	}
+    loading = false;
+    connectedWallet = walletName;
+    toast.success('Wallet connected successfully');
+    dispatch('connected', {
+      api: walletApi,
+      walletName: selectedWallet,
+      address: signerAddress,
+      signType,
+    });
+  }
 
-	function reset() {
-		loading = false;
-		selectedWallet = undefined;
-		walletApi = undefined;
-		connectedWallet = undefined;
-	}
+  function reset() {
+    loading = false;
+    selectedWallet = undefined;
+    walletApi = undefined;
+    connectedWallet = undefined;
+  }
 </script>
 
 {#if wallets.length > 0}
-	<div class="wallets">
-		{#each wallets as walletName}
-			<Button
-				variant="outline"
-				class="mb-2 w-full"
-				disabled={!signType || (selectedWallet && selectedWallet != walletName)}
-				onclick={() => {
-					if (loading) return;
-					if (connectedWallet == walletName) {
-						reset();
-						return;
-					} else {
-						connectWallet(walletName);
-					}
-				}}
-			>
-				{#if loading && selectedWallet === walletName}
-					<span class="wallet">{walletName} (Connecting...)</span>
-				{:else}
-					<span class="wallet"
-						>{walletName}
-						{#if connectedWallet == walletName}(Connected){/if}</span
-					>
-				{/if}
-			</Button>
-		{/each}
-	</div>
+  <div class="wallets">
+    {#each wallets as walletName}
+      <Button
+        variant="outline"
+        class="mb-2 w-full"
+        disabled={!signType || (selectedWallet && selectedWallet != walletName)}
+        onclick={() => {
+          if (loading) return;
+          if (connectedWallet == walletName) {
+            reset();
+            return;
+          } else {
+            connectWallet(walletName);
+          }
+        }}
+      >
+        {#if loading && selectedWallet === walletName}
+          <span class="wallet">{walletName} (Connecting...)</span>
+        {:else}
+          <span class="wallet"
+            >{walletName}
+            {#if connectedWallet == walletName}(Connected){/if}</span
+          >
+        {/if}
+      </Button>
+    {/each}
+  </div>
 {:else}
-	<p>No wallets available</p>
+  <p>No wallets available</p>
 {/if}
 
 <style>
-	.wallet::first-letter {
-		text-transform: uppercase;
-	}
+  .wallet::first-letter {
+    text-transform: uppercase;
+  }
 </style>

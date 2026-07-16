@@ -1,28 +1,28 @@
 .markdown-content {
-	font-family: 'Geist', sans-serif;
+  font-family: 'Geist', sans-serif;
 }
 
 .markdown-content h1 {
-	margin-top: auto;
-	font-size: 1.5rem;
-	margin-bottom: 0.5rem;
-	font-weight: 500;
+  margin-top: auto;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
 }
 
 .markdown-content h2 {
-	font-size: 1.25rem;
-	font-weight: 400;
+  font-size: 1.25rem;
+  font-weight: 400;
 }
 
 .markdown-content h3 {
-	font-size: 1rem;
-	font-weight: 400;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 .markdown-content a {
-	color: inherit;
-	text-decoration: underline;
-	text-underline-offset: 2px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .markdown-content strong,
@@ -30,43 +30,43 @@
 .markdown-content p strong,
 .markdown-content div strong,
 .markdown-content li strong {
-	font-weight: 550 !important;
-	letter-spacing: 0.01em;
+  font-weight: 550 !important;
+  letter-spacing: 0.01em;
 }
 
 .markdown-content p {
-	font-weight: 400;
-	margin-bottom: 1rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
 }
 
 .markdown-content p:last-child {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .markdown-content ul,
 .markdown-content ol {
-	margin-left: 1rem;
-	margin-bottom: 1.5rem;
-	padding-left: 0.5rem;
+  margin-left: 1rem;
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
 }
 
 .markdown-content li {
-	margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .markdown-content ul li {
-	list-style-type: square;
+  list-style-type: square;
 }
 
 .markdown-content ol li {
-	list-style-type: decimal;
+  list-style-type: decimal;
 }
 
 /* Nested lists */
 .markdown-content ol ol li {
-	list-style-type: lower-alpha;
+  list-style-type: lower-alpha;
 }
 
 .markdown-content ol ol ol li {
-	list-style-type: lower-roman;
+  list-style-type: lower-roman;
 }

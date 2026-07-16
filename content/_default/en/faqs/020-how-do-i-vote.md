@@ -1,5 +1,5 @@
 ---
-question: "How do I vote?"
+question: 'How do I vote?'
 order: 20
 ---
 

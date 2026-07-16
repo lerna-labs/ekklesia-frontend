@@ -21,11 +21,11 @@ import path from 'node:path';
 import { loadEnv } from 'vite';
 
 const BRAND_DEFAULTS = {
-	name: 'Ekklesia',
-	title: 'Ekklesia — Verifiable, Hydra-Powered Voting on Cardano',
-	description:
-		'Cast verifiable on-chain votes for Cardano governance. One tool for DReps, SPOs, CC members, and token holders — fast, auditable, Hydra-powered.',
-	ogImage: '/social.png'
+  name: 'Ekklesia',
+  title: 'Ekklesia — Verifiable, Hydra-Powered Voting on Cardano',
+  description:
+    'Cast verifiable on-chain votes for Cardano governance. One tool for DReps, SPOs, CC members, and token holders — fast, auditable, Hydra-powered.',
+  ogImage: '/social.png',
 };
 
 const mode = process.argv[2] || process.env.NODE_ENV || 'production';
@@ -33,11 +33,11 @@ const env = loadEnv(mode, process.cwd(), 'VITE_');
 const buildDir = path.resolve('build', mode);
 
 function escapeHtmlAttr(value) {
-	return String(value)
-		.replaceAll('&', '&amp;')
-		.replaceAll('"', '&quot;')
-		.replaceAll('<', '&lt;')
-		.replaceAll('>', '&gt;');
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 }
 
 const name = env.VITE_APP_NAME || BRAND_DEFAULTS.name;
@@ -50,44 +50,44 @@ const twitter = env.VITE_APP_TWITTER_HANDLE || '';
 const ogImageAbs = url && ogImagePath.startsWith('/') ? `${url}${ogImagePath}` : ogImagePath;
 
 const replacements = {
-	'%BRAND_NAME%': escapeHtmlAttr(name),
-	'%BRAND_TITLE%': escapeHtmlAttr(title),
-	'%BRAND_DESCRIPTION%': escapeHtmlAttr(description),
-	'%BRAND_OG_IMAGE%': escapeHtmlAttr(ogImageAbs)
+  '%BRAND_NAME%': escapeHtmlAttr(name),
+  '%BRAND_TITLE%': escapeHtmlAttr(title),
+  '%BRAND_DESCRIPTION%': escapeHtmlAttr(description),
+  '%BRAND_OG_IMAGE%': escapeHtmlAttr(ogImageAbs),
 };
 
 const urlMeta = url
-	? `<meta property="og:url" content="${escapeHtmlAttr(url)}">\n\t<meta property="twitter:url" content="${escapeHtmlAttr(url)}">\n\t<meta property="twitter:domain" content="${escapeHtmlAttr(url.replace(/^https?:\/\//, ''))}">`
-	: '';
+  ? `<meta property="og:url" content="${escapeHtmlAttr(url)}">\n\t<meta property="twitter:url" content="${escapeHtmlAttr(url)}">\n\t<meta property="twitter:domain" content="${escapeHtmlAttr(url.replace(/^https?:\/\//, ''))}">`
+  : '';
 const twitterMeta = twitter
-	? `<meta name="twitter:site" content="${escapeHtmlAttr(twitter)}">\n\t<meta name="twitter:creator" content="${escapeHtmlAttr(twitter)}">`
-	: '';
+  ? `<meta name="twitter:site" content="${escapeHtmlAttr(twitter)}">\n\t<meta name="twitter:creator" content="${escapeHtmlAttr(twitter)}">`
+  : '';
 
 function applyBranding(html) {
-	let out = html;
-	for (const [key, value] of Object.entries(replacements)) {
-		out = out.replaceAll(key, value);
-	}
-	out = out.replaceAll('%BRAND_URL_META%', urlMeta);
-	out = out.replaceAll('%BRAND_TWITTER_META%', twitterMeta);
-	return out;
+  let out = html;
+  for (const [key, value] of Object.entries(replacements)) {
+    out = out.replaceAll(key, value);
+  }
+  out = out.replaceAll('%BRAND_URL_META%', urlMeta);
+  out = out.replaceAll('%BRAND_TWITTER_META%', twitterMeta);
+  return out;
 }
 
 const indexPath = path.join(buildDir, 'index.html');
 if (fs.existsSync(indexPath)) {
-	const html = fs.readFileSync(indexPath, 'utf8');
-	fs.writeFileSync(indexPath, applyBranding(html));
-	console.log(`[brand] rewrote ${indexPath}`);
+  const html = fs.readFileSync(indexPath, 'utf8');
+  fs.writeFileSync(indexPath, applyBranding(html));
+  console.log(`[brand] rewrote ${indexPath}`);
 } else {
-	console.warn(`[brand] ${indexPath} not found — skipping`);
+  console.warn(`[brand] ${indexPath} not found — skipping`);
 }
 
 const buildManifest = path.join(buildDir, 'site.webmanifest');
 const sourceManifest = path.resolve('static/site.webmanifest');
 if (fs.existsSync(buildManifest) && fs.existsSync(sourceManifest)) {
-	const manifest = JSON.parse(fs.readFileSync(sourceManifest, 'utf8'));
-	manifest.name = title;
-	manifest.short_name = name;
-	fs.writeFileSync(buildManifest, JSON.stringify(manifest, null, '\t') + '\n');
-	console.log(`[brand] rewrote ${buildManifest}`);
+  const manifest = JSON.parse(fs.readFileSync(sourceManifest, 'utf8'));
+  manifest.name = title;
+  manifest.short_name = name;
+  fs.writeFileSync(buildManifest, JSON.stringify(manifest, null, '\t') + '\n');
+  console.log(`[brand] rewrote ${buildManifest}`);
 }

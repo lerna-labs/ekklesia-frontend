@@ -1,22 +1,22 @@
 <script>
-  import { toast } from "svelte-sonner";
-  import { Copy } from "lucide-svelte";
-  import { Button } from "$lib/components/ui/button/index.js";
+  import { toast } from 'svelte-sonner';
+  import { Copy } from 'lucide-svelte';
+  import { Button } from '$lib/components/ui/button/index.js';
   let { signType, signerAddress, payload } = $props();
   // FIXME: IMPORT FROM HEALTH ENDPOINT INSTEAD
   const NETWORK = import.meta.env.VITE_NETWORK_ID;
-  const testNetMagic = NETWORK == 1 ? "" : "--testnet-magic xxx";
+  const testNetMagic = NETWORK == 1 ? '' : '--testnet-magic xxx';
 
   // Create the complete command text with proper substitutions
   const command = $derived.by(() => {
     switch (signType) {
-      case "drep":
+      case 'drep':
         return `cardano-signer sign --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} --secret-key ${signType}.skey`;
-      case "pool":
+      case 'pool':
         return `cardano-signer sign --json --cip30 --data-hex  "${payload.dataHex}" --address ${payload.calidusID} --secret-key calidus.skey`;
-      case "addr":
+      case 'addr':
         return `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
-      case "stake":
+      case 'stake':
         return `cardano-signer sign  --json --cip30 --data-hex "${payload.dataHex}" --address ${signerAddress} ${testNetMagic} --secret-key ${signType}.skey`;
       default:
         return undefined;
@@ -26,12 +26,12 @@
   function copyCommand() {
     // Copy the formatted command
     navigator.clipboard.writeText(command);
-    toast.success("Command copied to clipboard");
+    toast.success('Command copied to clipboard');
   }
 
   function copyDataHex() {
     navigator.clipboard.writeText(payload.dataHex);
-    toast.success("Data hex copied to clipboard");
+    toast.success('Data hex copied to clipboard');
   }
 </script>
 
@@ -44,7 +44,7 @@
     copyCommand();
   }}
   onkeydown={(e) => {
-    if (e.key === "Enter" || e.key === " ") {
+    if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       copyCommand();
     }

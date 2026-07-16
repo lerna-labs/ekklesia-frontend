@@ -1,5 +1,5 @@
 ---
-question: "Can I fetch Ekklesia data via API?"
+question: 'Can I fetch Ekklesia data via API?'
 order: 100
 ---
 

@@ -1,73 +1,51 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<head>
-	<meta charset="utf-8" />
-	<link rel="apple-touch-icon"
-		  sizes="180x180"
-		  href="/apple-touch-icon.png">
-	<link rel="icon"
-		  type="image/png"
-		  sizes="32x32"
-		  href="/favicon-32x32.png">
-	<link rel="icon"
-		  type="image/png"
-		  sizes="16x16"
-		  href="/favicon-16x16.png">
-	<link rel="manifest"
-		  href="/site.webmanifest">
-	<meta name="viewport"
-		  content="width=device-width, initial-scale=1" />
-
-	<!--
+    <!--
 		Static branding meta tags. The %BRAND_*% placeholders are
 		substituted by `scripts/brand-build-output.js` (production) and
 		by `src/hooks.server.js` (dev server). Social scrapers read
 		these — they don't run JS, so PageHead.svelte only updates them
 		in-browser.
 	-->
-	<title>%BRAND_TITLE%</title>
-	<meta name="description"
-		  content="%BRAND_DESCRIPTION%">
+    <title>%BRAND_TITLE%</title>
+    <meta name="description" content="%BRAND_DESCRIPTION%" />
 
-	<!-- OpenGraph / Facebook -->
-	<meta property="og:type"
-		  content="website">
-	<meta property="og:site_name"
-		  content="%BRAND_NAME%">
-	<meta property="og:title"
-		  content="%BRAND_TITLE%">
-	<meta property="og:description"
-		  content="%BRAND_DESCRIPTION%">
-	<meta property="og:image"
-		  content="%BRAND_OG_IMAGE%">
-	%BRAND_URL_META%
+    <!-- OpenGraph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="%BRAND_NAME%" />
+    <meta property="og:title" content="%BRAND_TITLE%" />
+    <meta property="og:description" content="%BRAND_DESCRIPTION%" />
+    <meta property="og:image" content="%BRAND_OG_IMAGE%" />
+    %BRAND_URL_META%
 
-	<!-- Twitter -->
-	<meta name="twitter:card"
-		  content="summary_large_image">
-	<meta name="twitter:title"
-		  content="%BRAND_TITLE%">
-	<meta name="twitter:description"
-		  content="%BRAND_DESCRIPTION%">
-	<meta name="twitter:image"
-		  content="%BRAND_OG_IMAGE%">
-	%BRAND_TWITTER_META%
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="%BRAND_TITLE%" />
+    <meta name="twitter:description" content="%BRAND_DESCRIPTION%" />
+    <meta name="twitter:image" content="%BRAND_OG_IMAGE%" />
+    %BRAND_TWITTER_META% %sveltekit.head%
+  </head>
 
-	%sveltekit.head%
-</head>
-
-<body data-sveltekit-preload-data="hover">
-	<div style="display: contents">%sveltekit.body%</div>
-	<noscript>
-		<div>
-			<p>This app requires JavaScript to be enabled in your browser.</p>
-			<p>To enable JavaScript, please refer to the documentation for your specific browser.</p>
-			<p>Once JavaScript is enabled, please refresh the page.</p>
-			<p>If you are using a browser that does not support JavaScript, please consider switching to a modern
-				browser.</p>
-		</div>
-	</noscript>
-</body>
-
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+    <noscript>
+      <div>
+        <p>This app requires JavaScript to be enabled in your browser.</p>
+        <p>To enable JavaScript, please refer to the documentation for your specific browser.</p>
+        <p>Once JavaScript is enabled, please refresh the page.</p>
+        <p>
+          If you are using a browser that does not support JavaScript, please consider switching to
+          a modern browser.
+        </p>
+      </div>
+    </noscript>
+  </body>
 </html>
