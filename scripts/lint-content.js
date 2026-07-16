@@ -30,45 +30,45 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CONTENT = join(ROOT, 'content');
 
 const c = {
-	red: (s) => `\x1b[31m${s}\x1b[0m`,
-	yellow: (s) => `\x1b[33m${s}\x1b[0m`,
-	dim: (s) => `\x1b[2m${s}\x1b[0m`,
-	bold: (s) => `\x1b[1m${s}\x1b[0m`
+  red: (s) => `\x1b[31m${s}\x1b[0m`,
+  yellow: (s) => `\x1b[33m${s}\x1b[0m`,
+  dim: (s) => `\x1b[2m${s}\x1b[0m`,
+  bold: (s) => `\x1b[1m${s}\x1b[0m`,
 };
 
 // ---------- frontmatter parser (mirror of src/lib/content.js) ----------
 
 function parseFrontmatter(raw) {
-	const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
-	if (!match) return { data: {}, body: raw.replace(/^\s+/, ''), missingFrontmatter: true };
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!match) return { data: {}, body: raw.replace(/^\s+/, ''), missingFrontmatter: true };
 
-	const [, fmBlock, body] = match;
-	const data = {};
-	const malformed = [];
+  const [, fmBlock, body] = match;
+  const data = {};
+  const malformed = [];
 
-	const lines = fmBlock.split(/\r?\n/);
-	lines.forEach((line, i) => {
-		if (!line.trim() || line.trim().startsWith('#')) return;
-		const m = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
-		if (!m) {
-			malformed.push({ line: i + 2, content: line }); // +2: 1-indexed + leading `---`
-			return;
-		}
-		const [, key, rawValue] = m;
-		let value = rawValue.trim();
-		if (
-			(value.startsWith('"') && value.endsWith('"')) ||
-			(value.startsWith("'") && value.endsWith("'"))
-		) {
-			value = value.slice(1, -1);
-		}
-		if (/^-?\d+$/.test(value)) value = parseInt(value, 10);
-		else if (value === 'true') value = true;
-		else if (value === 'false') value = false;
-		data[key] = value;
-	});
+  const lines = fmBlock.split(/\r?\n/);
+  lines.forEach((line, i) => {
+    if (!line.trim() || line.trim().startsWith('#')) return;
+    const m = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (!m) {
+      malformed.push({ line: i + 2, content: line }); // +2: 1-indexed + leading `---`
+      return;
+    }
+    const [, key, rawValue] = m;
+    let value = rawValue.trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (/^-?\d+$/.test(value)) value = parseInt(value, 10);
+    else if (value === 'true') value = true;
+    else if (value === 'false') value = false;
+    data[key] = value;
+  });
 
-	return { data, body: body.replace(/^\s+/, ''), malformed };
+  return { data, body: body.replace(/^\s+/, ''), malformed };
 }
 
 // ---------- slot schemas ----------
@@ -78,66 +78,66 @@ const NUMBER = (v) => typeof v === 'number' && Number.isFinite(v);
 // Frontmatter parser coerces all-digit quoted values to numbers ("2025" → 2025),
 // so for fields meant to display as text we accept either shape.
 const YEAR = (v) =>
-	(typeof v === 'string' && /^\d{4}$/.test(v)) || (typeof v === 'number' && v >= 1900 && v <= 9999);
+  (typeof v === 'string' && /^\d{4}$/.test(v)) || (typeof v === 'number' && v >= 1900 && v <= 9999);
 
 const SLOT_SCHEMAS = {
-	'home/hero': {
-		fields: {
-			title: { required: true, check: STRING },
-			ctaLabel: { check: STRING },
-			ctaHref: { check: STRING }
-		},
-		bodyRequired: true,
-		fixedSlugs: ['hero', 'upcoming', 'live', 'closed']
-	},
-	'home/upcoming': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
-	'home/live': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
-	'home/closed': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
-	faqs: {
-		fields: {
-			question: { required: true, check: STRING },
-			order: { required: true, check: NUMBER }
-		},
-		bodyRequired: true
-	},
-	'footer/tagline': {
-		fields: {
-			name: { required: true, check: STRING },
-			pronunciation: { required: true, check: STRING }
-		},
-		bodyRequired: true
-	},
-	'footer/copyright': {
-		fields: { holder: { required: true, check: STRING }, year: { required: true, check: YEAR } },
-		bodyRequired: false
-	},
-	'voter-directory/intro': {
-		fields: { title: { required: true, check: STRING } },
-		bodyRequired: true
-	},
-	'errors/generic': { fields: { title: { required: true, check: STRING } }, bodyRequired: true }
+  'home/hero': {
+    fields: {
+      title: { required: true, check: STRING },
+      ctaLabel: { check: STRING },
+      ctaHref: { check: STRING },
+    },
+    bodyRequired: true,
+    fixedSlugs: ['hero', 'upcoming', 'live', 'closed'],
+  },
+  'home/upcoming': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
+  'home/live': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
+  'home/closed': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
+  faqs: {
+    fields: {
+      question: { required: true, check: STRING },
+      order: { required: true, check: NUMBER },
+    },
+    bodyRequired: true,
+  },
+  'footer/tagline': {
+    fields: {
+      name: { required: true, check: STRING },
+      pronunciation: { required: true, check: STRING },
+    },
+    bodyRequired: true,
+  },
+  'footer/copyright': {
+    fields: { holder: { required: true, check: STRING }, year: { required: true, check: YEAR } },
+    bodyRequired: false,
+  },
+  'voter-directory/intro': {
+    fields: { title: { required: true, check: STRING } },
+    bodyRequired: true,
+  },
+  'errors/generic': { fields: { title: { required: true, check: STRING } }, bodyRequired: true },
 };
 
 // Slots whose slug set is fixed (i.e. only the listed filenames render).
 const FIXED_SLOTS = {
-	home: ['hero', 'upcoming', 'live', 'closed'],
-	footer: ['tagline', 'copyright'],
-	'voter-directory': ['intro'],
-	errors: ['generic']
+  home: ['hero', 'upcoming', 'live', 'closed'],
+  footer: ['tagline', 'copyright'],
+  'voter-directory': ['intro'],
+  errors: ['generic'],
 };
 
 // ---------- theme.json schema ----------
 
 const COLOR_KEYS = [
-	'primary',
-	'primary-foreground',
-	'secondary',
-	'secondary-foreground',
-	'accent',
-	'accent-foreground',
-	'destructive',
-	'destructive-foreground',
-	'ring'
+  'primary',
+  'primary-foreground',
+  'secondary',
+  'secondary-foreground',
+  'accent',
+  'accent-foreground',
+  'destructive',
+  'destructive-foreground',
+  'ring',
 ];
 const THEME_KEYS = new Set([...COLOR_KEYS, 'radius', 'font-heading', 'font-body']);
 const HSL_TRIPLET = /^\d+(?:\.\d+)?\s+\d+(?:\.\d+)?%\s+\d+(?:\.\d+)?%$/;
@@ -146,13 +146,13 @@ const RADIUS = /^\d+(?:\.\d+)?(rem|em|px)$/;
 // ---------- walker ----------
 
 function walk(dir, out = []) {
-	for (const entry of readdirSync(dir)) {
-		const full = join(dir, entry);
-		const st = statSync(full);
-		if (st.isDirectory()) walk(full, out);
-		else out.push(full);
-	}
-	return out;
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    const st = statSync(full);
+    if (st.isDirectory()) walk(full, out);
+    else out.push(full);
+  }
+  return out;
 }
 
 // ---------- linter ----------
@@ -160,149 +160,149 @@ function walk(dir, out = []) {
 const errors = [];
 const warnings = [];
 function err(file, msg, line) {
-	errors.push({ file, msg, line });
+  errors.push({ file, msg, line });
 }
 function warn(file, msg, line) {
-	warnings.push({ file, msg, line });
+  warnings.push({ file, msg, line });
 }
 
 function lintMarkdown(absPath) {
-	const rel = relative(ROOT, absPath);
-	const parts = rel.split('/');
-	// Expected shape: content/<deployment>/<lang>/<slot>/<slug>.md
-	if (parts.length !== 5 || parts[0] !== 'content' || !parts[4].endsWith('.md')) {
-		err(rel, 'unexpected file path — expected content/<deployment>/<lang>/<slot>/<slug>.md');
-		return;
-	}
-	const [, , , slot, fileName] = parts;
-	const slug = fileName.replace(/\.md$/, '');
+  const rel = relative(ROOT, absPath);
+  const parts = rel.split('/');
+  // Expected shape: content/<deployment>/<lang>/<slot>/<slug>.md
+  if (parts.length !== 5 || parts[0] !== 'content' || !parts[4].endsWith('.md')) {
+    err(rel, 'unexpected file path — expected content/<deployment>/<lang>/<slot>/<slug>.md');
+    return;
+  }
+  const [, , , slot, fileName] = parts;
+  const slug = fileName.replace(/\.md$/, '');
 
-	// Filename sanity for FAQs
-	if (slot === 'faqs' && !/^\d{2,4}-[a-z0-9-]+$/.test(slug)) {
-		err(rel, `faq filename must look like NNN-slug.md (got "${fileName}")`);
-	}
+  // Filename sanity for FAQs
+  if (slot === 'faqs' && !/^\d{2,4}-[a-z0-9-]+$/.test(slug)) {
+    err(rel, `faq filename must look like NNN-slug.md (got "${fileName}")`);
+  }
 
-	// Unknown fixed-slot slug
-	if (FIXED_SLOTS[slot] && !FIXED_SLOTS[slot].includes(slug)) {
-		err(rel, `unknown ${slot} slug "${slug}" — known slugs: ${FIXED_SLOTS[slot].join(', ')}`);
-	}
+  // Unknown fixed-slot slug
+  if (FIXED_SLOTS[slot] && !FIXED_SLOTS[slot].includes(slug)) {
+    err(rel, `unknown ${slot} slug "${slug}" — known slugs: ${FIXED_SLOTS[slot].join(', ')}`);
+  }
 
-	const raw = readFileSync(absPath, 'utf8');
-	const { data, body, missingFrontmatter, malformed = [] } = parseFrontmatter(raw);
+  const raw = readFileSync(absPath, 'utf8');
+  const { data, body, missingFrontmatter, malformed = [] } = parseFrontmatter(raw);
 
-	if (missingFrontmatter) {
-		err(rel, 'no frontmatter block — files must start with `---` … `---`');
-		return;
-	}
-	for (const m of malformed) {
-		err(rel, `malformed frontmatter line: ${JSON.stringify(m.content)}`, m.line);
-	}
+  if (missingFrontmatter) {
+    err(rel, 'no frontmatter block — files must start with `---` … `---`');
+    return;
+  }
+  for (const m of malformed) {
+    err(rel, `malformed frontmatter line: ${JSON.stringify(m.content)}`, m.line);
+  }
 
-	const schemaKey = slot === 'faqs' ? 'faqs' : `${slot}/${slug}`;
-	const schema = SLOT_SCHEMAS[schemaKey];
-	if (!schema) {
-		// Unknown slot — already reported above if it was in FIXED_SLOTS,
-		// otherwise let it pass with a soft warn so new slots can land
-		// without immediately failing the lint.
-		if (!FIXED_SLOTS[slot]) warn(rel, `no schema registered for slot "${slot}"`);
-		return;
-	}
+  const schemaKey = slot === 'faqs' ? 'faqs' : `${slot}/${slug}`;
+  const schema = SLOT_SCHEMAS[schemaKey];
+  if (!schema) {
+    // Unknown slot — already reported above if it was in FIXED_SLOTS,
+    // otherwise let it pass with a soft warn so new slots can land
+    // without immediately failing the lint.
+    if (!FIXED_SLOTS[slot]) warn(rel, `no schema registered for slot "${slot}"`);
+    return;
+  }
 
-	for (const [key, def] of Object.entries(schema.fields)) {
-		const value = data[key];
-		if (value === undefined) {
-			if (def.required) err(rel, `missing required frontmatter field "${key}"`);
-			continue;
-		}
-		if (!def.check(value)) {
-			err(rel, `frontmatter field "${key}" failed type check (got ${JSON.stringify(value)})`);
-		}
-	}
+  for (const [key, def] of Object.entries(schema.fields)) {
+    const value = data[key];
+    if (value === undefined) {
+      if (def.required) err(rel, `missing required frontmatter field "${key}"`);
+      continue;
+    }
+    if (!def.check(value)) {
+      err(rel, `frontmatter field "${key}" failed type check (got ${JSON.stringify(value)})`);
+    }
+  }
 
-	if (schema.bodyRequired && !body.trim()) {
-		err(rel, 'body is empty — this slot renders markdown content');
-	}
+  if (schema.bodyRequired && !body.trim()) {
+    err(rel, 'body is empty — this slot renders markdown content');
+  }
 
-	// FAQ-specific: filename prefix must match `order`
-	if (slot === 'faqs' && typeof data.order === 'number') {
-		const prefix = slug.match(/^(\d+)-/)?.[1];
-		if (prefix && parseInt(prefix, 10) !== data.order) {
-			err(rel, `faq filename prefix (${prefix}) must equal the \`order\` field (${data.order})`);
-		}
-	}
+  // FAQ-specific: filename prefix must match `order`
+  if (slot === 'faqs' && typeof data.order === 'number') {
+    const prefix = slug.match(/^(\d+)-/)?.[1];
+    if (prefix && parseInt(prefix, 10) !== data.order) {
+      err(rel, `faq filename prefix (${prefix}) must equal the \`order\` field (${data.order})`);
+    }
+  }
 }
 
 function lintTheme(absPath) {
-	const rel = relative(ROOT, absPath);
-	let parsed;
-	try {
-		parsed = JSON.parse(readFileSync(absPath, 'utf8'));
-	} catch (e) {
-		err(rel, `invalid JSON: ${e.message}`);
-		return;
-	}
-	if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-		err(rel, 'theme.json must be a flat JSON object');
-		return;
-	}
-	for (const [key, value] of Object.entries(parsed)) {
-		if (!THEME_KEYS.has(key)) {
-			warn(rel, `unknown theme key "${key}" — will be ignored at runtime`);
-			continue;
-		}
-		if (COLOR_KEYS.includes(key)) {
-			if (typeof value !== 'string' || !HSL_TRIPLET.test(value)) {
-				err(
-					rel,
-					`"${key}" must be an HSL triplet like "222 47% 11%" (got ${JSON.stringify(value)})`
-				);
-			}
-		} else if (key === 'radius') {
-			if (typeof value !== 'string' || !RADIUS.test(value)) {
-				err(rel, `"radius" must be a CSS length like "0.5rem" (got ${JSON.stringify(value)})`);
-			}
-		} else if (key === 'font-heading' || key === 'font-body') {
-			if (typeof value !== 'string' || !value.trim()) {
-				err(rel, `"${key}" must be a non-empty Google Font family name`);
-			}
-		}
-	}
+  const rel = relative(ROOT, absPath);
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(absPath, 'utf8'));
+  } catch (e) {
+    err(rel, `invalid JSON: ${e.message}`);
+    return;
+  }
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    err(rel, 'theme.json must be a flat JSON object');
+    return;
+  }
+  for (const [key, value] of Object.entries(parsed)) {
+    if (!THEME_KEYS.has(key)) {
+      warn(rel, `unknown theme key "${key}" — will be ignored at runtime`);
+      continue;
+    }
+    if (COLOR_KEYS.includes(key)) {
+      if (typeof value !== 'string' || !HSL_TRIPLET.test(value)) {
+        err(
+          rel,
+          `"${key}" must be an HSL triplet like "222 47% 11%" (got ${JSON.stringify(value)})`,
+        );
+      }
+    } else if (key === 'radius') {
+      if (typeof value !== 'string' || !RADIUS.test(value)) {
+        err(rel, `"radius" must be a CSS length like "0.5rem" (got ${JSON.stringify(value)})`);
+      }
+    } else if (key === 'font-heading' || key === 'font-body') {
+      if (typeof value !== 'string' || !value.trim()) {
+        err(rel, `"${key}" must be a non-empty Google Font family name`);
+      }
+    }
+  }
 }
 
 // ---------- run ----------
 
 let files;
 try {
-	files = walk(CONTENT);
+  files = walk(CONTENT);
 } catch (e) {
-	console.error(c.red(`Failed to read ${CONTENT}: ${e.message}`));
-	process.exit(2);
+  console.error(c.red(`Failed to read ${CONTENT}: ${e.message}`));
+  process.exit(2);
 }
 
 for (const f of files) {
-	if (f.endsWith('.md')) lintMarkdown(f);
-	else if (basename(f) === 'theme.json') lintTheme(f);
-	else warn(relative(ROOT, f), 'unexpected file (only .md and theme.json are recognized)');
+  if (f.endsWith('.md')) lintMarkdown(f);
+  else if (basename(f) === 'theme.json') lintTheme(f);
+  else warn(relative(ROOT, f), 'unexpected file (only .md and theme.json are recognized)');
 }
 
 function fmt(list, label, color) {
-	if (!list.length) return;
-	console.error(`\n${color(c.bold(`${label} (${list.length})`))}`);
-	for (const e of list) {
-		const where = e.line ? `${e.file}:${e.line}` : e.file;
-		console.error(`  ${color(label[0])} ${c.bold(where)} — ${e.msg}`);
-	}
+  if (!list.length) return;
+  console.error(`\n${color(c.bold(`${label} (${list.length})`))}`);
+  for (const e of list) {
+    const where = e.line ? `${e.file}:${e.line}` : e.file;
+    console.error(`  ${color(label[0])} ${c.bold(where)} — ${e.msg}`);
+  }
 }
 
 fmt(warnings, 'warnings', c.yellow);
 fmt(errors, 'errors', c.red);
 
 if (errors.length) {
-	console.error(`\n${c.red(c.bold(`✗ content lint failed with ${errors.length} error(s)`))}`);
-	process.exit(1);
+  console.error(`\n${c.red(c.bold(`✗ content lint failed with ${errors.length} error(s)`))}`);
+  process.exit(1);
 }
 console.log(
-	c.dim(
-		`✓ content ok — ${files.filter((f) => f.endsWith('.md')).length} markdown, ${files.filter((f) => basename(f) === 'theme.json').length} theme${warnings.length ? `, ${warnings.length} warning(s)` : ''}`
-	)
+  c.dim(
+    `✓ content ok — ${files.filter((f) => f.endsWith('.md')).length} markdown, ${files.filter((f) => basename(f) === 'theme.json').length} theme${warnings.length ? `, ${warnings.length} warning(s)` : ''}`,
+  ),
 );

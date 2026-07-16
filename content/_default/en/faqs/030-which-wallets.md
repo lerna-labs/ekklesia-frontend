@@ -1,5 +1,5 @@
 ---
-question: "Which wallets are supported?"
+question: 'Which wallets are supported?'
 order: 30
 ---
 

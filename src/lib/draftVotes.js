@@ -61,25 +61,25 @@ export const submittedTree = writable({});
 export const draftCount = writable(0);
 
 function storageKey() {
-	const u = get(user);
-	const id = u?.userId;
-	if (!id) return null;
-	return STORAGE_PREFIX + id;
+  const u = get(user);
+  const id = u?.userId;
+  if (!id) return null;
+  return STORAGE_PREFIX + id;
 }
 
 function submittedStorageKey() {
-	const u = get(user);
-	const id = u?.userId;
-	if (!id) return null;
-	return SUBMITTED_PREFIX + id;
+  const u = get(user);
+  const id = u?.userId;
+  if (!id) return null;
+  return SUBMITTED_PREFIX + id;
 }
 
 function isV2Draft(value) {
-	if (value == null || typeof value !== 'object' || Array.isArray(value)) return false;
-	if (value.kind === 'abstain') return true;
-	if (value.kind === 'cleared') return true;
-	if (value.kind === 'selection' && Array.isArray(value.selection)) return true;
-	return false;
+  if (value == null || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (value.kind === 'abstain') return true;
+  if (value.kind === 'cleared') return true;
+  if (value.kind === 'selection' && Array.isArray(value.selection)) return true;
+  return false;
 }
 
 // Schema-v1 drafts were vote-arrays: [optionId], ['abstain'], [number], etc.
@@ -87,29 +87,29 @@ function isV2Draft(value) {
 // doesn't match the new shape is wiped silently on first read — no
 // migration contract, no production data to preserve.
 function sanitize(tree) {
-	if (!tree || typeof tree !== 'object') return { tree: {}, dirty: !!tree };
-	const clean = {};
-	let dirty = false;
-	for (const [ballotId, drafts] of Object.entries(tree)) {
-		if (!drafts || typeof drafts !== 'object') {
-			dirty = true;
-			continue;
-		}
-		const cleanProposals = {};
-		for (const [proposalId, draft] of Object.entries(drafts)) {
-			if (isV2Draft(draft)) cleanProposals[proposalId] = draft;
-			else dirty = true;
-		}
-		if (Object.keys(cleanProposals).length > 0) clean[ballotId] = cleanProposals;
-		else if (Object.keys(drafts).length > 0) dirty = true;
-	}
-	return { tree: clean, dirty };
+  if (!tree || typeof tree !== 'object') return { tree: {}, dirty: !!tree };
+  const clean = {};
+  let dirty = false;
+  for (const [ballotId, drafts] of Object.entries(tree)) {
+    if (!drafts || typeof drafts !== 'object') {
+      dirty = true;
+      continue;
+    }
+    const cleanProposals = {};
+    for (const [proposalId, draft] of Object.entries(drafts)) {
+      if (isV2Draft(draft)) cleanProposals[proposalId] = draft;
+      else dirty = true;
+    }
+    if (Object.keys(cleanProposals).length > 0) clean[ballotId] = cleanProposals;
+    else if (Object.keys(drafts).length > 0) dirty = true;
+  }
+  return { tree: clean, dirty };
 }
 
 function entriesEqual(a, b) {
-	if (a == null && b == null) return true;
-	if (a == null || b == null) return false;
-	return JSON.stringify(a) === JSON.stringify(b);
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 // Counts only drafts that diverge from their submitted baseline so the
@@ -117,102 +117,102 @@ function entriesEqual(a, b) {
 // edits — and so a freshly-rehydrated, untouched ballot doesn't read as
 // "you have N drafts to submit" on every dashboard visit.
 function countDivergent(drafts, submitted) {
-	let n = 0;
-	const ballotIds = new Set([...Object.keys(drafts ?? {}), ...Object.keys(submitted ?? {})]);
-	for (const bid of ballotIds) {
-		const d = drafts?.[bid] ?? {};
-		const s = submitted?.[bid] ?? {};
-		const proposalIds = new Set([...Object.keys(d), ...Object.keys(s)]);
-		for (const pid of proposalIds) {
-			if (!entriesEqual(d[pid] ?? null, s[pid] ?? null)) n += 1;
-		}
-	}
-	return n;
+  let n = 0;
+  const ballotIds = new Set([...Object.keys(drafts ?? {}), ...Object.keys(submitted ?? {})]);
+  for (const bid of ballotIds) {
+    const d = drafts?.[bid] ?? {};
+    const s = submitted?.[bid] ?? {};
+    const proposalIds = new Set([...Object.keys(d), ...Object.keys(s)]);
+    for (const pid of proposalIds) {
+      if (!entriesEqual(d[pid] ?? null, s[pid] ?? null)) n += 1;
+    }
+  }
+  return n;
 }
 
 function readAll() {
-	if (typeof localStorage === 'undefined') return {};
-	const key = storageKey();
-	if (!key) return {};
-	try {
-		const raw = localStorage.getItem(key);
-		const parsed = raw ? JSON.parse(raw) : {};
-		const { tree, dirty } = sanitize(parsed);
-		if (dirty) {
-			try {
-				localStorage.setItem(key, JSON.stringify(tree));
-			} catch {
-				// ignore
-			}
-		}
-		return tree;
-	} catch {
-		return {};
-	}
+  if (typeof localStorage === 'undefined') return {};
+  const key = storageKey();
+  if (!key) return {};
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const { tree, dirty } = sanitize(parsed);
+    if (dirty) {
+      try {
+        localStorage.setItem(key, JSON.stringify(tree));
+      } catch {
+        // ignore
+      }
+    }
+    return tree;
+  } catch {
+    return {};
+  }
 }
 
 function readAllSubmitted() {
-	if (typeof localStorage === 'undefined') return {};
-	const key = submittedStorageKey();
-	if (!key) return {};
-	try {
-		const raw = localStorage.getItem(key);
-		const parsed = raw ? JSON.parse(raw) : {};
-		const { tree } = sanitize(parsed);
-		return tree;
-	} catch {
-		return {};
-	}
+  if (typeof localStorage === 'undefined') return {};
+  const key = submittedStorageKey();
+  if (!key) return {};
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const { tree } = sanitize(parsed);
+    return tree;
+  } catch {
+    return {};
+  }
 }
 
 function refreshDivergentCount() {
-	draftCount.set(countDivergent(get(draftsTree), get(submittedTree)));
+  draftCount.set(countDivergent(get(draftsTree), get(submittedTree)));
 }
 
 function writeAll(tree) {
-	if (typeof localStorage === 'undefined') return;
-	const key = storageKey();
-	if (!key) return;
-	try {
-		localStorage.setItem(key, JSON.stringify(tree));
-	} catch {
-		// ignore quota errors; drafts are ephemeral by design
-	}
-	draftsTree.set(tree);
-	refreshDivergentCount();
+  if (typeof localStorage === 'undefined') return;
+  const key = storageKey();
+  if (!key) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(tree));
+  } catch {
+    // ignore quota errors; drafts are ephemeral by design
+  }
+  draftsTree.set(tree);
+  refreshDivergentCount();
 }
 
 function writeAllSubmitted(tree) {
-	if (typeof localStorage === 'undefined') return;
-	const key = submittedStorageKey();
-	if (!key) return;
-	try {
-		localStorage.setItem(key, JSON.stringify(tree));
-	} catch {
-		// ignore quota errors
-	}
-	submittedTree.set(tree);
-	refreshDivergentCount();
+  if (typeof localStorage === 'undefined') return;
+  const key = submittedStorageKey();
+  if (!key) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(tree));
+  } catch {
+    // ignore quota errors
+  }
+  submittedTree.set(tree);
+  refreshDivergentCount();
 }
 
 /** Seed the reactive stores from localStorage. Call once per login. */
 export function hydrateDrafts() {
-	const tree = readAll();
-	const submitted = readAllSubmitted();
-	draftsTree.set(tree);
-	submittedTree.set(submitted);
-	refreshDivergentCount();
+  const tree = readAll();
+  const submitted = readAllSubmitted();
+  draftsTree.set(tree);
+  submittedTree.set(submitted);
+  refreshDivergentCount();
 }
 
 /** All drafts across every ballot for the current user. */
 export function getAllDrafts() {
-	return readAll();
+  return readAll();
 }
 
 /** `{proposalId: draft}` map for one ballot. */
 export function getBallotDrafts(ballotId) {
-	const tree = readAll();
-	return tree[ballotId] ?? {};
+  const tree = readAll();
+  return tree[ballotId] ?? {};
 }
 
 /**
@@ -221,19 +221,23 @@ export function getBallotDrafts(ballotId) {
  * @returns {{kind:'selection',selection:any[]} | {kind:'abstain'} | null}
  */
 export function getProposalDraft(ballotId, proposalId) {
-	const drafts = getBallotDrafts(ballotId);
-	return drafts[proposalId] ?? null;
+  const drafts = getBallotDrafts(ballotId);
+  return drafts[proposalId] ?? null;
 }
 
 /** True when the draft carries a non-empty selection. */
 export function draftHasSelection(draft) {
-	return !!draft && draft.kind === 'selection' && Array.isArray(draft.selection)
-		&& draft.selection.length > 0;
+  return (
+    !!draft &&
+    draft.kind === 'selection' &&
+    Array.isArray(draft.selection) &&
+    draft.selection.length > 0
+  );
 }
 
 /** True when the draft is explicitly abstaining. */
 export function draftIsAbstaining(draft) {
-	return !!draft && draft.kind === 'abstain';
+  return !!draft && draft.kind === 'abstain';
 }
 
 /**
@@ -242,7 +246,7 @@ export function draftIsAbstaining(draft) {
  * omits the questionId entirely; Hydra treats the omission as "no vote".
  */
 export function draftIsCleared(draft) {
-	return !!draft && draft.kind === 'cleared';
+  return !!draft && draft.kind === 'cleared';
 }
 
 /**
@@ -250,17 +254,16 @@ export function draftIsCleared(draft) {
  * Returns true if the stored value changed.
  */
 export function saveProposalSelection(ballotId, proposalId, selection) {
-	const normalized = Array.isArray(selection) && selection.length > 0
-		? { kind: 'selection', selection }
-		: null;
-	return writeProposalDraft(ballotId, proposalId, normalized);
+  const normalized =
+    Array.isArray(selection) && selection.length > 0 ? { kind: 'selection', selection } : null;
+  return writeProposalDraft(ballotId, proposalId, normalized);
 }
 
 /**
  * Persist an abstain draft. Returns true if the stored value changed.
  */
 export function saveProposalAbstain(ballotId, proposalId) {
-	return writeProposalDraft(ballotId, proposalId, { kind: 'abstain' });
+  return writeProposalDraft(ballotId, proposalId, { kind: 'abstain' });
 }
 
 /**
@@ -275,27 +278,27 @@ export function saveProposalAbstain(ballotId, proposalId) {
  *     vote from Hydra.
  */
 export function clearProposalDraft(ballotId, proposalId) {
-	const baseline = readAllSubmitted()[ballotId]?.[proposalId];
-	const next = baseline != null ? { kind: 'cleared' } : null;
-	return writeProposalDraft(ballotId, proposalId, next);
+  const baseline = readAllSubmitted()[ballotId]?.[proposalId];
+  const next = baseline != null ? { kind: 'cleared' } : null;
+  return writeProposalDraft(ballotId, proposalId, next);
 }
 
 function writeProposalDraft(ballotId, proposalId, draftOrNull) {
-	const tree = readAll();
-	const prior = tree[ballotId]?.[proposalId] ?? null;
-	if (JSON.stringify(prior) === JSON.stringify(draftOrNull)) return false;
+  const tree = readAll();
+  const prior = tree[ballotId]?.[proposalId] ?? null;
+  if (JSON.stringify(prior) === JSON.stringify(draftOrNull)) return false;
 
-	if (draftOrNull == null) {
-		if (tree[ballotId]) {
-			delete tree[ballotId][proposalId];
-			if (Object.keys(tree[ballotId]).length === 0) delete tree[ballotId];
-		}
-	} else {
-		if (!tree[ballotId]) tree[ballotId] = {};
-		tree[ballotId][proposalId] = draftOrNull;
-	}
-	writeAll(tree);
-	return true;
+  if (draftOrNull == null) {
+    if (tree[ballotId]) {
+      delete tree[ballotId][proposalId];
+      if (Object.keys(tree[ballotId]).length === 0) delete tree[ballotId];
+    }
+  } else {
+    if (!tree[ballotId]) tree[ballotId] = {};
+    tree[ballotId][proposalId] = draftOrNull;
+  }
+  writeAll(tree);
+  return true;
 }
 
 /**
@@ -304,16 +307,16 @@ function writeProposalDraft(ballotId, proposalId, draftOrNull) {
  * next /mine fetch reseeds the baseline.
  */
 export function clearBallotDrafts(ballotId) {
-	const tree = readAll();
-	if (tree[ballotId]) {
-		delete tree[ballotId];
-		writeAll(tree);
-	}
-	const sub = readAllSubmitted();
-	if (sub[ballotId]) {
-		delete sub[ballotId];
-		writeAllSubmitted(sub);
-	}
+  const tree = readAll();
+  if (tree[ballotId]) {
+    delete tree[ballotId];
+    writeAll(tree);
+  }
+  const sub = readAllSubmitted();
+  if (sub[ballotId]) {
+    delete sub[ballotId];
+    writeAllSubmitted(sub);
+  }
 }
 
 /**
@@ -327,10 +330,10 @@ export function clearBallotDrafts(ballotId) {
  * wiped without our needing a dedicated remove signal.
  */
 export function ballotDraftsForBroker(ballotId) {
-	const drafts = getBallotDrafts(ballotId);
-	return Object.entries(drafts)
-		.filter(([, draft]) => draft.kind !== 'cleared')
-		.map(([proposalId, draft]) => toWireSelection(String(proposalId), draft));
+  const drafts = getBallotDrafts(ballotId);
+  return Object.entries(drafts)
+    .filter(([, draft]) => draft.kind !== 'cleared')
+    .map(([proposalId, draft]) => toWireSelection(String(proposalId), draft));
 }
 
 // ─── Submitted-baseline + divergence ────────────────────────────────────
@@ -342,12 +345,12 @@ export function ballotDraftsForBroker(ballotId) {
  * input so a junk entry doesn't pollute either store.
  */
 function voterVoteToDraftEntry(v) {
-	if (!v || typeof v !== 'object') return null;
-	if (v.abstain === true) return { kind: 'abstain' };
-	if (Array.isArray(v.selection) && v.selection.length > 0) {
-		return { kind: 'selection', selection: v.selection };
-	}
-	return null;
+  if (!v || typeof v !== 'object') return null;
+  if (v.abstain === true) return { kind: 'abstain' };
+  if (Array.isArray(v.selection) && v.selection.length > 0) {
+    return { kind: 'selection', selection: v.selection };
+  }
+  return null;
 }
 
 /**
@@ -357,21 +360,21 @@ function voterVoteToDraftEntry(v) {
  * voter's most recent server-side state".
  */
 function buildSubmittedFromMine(mine) {
-	const out = {};
-	if (!mine) return out;
-	if (mine.confirmed?.votes) {
-		for (const [pid, v] of Object.entries(mine.confirmed.votes)) {
-			const entry = voterVoteToDraftEntry(v);
-			if (entry) out[pid] = entry;
-		}
-	}
-	for (const pkg of mine.inFlight || []) {
-		for (const [pid, v] of Object.entries(pkg.votes || {})) {
-			const entry = voterVoteToDraftEntry(v);
-			if (entry) out[pid] = entry;
-		}
-	}
-	return out;
+  const out = {};
+  if (!mine) return out;
+  if (mine.confirmed?.votes) {
+    for (const [pid, v] of Object.entries(mine.confirmed.votes)) {
+      const entry = voterVoteToDraftEntry(v);
+      if (entry) out[pid] = entry;
+    }
+  }
+  for (const pkg of mine.inFlight || []) {
+    for (const [pid, v] of Object.entries(pkg.votes || {})) {
+      const entry = voterVoteToDraftEntry(v);
+      if (entry) out[pid] = entry;
+    }
+  }
+  return out;
 }
 
 /**
@@ -388,38 +391,38 @@ function buildSubmittedFromMine(mine) {
  * the server-side baseline).
  */
 export function seedBallotFromMine(ballotId, mine) {
-	if (!ballotId) return;
-	// `loadMyBallotVotes` returns null on transient auth/network errors.
-	// Treat that as "couldn't refresh" — preserve whatever baseline is
-	// already cached so a flaky /mine call doesn't make every previously-
-	// submitted vote suddenly look divergent.
-	if (mine == null) return;
-	const baseline = buildSubmittedFromMine(mine);
+  if (!ballotId) return;
+  // `loadMyBallotVotes` returns null on transient auth/network errors.
+  // Treat that as "couldn't refresh" — preserve whatever baseline is
+  // already cached so a flaky /mine call doesn't make every previously-
+  // submitted vote suddenly look divergent.
+  if (mine == null) return;
+  const baseline = buildSubmittedFromMine(mine);
 
-	const sub = readAllSubmitted();
-	const priorSub = sub[ballotId] ?? {};
-	if (JSON.stringify(priorSub) !== JSON.stringify(baseline)) {
-		if (Object.keys(baseline).length === 0) delete sub[ballotId];
-		else sub[ballotId] = baseline;
-		writeAllSubmitted(sub);
-	}
+  const sub = readAllSubmitted();
+  const priorSub = sub[ballotId] ?? {};
+  if (JSON.stringify(priorSub) !== JSON.stringify(baseline)) {
+    if (Object.keys(baseline).length === 0) delete sub[ballotId];
+    else sub[ballotId] = baseline;
+    writeAllSubmitted(sub);
+  }
 
-	const drafts = readAll();
-	const existing = drafts[ballotId] ?? {};
-	let dirty = false;
-	for (const [pid, entry] of Object.entries(baseline)) {
-		if (existing[pid] != null) continue;
-		if (!drafts[ballotId]) drafts[ballotId] = {};
-		drafts[ballotId][pid] = entry;
-		dirty = true;
-	}
-	if (dirty) writeAll(drafts);
+  const drafts = readAll();
+  const existing = drafts[ballotId] ?? {};
+  let dirty = false;
+  for (const [pid, entry] of Object.entries(baseline)) {
+    if (existing[pid] != null) continue;
+    if (!drafts[ballotId]) drafts[ballotId] = {};
+    drafts[ballotId][pid] = entry;
+    dirty = true;
+  }
+  if (dirty) writeAll(drafts);
 }
 
 /** The submitted baseline for one (ballotId, proposalId), or null. */
 export function getProposalBaseline(ballotId, proposalId) {
-	const sub = readAllSubmitted();
-	return sub[ballotId]?.[proposalId] ?? null;
+  const sub = readAllSubmitted();
+  return sub[ballotId]?.[proposalId] ?? null;
 }
 
 /**
@@ -429,21 +432,21 @@ export function getProposalBaseline(ballotId, proposalId) {
  * (it's a fresh first-time vote).
  */
 export function isProposalDraftDivergent(ballotId, proposalId) {
-	const draft = getProposalDraft(ballotId, proposalId);
-	const baseline = getProposalBaseline(ballotId, proposalId);
-	return !entriesEqual(draft, baseline);
+  const draft = getProposalDraft(ballotId, proposalId);
+  const baseline = getProposalBaseline(ballotId, proposalId);
+  return !entriesEqual(draft, baseline);
 }
 
 /** Number of divergent drafts within a single ballot. */
 export function divergentBallotChangeCount(ballotId) {
-	const drafts = readAll()[ballotId] ?? {};
-	const baseline = readAllSubmitted()[ballotId] ?? {};
-	const ids = new Set([...Object.keys(drafts), ...Object.keys(baseline)]);
-	let n = 0;
-	for (const pid of ids) {
-		if (!entriesEqual(drafts[pid] ?? null, baseline[pid] ?? null)) n += 1;
-	}
-	return n;
+  const drafts = readAll()[ballotId] ?? {};
+  const baseline = readAllSubmitted()[ballotId] ?? {};
+  const ids = new Set([...Object.keys(drafts), ...Object.keys(baseline)]);
+  let n = 0;
+  for (const pid of ids) {
+    if (!entriesEqual(drafts[pid] ?? null, baseline[pid] ?? null)) n += 1;
+  }
+  return n;
 }
 
 /**
@@ -451,8 +454,8 @@ export function divergentBallotChangeCount(ballotId) {
  * "Revert to submitted" affordance. Returns true if anything changed.
  */
 export function revertProposalDraftToBaseline(ballotId, proposalId) {
-	const baseline = getProposalBaseline(ballotId, proposalId);
-	return writeProposalDraft(ballotId, proposalId, baseline);
+  const baseline = getProposalBaseline(ballotId, proposalId);
+  return writeProposalDraft(ballotId, proposalId, baseline);
 }
 
 /**
@@ -466,32 +469,32 @@ export function revertProposalDraftToBaseline(ballotId, proposalId) {
  * their cached server-side state.
  */
 export function revertBallotDraftsToBaseline(ballotId) {
-	const tree = readAll();
-	const baseline = readAllSubmitted()[ballotId] ?? {};
-	const drafts = tree[ballotId] ?? {};
-	const ids = new Set([...Object.keys(drafts), ...Object.keys(baseline)]);
+  const tree = readAll();
+  const baseline = readAllSubmitted()[ballotId] ?? {};
+  const drafts = tree[ballotId] ?? {};
+  const ids = new Set([...Object.keys(drafts), ...Object.keys(baseline)]);
 
-	let dirty = false;
-	for (const pid of ids) {
-		const desired = baseline[pid] ?? null;
-		const current = drafts[pid] ?? null;
-		if (entriesEqual(current, desired)) continue;
-		if (desired == null) {
-			if (drafts[pid] != null) {
-				delete drafts[pid];
-				dirty = true;
-			}
-		} else {
-			drafts[pid] = desired;
-			dirty = true;
-		}
-	}
+  let dirty = false;
+  for (const pid of ids) {
+    const desired = baseline[pid] ?? null;
+    const current = drafts[pid] ?? null;
+    if (entriesEqual(current, desired)) continue;
+    if (desired == null) {
+      if (drafts[pid] != null) {
+        delete drafts[pid];
+        dirty = true;
+      }
+    } else {
+      drafts[pid] = desired;
+      dirty = true;
+    }
+  }
 
-	if (!dirty) return false;
-	if (Object.keys(drafts).length === 0) delete tree[ballotId];
-	else tree[ballotId] = drafts;
-	writeAll(tree);
-	return true;
+  if (!dirty) return false;
+  if (Object.keys(drafts).length === 0) delete tree[ballotId];
+  else tree[ballotId] = drafts;
+  writeAll(tree);
+  return true;
 }
 
 // Sync stores across browser tabs so a draft saved in tab A shows up
@@ -499,12 +502,12 @@ export function revertBallotDraftsToBaseline(ballotId) {
 // baseline are kept in localStorage; either changing means our in-memory
 // counters are out of date.
 if (typeof window !== 'undefined') {
-	window.addEventListener('storage', (ev) => {
-		if (!ev.key) return;
-		if (ev.key.startsWith(STORAGE_PREFIX) || ev.key.startsWith(SUBMITTED_PREFIX)) {
-			hydrateDrafts();
-		}
-	});
+  window.addEventListener('storage', (ev) => {
+    if (!ev.key) return;
+    if (ev.key.startsWith(STORAGE_PREFIX) || ev.key.startsWith(SUBMITTED_PREFIX)) {
+      hydrateDrafts();
+    }
+  });
 }
 
 // Reactively track the current user so the in-memory draft stores
@@ -513,11 +516,11 @@ if (typeof window !== 'undefined') {
 // a manual refresh — the old "unsubmitted votes" badge visibly lingers
 // on the header.
 user.subscribe((u) => {
-	if (!u) {
-		draftsTree.set({});
-		submittedTree.set({});
-		draftCount.set(0);
-	} else {
-		hydrateDrafts();
-	}
+  if (!u) {
+    draftsTree.set({});
+    submittedTree.set({});
+    draftCount.set(0);
+  } else {
+    hydrateDrafts();
+  }
 });

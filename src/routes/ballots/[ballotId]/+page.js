@@ -10,5 +10,5 @@ import { redirect } from '@sveltejs/kit';
  * can cache the redirect for bookmarked / historical URLs.
  */
 export function load({ params, url }) {
-	throw redirect(301, '/ballots/' + params.ballotId + '/proposals' + url.search);
+  throw redirect(301, '/ballots/' + params.ballotId + '/proposals' + url.search);
 }

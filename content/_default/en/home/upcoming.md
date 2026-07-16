@@ -1,5 +1,5 @@
 ---
-title: "Upcoming Ballots"
+title: 'Upcoming Ballots'
 ---
 
 The following ballots are coming up for voting. Connect a CIP-95 compatible
