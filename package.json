@@ -6,6 +6,9 @@
 	"license": "Apache-2.0",
 	"author": "Mad Orkestra for Lerna Labs",
 	"homepage": "https://github.com/Lerna-Labs/ekklesia-frontend",
+	"engines": {
+		"node": ">=20"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build --mode production && node scripts/brand-build-output.js production",
