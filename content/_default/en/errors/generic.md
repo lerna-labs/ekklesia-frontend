@@ -1,5 +1,5 @@
 ---
-title: "Something went wrong"
+title: 'Something went wrong'
 ---
 
 Sorry for the inconvenience — we ran into an unexpected error. Try

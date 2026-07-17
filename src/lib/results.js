@@ -4,26 +4,26 @@ import { api } from '$stores/sessionManager.js';
 // document (including `source`, `ballotSource`, hydra provenance fields),
 // or null if the backend has no results yet (404).
 export async function fetchProposalResult(fetch, proposalId) {
-	try {
-		const res = await api.v1.fetch(fetch, '/results/proposal/' + proposalId);
-		const payload = await res.json();
-		return payload?.data ?? null;
-	} catch (err) {
-		if (err?.status === 404) return null;
-		throw err;
-	}
+  try {
+    const res = await api.v1.fetch(fetch, '/results/proposal/' + proposalId);
+    const payload = await res.json();
+    return payload?.data ?? null;
+  } catch (err) {
+    if (err?.status === 404) return null;
+    throw err;
+  }
 }
 
 // Fetch the array of results for every proposal in a ballot.
 export async function fetchBallotResults(fetch, ballotId) {
-	try {
-		const res = await api.v1.fetch(fetch, '/results/ballot/' + ballotId);
-		const payload = await res.json();
-		return payload?.data ?? [];
-	} catch (err) {
-		if (err?.status === 404) return [];
-		throw err;
-	}
+  try {
+    const res = await api.v1.fetch(fetch, '/results/ballot/' + ballotId);
+    const payload = await res.json();
+    return payload?.data ?? [];
+  } catch (err) {
+    if (err?.status === 404) return [];
+    throw err;
+  }
 }
 
 /**
@@ -37,34 +37,34 @@ export async function fetchBallotResults(fetch, ballotId) {
  * @returns {() => void} cleanup
  */
 export function startResultsPoller(tick, intervalMs = 30_000) {
-	if (typeof document === 'undefined') return () => {};
+  if (typeof document === 'undefined') return () => {};
 
-	let timer = null;
-	const start = () => {
-		if (timer != null) return;
-		timer = setInterval(() => {
-			void tick();
-		}, intervalMs);
-	};
-	const stop = () => {
-		if (timer == null) return;
-		clearInterval(timer);
-		timer = null;
-	};
-	const onVisibility = () => {
-		if (document.visibilityState === 'visible') {
-			void tick();
-			start();
-		} else {
-			stop();
-		}
-	};
+  let timer = null;
+  const start = () => {
+    if (timer != null) return;
+    timer = setInterval(() => {
+      void tick();
+    }, intervalMs);
+  };
+  const stop = () => {
+    if (timer == null) return;
+    clearInterval(timer);
+    timer = null;
+  };
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') {
+      void tick();
+      start();
+    } else {
+      stop();
+    }
+  };
 
-	document.addEventListener('visibilitychange', onVisibility);
-	if (document.visibilityState === 'visible') start();
+  document.addEventListener('visibilitychange', onVisibility);
+  if (document.visibilityState === 'visible') start();
 
-	return () => {
-		document.removeEventListener('visibilitychange', onVisibility);
-		stop();
-	};
+  return () => {
+    document.removeEventListener('visibilitychange', onVisibility);
+    stop();
+  };
 }

@@ -1,7 +1,7 @@
 ---
-title: "Welcome to Ekklesia"
-ctaLabel: "Go to Voter Directory"
-ctaHref: "/voter-directory"
+title: 'Welcome to Ekklesia'
+ctaLabel: 'Go to Voter Directory'
+ctaHref: '/voter-directory'
 ---
 
 Verifiable, Hydra-powered on-chain voting on Cardano. Browse upcoming and

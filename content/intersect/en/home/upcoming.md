@@ -1,5 +1,5 @@
 ---
-title: "Upcoming Ballots"
+title: 'Upcoming Ballots'
 ---
 
 The following ballots are coming up for voting. Any registered DRep is

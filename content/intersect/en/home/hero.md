@@ -1,7 +1,7 @@
 ---
-title: "Welcome to Intersect Polling on Ekklesia"
-ctaLabel: "Go to Voter Directory"
-ctaHref: "/voter-directory"
+title: 'Welcome to Intersect Polling on Ekklesia'
+ctaLabel: 'Go to Voter Directory'
+ctaHref: '/voter-directory'
 ---
 
 Your place for all Intersect-related polling. All polls on this platform

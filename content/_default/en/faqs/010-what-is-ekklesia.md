@@ -1,5 +1,5 @@
 ---
-question: "What is Ekklesia?"
+question: 'What is Ekklesia?'
 order: 10
 ---
 

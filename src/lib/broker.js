@@ -8,7 +8,7 @@ import { ballotDraftsForBroker } from '$lib/draftVotes.js';
 // companions from `coseKeyHex` and `coseSign1Hex` server-side — the frontend
 // ships only these two fields. See BACKEND_PREREQS.md §1.
 export function toWitness(coseSign1Hex, coseKeyHex) {
-	return { coseSign1Hex, coseKeyHex };
+  return { coseSign1Hex, coseKeyHex };
 }
 
 // UTF-8 hex encoding of the signing payload the voter is expected to sign.
@@ -17,14 +17,14 @@ export function toWitness(coseSign1Hex, coseKeyHex) {
 // the raw bytes represented by that hex. Hydra verifies by comparing the
 // signed COSE payload's ASCII against this exact string.
 export function merkleRootPayloadHex(merkleRoot) {
-	if (typeof merkleRoot !== 'string') {
-		throw new Error('merkleRoot must be a string');
-	}
-	let out = '';
-	for (let i = 0; i < merkleRoot.length; i++) {
-		out += merkleRoot.charCodeAt(i).toString(16).padStart(2, '0');
-	}
-	return out;
+  if (typeof merkleRoot !== 'string') {
+    throw new Error('merkleRoot must be a string');
+  }
+  let out = '';
+  for (let i = 0; i < merkleRoot.length; i++) {
+    out += merkleRoot.charCodeAt(i).toString(16).padStart(2, '0');
+  }
+  return out;
 }
 
 // POST /v1/votes/:ballotId/draft — returns the merkleRoot the caller must
@@ -33,11 +33,11 @@ export function merkleRootPayloadHex(merkleRoot) {
 // actually lands on the Hydra head), so repeat /draft calls for the same
 // voter+ballot should resolve to the same logical package.
 export async function postDraft(fetch, ballotId, body) {
-	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/draft', {
-		method: 'POST',
-		body: JSON.stringify(body)
-	});
-	return res.json();
+  const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/draft', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  return res.json();
 }
 
 // POST /v1/votes/:ballotId/signature — appends a witness. For key-based
@@ -45,28 +45,28 @@ export async function postDraft(fetch, ballotId, body) {
 // artifacts (hydraTxId, ipfsCid, confirmedAt). For multisig, `submitted` is
 // false until the final cosigner's witness satisfies the threshold.
 export async function postSignature(fetch, ballotId, packageId, witness) {
-	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/signature', {
-		method: 'POST',
-		body: JSON.stringify({ packageId, witness })
-	});
-	return res.json();
+  const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/signature', {
+    method: 'POST',
+    body: JSON.stringify({ packageId, witness }),
+  });
+  return res.json();
 }
 
 // POST /v1/votes/:ballotId/submit — idempotent manual retry for packages
 // stuck in `awaiting-submission` (e.g. after a transient Hydra failure).
 export async function postSubmit(fetch, ballotId, packageId) {
-	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/submit', {
-		method: 'POST',
-		body: JSON.stringify({ packageId })
-	});
-	return res.json();
+  const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/submit', {
+    method: 'POST',
+    body: JSON.stringify({ packageId }),
+  });
+  return res.json();
 }
 
 // GET /v1/votes/:ballotId/package/:packageId — current package state. Used by
 // the confirmation + retry surfaces.
 export async function getPackage(fetch, ballotId, packageId) {
-	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/package/' + packageId);
-	return res.json();
+  const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/package/' + packageId);
+  return res.json();
 }
 
 // DELETE /v1/votes/:ballotId/package/:packageId — voter-scoped cancel.
@@ -75,10 +75,10 @@ export async function getPackage(fetch, ballotId, packageId) {
 // cosigners do not have delete authority. Terminal packages return 409
 // (PACKAGE_TERMINAL) — callers should treat that as a no-op success.
 export async function deletePackage(fetch, ballotId, packageId) {
-	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/package/' + packageId, {
-		method: 'DELETE'
-	});
-	return res.json();
+  const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/package/' + packageId, {
+    method: 'DELETE',
+  });
+  return res.json();
 }
 
 // GET /v1/votes/:ballotId/packages — list this user's packages on a ballot.
@@ -86,13 +86,13 @@ export async function deletePackage(fetch, ballotId, packageId) {
 // awaiting-submission) so callers can cheaply check "is there something to
 // resume / cosign?" on this ballot.
 export async function listPackages(fetch, ballotId, { includeTerminal = false, limit } = {}) {
-	const params = new URLSearchParams();
-	if (includeTerminal) params.set('includeTerminal', 'true');
-	if (limit) params.set('limit', String(limit));
-	const qs = params.toString();
-	const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/packages' + (qs ? '?' + qs : ''));
-	const payload = await res.json();
-	return payload?.data ?? [];
+  const params = new URLSearchParams();
+  if (includeTerminal) params.set('includeTerminal', 'true');
+  if (limit) params.set('limit', String(limit));
+  const qs = params.toString();
+  const res = await api.v1.fetch(fetch, '/votes/' + ballotId + '/packages' + (qs ? '?' + qs : ''));
+  const payload = await res.json();
+  return payload?.data ?? [];
 }
 
 /**
@@ -105,7 +105,7 @@ export async function listPackages(fetch, ballotId, { includeTerminal = false, l
  * growing with abandoned drafts. See `$lib/draftVotes.js`.
  */
 export async function getPendingBallotVotes(_fetch, ballotId) {
-	return ballotDraftsForBroker(ballotId);
+  return ballotDraftsForBroker(ballotId);
 }
 
 /**
@@ -123,13 +123,13 @@ export async function getPendingBallotVotes(_fetch, ballotId) {
  * } | null>}
  */
 export async function loadMyBallotVotes(fetch, ballotId) {
-	const res = await api.v1.tryFetch(fetch, '/votes/' + ballotId + '/mine');
-	if (!res || !res.ok) return null;
-	try {
-		return await res.json();
-	} catch {
-		return null;
-	}
+  const res = await api.v1.tryFetch(fetch, '/votes/' + ballotId + '/mine');
+  if (!res || !res.ok) return null;
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -149,26 +149,24 @@ export async function loadMyBallotVotes(fetch, ballotId) {
  * stale/unfilled map entry doesn't light up the indicator.
  */
 export function mineToProposalAnnotations(mine) {
-	const out = {};
-	if (!mine) return out;
-	const isValid = (v) =>
-		v != null &&
-		typeof v === 'object' &&
-		(v.abstain === true || Array.isArray(v.selection));
-	if (mine.confirmed?.votes) {
-		for (const [pid, v] of Object.entries(mine.confirmed.votes)) {
-			if (!isValid(v)) continue;
-			out[pid] = { voterVote: v, voterVoteStatus: 'confirmed' };
-		}
-	}
-	// inFlight is ordered nonce-desc by the backend; the first entry
-	// covering a proposal wins.
-	for (const pkg of mine.inFlight || []) {
-		for (const [pid, v] of Object.entries(pkg.votes || {})) {
-			if (!isValid(v)) continue;
-			if (out[pid]?.voterVoteStatus === 'in-flight') continue;
-			out[pid] = { voterVote: v, voterVoteStatus: 'in-flight' };
-		}
-	}
-	return out;
+  const out = {};
+  if (!mine) return out;
+  const isValid = (v) =>
+    v != null && typeof v === 'object' && (v.abstain === true || Array.isArray(v.selection));
+  if (mine.confirmed?.votes) {
+    for (const [pid, v] of Object.entries(mine.confirmed.votes)) {
+      if (!isValid(v)) continue;
+      out[pid] = { voterVote: v, voterVoteStatus: 'confirmed' };
+    }
+  }
+  // inFlight is ordered nonce-desc by the backend; the first entry
+  // covering a proposal wins.
+  for (const pkg of mine.inFlight || []) {
+    for (const [pid, v] of Object.entries(pkg.votes || {})) {
+      if (!isValid(v)) continue;
+      if (out[pid]?.voterVoteStatus === 'in-flight') continue;
+      out[pid] = { voterVote: v, voterVoteStatus: 'in-flight' };
+    }
+  }
+  return out;
 }
