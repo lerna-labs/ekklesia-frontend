@@ -12,7 +12,7 @@ the v1 broker surface instead.
   `/v0` or `/v1`). For back-compat the wrapper strips a trailing
   `/v0` from a legacy `.env` value.
 - **Wrapper**: `src/stores/sessionManager.js` exports `api.fetch(fetch,
-  path, opts)` (prepends `/v0`) and `api.v1.fetch(fetch, path, opts)`
+path, opts)` (prepends `/v0`) and `api.v1.fetch(fetch, path, opts)`
   (prepends `/v1`). Both attach the JWT Bearer header, send
   `credentials: 'include'`, and auto-logout on 401.
 
@@ -239,22 +239,22 @@ return it.
 
 ## Component → endpoint map (quick reference)
 
-| Component / module | Endpoint(s) |
-|---|---|
-| `src/routes/+layout.js` | `GET /v1/config`, `GET /v0/dashboard/`, `GET /v0/session/` |
-| `src/routes/+page.js` | `GET /v1/ballots?status=…` |
-| `src/routes/ballots/+page.js` | `GET /v1/ballots`, `GET /v0/ballots/voterTypes` |
-| `src/routes/ballots/[ballotId]/+page.js` | `GET /v1/ballots/:id` |
-| `src/routes/ballots/[ballotId]/proposals/+page.js` | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals`, `GET /v0/ballots/:id/tags`, `GET /v0/ballots/:id/categories` |
-| `src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.js` | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals?search=:id` |
-| `src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.js` | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals?search=:id`, `GET /v1/results/proposal/:id` |
-| `src/routes/(private)/dashboard/+page.js` | `GET /v0/dashboard/`, `GET /v0/dashboard/ballots`, `GET /v0/transactions`, `GET /v0/dashboard/pending` |
-| `src/routes/voter-directory/+page.js`, `[voterId]/+page.js` | `GET /v0/voters`, `GET /v0/voters/:id` |
-| `src/lib/Comments.svelte` | `GET /v0/proposals/:id/comments`, `POST /v0/comment` |
-| `src/lib/TransactionDetails.svelte` | `GET /v1/ballots/:id` |
-| `src/lib/TransactionVotes.svelte` | `GET /v0/proposals/:id/short` |
-| `src/lib/ProposalVoteDefault.svelte`, `ProposalVoteBudget.svelte` | `POST /v0/vote/:id` (only reachable on non-legacy ballots; the new broker doesn't use this path for Hydra writes — it's only per-proposal draft staging) |
-| `src/lib/broker.js` | `GET /v1/votes/:ballotId/packages`, `GET /v1/votes/:ballotId/package/:id`, `POST /v1/votes/:ballotId/draft`, `POST /v1/votes/:ballotId/signature`, `POST /v1/votes/:ballotId/submit`, `GET /v0/dashboard/pending` |
-| `src/lib/BrokerVoteFlow.svelte`, `BallotCosignerPrompt.svelte`, `AuditMyVote.svelte` | (via `broker.js` helpers) |
-| `src/lib/BallotProvenance.svelte` | `GET /v1/results/ballot/:id` |
-| `src/lib/WalletSigner/*` | `POST /v0/session`, `PUT /v0/session` (login only — no longer used for vote submission) |
+| Component / module                                                                   | Endpoint(s)                                                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/routes/+layout.js`                                                              | `GET /v1/config`, `GET /v0/dashboard/`, `GET /v0/session/`                                                                                                                                                        |
+| `src/routes/+page.js`                                                                | `GET /v1/ballots?status=…`                                                                                                                                                                                        |
+| `src/routes/ballots/+page.js`                                                        | `GET /v1/ballots`, `GET /v0/ballots/voterTypes`                                                                                                                                                                   |
+| `src/routes/ballots/[ballotId]/+page.js`                                             | `GET /v1/ballots/:id`                                                                                                                                                                                             |
+| `src/routes/ballots/[ballotId]/proposals/+page.js`                                   | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals`, `GET /v0/ballots/:id/tags`, `GET /v0/ballots/:id/categories`                                                                                              |
+| `src/routes/ballots/[ballotId]/proposals/[proposalId]/+page.js`                      | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals?search=:id`                                                                                                                                                 |
+| `src/routes/ballots/[ballotId]/proposals/[proposalId]/results/+page.js`              | `GET /v1/ballots/:id`, `GET /v0/ballots/:id/proposals?search=:id`, `GET /v1/results/proposal/:id`                                                                                                                 |
+| `src/routes/(private)/dashboard/+page.js`                                            | `GET /v0/dashboard/`, `GET /v0/dashboard/ballots`, `GET /v0/transactions`, `GET /v0/dashboard/pending`                                                                                                            |
+| `src/routes/voter-directory/+page.js`, `[voterId]/+page.js`                          | `GET /v0/voters`, `GET /v0/voters/:id`                                                                                                                                                                            |
+| `src/lib/Comments.svelte`                                                            | `GET /v0/proposals/:id/comments`, `POST /v0/comment`                                                                                                                                                              |
+| `src/lib/TransactionDetails.svelte`                                                  | `GET /v1/ballots/:id`                                                                                                                                                                                             |
+| `src/lib/TransactionVotes.svelte`                                                    | `GET /v0/proposals/:id/short`                                                                                                                                                                                     |
+| `src/lib/ProposalVoteDefault.svelte`, `ProposalVoteBudget.svelte`                    | `POST /v0/vote/:id` (only reachable on non-legacy ballots; the new broker doesn't use this path for Hydra writes — it's only per-proposal draft staging)                                                          |
+| `src/lib/broker.js`                                                                  | `GET /v1/votes/:ballotId/packages`, `GET /v1/votes/:ballotId/package/:id`, `POST /v1/votes/:ballotId/draft`, `POST /v1/votes/:ballotId/signature`, `POST /v1/votes/:ballotId/submit`, `GET /v0/dashboard/pending` |
+| `src/lib/BrokerVoteFlow.svelte`, `BallotCosignerPrompt.svelte`, `AuditMyVote.svelte` | (via `broker.js` helpers)                                                                                                                                                                                         |
+| `src/lib/BallotProvenance.svelte`                                                    | `GET /v1/results/ballot/:id`                                                                                                                                                                                      |
+| `src/lib/WalletSigner/*`                                                             | `POST /v0/session`, `PUT /v0/session` (login only — no longer used for vote submission)                                                                                                                           |

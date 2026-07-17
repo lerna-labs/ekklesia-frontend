@@ -8,30 +8,30 @@ import { Landmark, Crown, UserCircle, Users } from 'lucide-svelte';
 import { brandColor } from '$lib/base/brandColor.js';
 
 export const GROUP_ACCENTS = {
-	indigo: {
-		bar: 'bg-indigo-500',
-		chip: 'bg-indigo-50 ring-indigo-200',
-		icon: 'text-indigo-600',
-		stroke: '#6366f1'
-	},
-	amber: {
-		bar: 'bg-amber-500',
-		chip: 'bg-amber-50 ring-amber-200',
-		icon: 'text-amber-600',
-		stroke: '#f59e0b'
-	},
-	slate: {
-		bar: 'bg-slate-500',
-		chip: 'bg-slate-50 ring-slate-200',
-		icon: 'text-slate-600',
-		stroke: '#64748b'
-	},
-	neutral: {
-		bar: 'bg-neutral-500',
-		chip: 'bg-neutral-50 ring-neutral-200',
-		icon: 'text-neutral-600',
-		stroke: '#737373'
-	}
+  indigo: {
+    bar: 'bg-indigo-500',
+    chip: 'bg-indigo-50 ring-indigo-200',
+    icon: 'text-indigo-600',
+    stroke: '#6366f1',
+  },
+  amber: {
+    bar: 'bg-amber-500',
+    chip: 'bg-amber-50 ring-amber-200',
+    icon: 'text-amber-600',
+    stroke: '#f59e0b',
+  },
+  slate: {
+    bar: 'bg-slate-500',
+    chip: 'bg-slate-50 ring-slate-200',
+    icon: 'text-slate-600',
+    stroke: '#64748b',
+  },
+  neutral: {
+    bar: 'bg-neutral-500',
+    chip: 'bg-neutral-50 ring-neutral-200',
+    icon: 'text-neutral-600',
+    stroke: '#737373',
+  },
 };
 
 /**
@@ -40,13 +40,13 @@ export const GROUP_ACCENTS = {
  * card family.
  */
 export function groupIdentity(key, fallbackLabel) {
-	const k = String(key || '').toLowerCase();
-	if (k === 'drep') return { Icon: Landmark, accent: 'indigo', role: 'Delegated Representative' };
-	if (k === 'pool' || k === 'spo')
-		return { Icon: Crown, accent: 'amber', role: 'Stake Pool Operator' };
-	if (k === 'stake' || k === 'stakeholder')
-		return { Icon: UserCircle, accent: 'slate', role: 'Individual Stakeholder' };
-	return { Icon: Users, accent: 'neutral', role: fallbackLabel || 'Other' };
+  const k = String(key || '').toLowerCase();
+  if (k === 'drep') return { Icon: Landmark, accent: 'indigo', role: 'Delegated Representative' };
+  if (k === 'pool' || k === 'spo')
+    return { Icon: Crown, accent: 'amber', role: 'Stake Pool Operator' };
+  if (k === 'stake' || k === 'stakeholder')
+    return { Icon: UserCircle, accent: 'slate', role: 'Individual Stakeholder' };
+  return { Icon: Users, accent: 'neutral', role: fallbackLabel || 'Other' };
 }
 
 // Saturated, mid-weight colors that hold up on white at small donut sizes.
@@ -54,13 +54,13 @@ export function groupIdentity(key, fallbackLabel) {
 // Slot 0 reads the deployment's `--brand-hover` at call time; slots 1+ are
 // intentionally fixed distinct hues, independent of brand.
 const OTHER_OPTION_COLORS_SECONDARY = [
-	'#4f46e5', // indigo-600
-	'#0891b2', // cyan-600
-	'#c026d3', // fuchsia-600
-	'#ca8a04', // yellow-600
-	'#0d9488', // teal-600
-	'#9333ea', // violet-600
-	'#e11d48' // rose-600
+  '#4f46e5', // indigo-600
+  '#0891b2', // cyan-600
+  '#c026d3', // fuchsia-600
+  '#ca8a04', // yellow-600
+  '#0d9488', // teal-600
+  '#9333ea', // violet-600
+  '#e11d48', // rose-600
 ];
 
 /**
@@ -69,11 +69,11 @@ const OTHER_OPTION_COLORS_SECONDARY = [
  * distinct-hue palette so ballots with 4+ options remain scannable.
  */
 export function optionColor(label, i) {
-	const l = String(label || '').toLowerCase();
-	if (l === 'yes') return '#059669'; // emerald-600
-	if (l === 'no') return '#dc2626'; // red-600
-	if (l === 'abstain') return '#475569'; // slate-600
-	const idx = i % (OTHER_OPTION_COLORS_SECONDARY.length + 1);
-	if (idx === 0) return brandColor('brand-hover');
-	return OTHER_OPTION_COLORS_SECONDARY[idx - 1];
+  const l = String(label || '').toLowerCase();
+  if (l === 'yes') return '#059669'; // emerald-600
+  if (l === 'no') return '#dc2626'; // red-600
+  if (l === 'abstain') return '#475569'; // slate-600
+  const idx = i % (OTHER_OPTION_COLORS_SECONDARY.length + 1);
+  if (idx === 0) return brandColor('brand-hover');
+  return OTHER_OPTION_COLORS_SECONDARY[idx - 1];
 }

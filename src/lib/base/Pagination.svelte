@@ -1,90 +1,90 @@
 <script>
-	import { page } from '$app/stores';
-	import * as Pagination from '$lib/components/ui/pagination/index.js';
-	import { goto } from '$app/navigation';
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+  import { page } from '$app/stores';
+  import * as Pagination from '$lib/components/ui/pagination/index.js';
+  import { goto } from '$app/navigation';
+  import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
-	// Get pagination data from page store
-	const count = $derived($page.data.pagination.total);
-	const perPage = $derived($page.data.pagination.limit);
-	const currentPage = $derived($page.data.pagination.page);
-	const totalPages = $derived($page.data.pagination.totalPages);
+  // Get pagination data from page store
+  const count = $derived($page.data.pagination.total);
+  const perPage = $derived($page.data.pagination.limit);
+  const currentPage = $derived($page.data.pagination.page);
+  const totalPages = $derived($page.data.pagination.totalPages);
 
-	// Function to navigate to a specific page while preserving other URL parameters
-	function navigateTo(pageNum) {
-		// console.log('Navigating to page:', pageNum);
-		// Create a URL object from the current URL
-		const url = new URL(window.location.href);
+  // Function to navigate to a specific page while preserving other URL parameters
+  function navigateTo(pageNum) {
+    // console.log('Navigating to page:', pageNum);
+    // Create a URL object from the current URL
+    const url = new URL(window.location.href);
 
-		// Update only the page parameter
-		url.searchParams.set('page', pageNum.toString());
+    // Update only the page parameter
+    url.searchParams.set('page', pageNum.toString());
 
-		// Navigate to the new URL
-		goto(url.toString());
-	}
+    // Navigate to the new URL
+    goto(url.toString());
+  }
 
-	// Handler for "Previous" button
-	function goToPrevious() {
-		if (currentPage > 1) {
-			navigateTo(currentPage - 1);
-		}
-	}
+  // Handler for "Previous" button
+  function goToPrevious() {
+    if (currentPage > 1) {
+      navigateTo(currentPage - 1);
+    }
+  }
 
-	// Handler for "Next" button
-	function goToNext() {
-		if (currentPage < totalPages) {
-			navigateTo(currentPage + 1);
-		}
-	}
+  // Handler for "Next" button
+  function goToNext() {
+    if (currentPage < totalPages) {
+      navigateTo(currentPage + 1);
+    }
+  }
 
-	// Handler for direct page navigation
-	function goToPage(pageNum) {
-		navigateTo(pageNum);
-	}
+  // Handler for direct page navigation
+  function goToPage(pageNum) {
+    navigateTo(pageNum);
+  }
 </script>
 
 <Pagination.Root {count} {perPage} {currentPage} {...$page.data.pagination || {}}>
-	{#snippet children({ pages, currentPage })}
-		<Pagination.Content>
-			<Pagination.Item>
-				<Pagination.PrevButton
-					onclick={goToPrevious}
-					disabled={currentPage <= 1}
-					class="hidden sm:flex"
-				>
-					<ChevronLeft class="size-4" />
-					<span class="hidden sm:block">Previous</span>
-				</Pagination.PrevButton>
-			</Pagination.Item>
+  {#snippet children({ pages, currentPage })}
+    <Pagination.Content>
+      <Pagination.Item>
+        <Pagination.PrevButton
+          onclick={goToPrevious}
+          disabled={currentPage <= 1}
+          class="hidden sm:flex"
+        >
+          <ChevronLeft class="size-4" />
+          <span class="hidden sm:block">Previous</span>
+        </Pagination.PrevButton>
+      </Pagination.Item>
 
-			{#each pages as page (page.key)}
-				{#if page.type === 'ellipsis'}
-					<Pagination.Item>
-						<Pagination.Ellipsis />
-					</Pagination.Item>
-				{:else}
-					<Pagination.Item isVisible={currentPage === page.value}>
-						<Pagination.Link
-							{page}
-							isActive={currentPage === page.value}
-							onclick={() => goToPage(page.value)}
-						>
-							{page.value}
-						</Pagination.Link>
-					</Pagination.Item>
-				{/if}
-			{/each}
+      {#each pages as page (page.key)}
+        {#if page.type === 'ellipsis'}
+          <Pagination.Item>
+            <Pagination.Ellipsis />
+          </Pagination.Item>
+        {:else}
+          <Pagination.Item isVisible={currentPage === page.value}>
+            <Pagination.Link
+              {page}
+              isActive={currentPage === page.value}
+              onclick={() => goToPage(page.value)}
+            >
+              {page.value}
+            </Pagination.Link>
+          </Pagination.Item>
+        {/if}
+      {/each}
 
-			<Pagination.Item>
-				<Pagination.NextButton
-					onclick={goToNext}
-					disabled={currentPage >= totalPages}
-					class="hidden sm:flex"
-				>
-					<span class="hidden sm:block">Next</span>
-					<ChevronRight class="size-4" />
-				</Pagination.NextButton>
-			</Pagination.Item>
-		</Pagination.Content>
-	{/snippet}
+      <Pagination.Item>
+        <Pagination.NextButton
+          onclick={goToNext}
+          disabled={currentPage >= totalPages}
+          class="hidden sm:flex"
+        >
+          <span class="hidden sm:block">Next</span>
+          <ChevronRight class="size-4" />
+        </Pagination.NextButton>
+      </Pagination.Item>
+    </Pagination.Content>
+  {/snippet}
 </Pagination.Root>

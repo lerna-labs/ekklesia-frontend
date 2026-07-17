@@ -1,5 +1,5 @@
 ---
-title: "Live Ballots"
+title: 'Live Ballots'
 ---
 
 The following ballots are open for voting. Every registered DRep can log

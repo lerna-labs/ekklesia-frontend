@@ -18,24 +18,24 @@ import { api } from '$stores/sessionManager.js';
 // When not yet certified:
 //   { certified: false, narrative: null | { url, label }, history: [] }
 export async function fetchCertification(fetch, ballotId) {
-	try {
-		const res = await api.v1.fetch(fetch, '/ballots/' + ballotId + '/certified');
-		if (!res.ok) return null;
-		const payload = await res.json();
-		return payload?.data ?? null;
-	} catch (err) {
-		if (err?.status === 404) return null;
-		return null;
-	}
+  try {
+    const res = await api.v1.fetch(fetch, '/ballots/' + ballotId + '/certified');
+    if (!res.ok) return null;
+    const payload = await res.json();
+    return payload?.data ?? null;
+  } catch (err) {
+    if (err?.status === 404) return null;
+    return null;
+  }
 }
 
 // Pulls the per-proposal entry for a given proposal out of the active
 // certification payload. Returns null when the ballot isn't certified
 // or the proposal isn't represented in the snapshot.
 export function getCertifiedProposal(certification, proposalId) {
-	if (!certification?.certified) return null;
-	const list = Array.isArray(certification.perProposal) ? certification.perProposal : [];
-	return list.find((p) => String(p.proposalId) === String(proposalId)) ?? null;
+  if (!certification?.certified) return null;
+  const list = Array.isArray(certification.perProposal) ? certification.perProposal : [];
+  return list.find((p) => String(p.proposalId) === String(proposalId)) ?? null;
 }
 
 // Derives the display state for a ballot's results given the
@@ -55,17 +55,17 @@ export function getCertifiedProposal(certification, proposalId) {
 // ballot + result so the UI can distinguish "polls are still open" from
 // "polls closed, waiting on the authority."
 export function certificationState(certification, result, ballot) {
-	if (certification?.certified) return 'certified';
-	if (certification && !certification.certified && certification.narrative?.url) return 'narrative';
+  if (certification?.certified) return 'certified';
+  if (certification && !certification.certified && certification.narrative?.url) return 'narrative';
 
-	const closed = ballot?.status === 'closed';
-	const hydraFinal =
-		result?.source === 'final' ||
-		result?.source === 'certified' ||
-		!!result?.hydraFinalizeTxHash ||
-		!!result?.finalizedAt;
+  const closed = ballot?.status === 'closed';
+  const hydraFinal =
+    result?.source === 'final' ||
+    result?.source === 'certified' ||
+    !!result?.hydraFinalizeTxHash ||
+    !!result?.finalizedAt;
 
-	if (closed && hydraFinal) return 'hydra-provisional';
-	if (result) return 'voting';
-	return null;
+  if (closed && hydraFinal) return 'hydra-provisional';
+  if (result) return 'voting';
+  return null;
 }

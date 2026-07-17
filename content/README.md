@@ -54,24 +54,24 @@ guide.
 
 #### Core shadcn tokens
 
-| Key                       | Controls                                            |
-| ---                       | ---                                                 |
-| `primary`                 | Default Button bg, primary CTA                      |
-| `primary-foreground`      | Text/icons on `--primary` surfaces                  |
-| `secondary`               | Secondary Button bg                                 |
-| `secondary-foreground`    | Text/icons on `--secondary` surfaces                |
-| `accent`                  | Hover bg on ghost buttons and menu items            |
-| `accent-foreground`       | Text/icons on `--accent` surfaces                   |
-| `destructive`             | Destructive button bg, error highlights             |
-| `destructive-foreground`  | Text/icons on `--destructive` surfaces              |
-| `ring`                    | Keyboard focus ring                                 |
+| Key                      | Controls                                 |
+| ------------------------ | ---------------------------------------- |
+| `primary`                | Default Button bg, primary CTA           |
+| `primary-foreground`     | Text/icons on `--primary` surfaces       |
+| `secondary`              | Secondary Button bg                      |
+| `secondary-foreground`   | Text/icons on `--secondary` surfaces     |
+| `accent`                 | Hover bg on ghost buttons and menu items |
+| `accent-foreground`      | Text/icons on `--accent` surfaces        |
+| `destructive`            | Destructive button bg, error highlights  |
+| `destructive-foreground` | Text/icons on `--destructive` surfaces   |
+| `ring`                   | Keyboard focus ring                      |
 
 #### Header
 
-| Key                  | Controls                                            |
-| ---                  | ---                                                 |
-| `header-background`  | Sticky header bg (was `#1E1E2F`)                    |
-| `header-foreground`  | Header text & nav button colours. **Auto-derived from `header-background` (white on dark, black on light) when omitted** — pick one, get the other for free. |
+| Key                 | Controls                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `header-background` | Sticky header bg (was `#1E1E2F`)                                                                                                                             |
+| `header-foreground` | Header text & nav button colours. **Auto-derived from `header-background` (white on dark, black on light) when omitted** — pick one, get the other for free. |
 
 #### Brand accent palette
 
@@ -81,13 +81,13 @@ the scroll progress strip, vote CTAs, ProposalVote highlights, version-update
 banner, filter/sort badges, markdown links, ranked result rank-1 bar, and
 "View Results" buttons.
 
-| Key                | Controls                                              |
-| ---                | ---                                                   |
-| `brand`            | Resting brand bg / accent text                        |
-| `brand-hover`      | Hover state for `brand`-bg elements; brand text colour |
-| `brand-fg`         | Text/icons on `brand` surfaces                        |
-| `brand-soft`       | Soft tinted bg (callout panels, gradient highlights)  |
-| `brand-soft-fg`    | Text/icons on `brand-soft` surfaces                   |
+| Key             | Controls                                               |
+| --------------- | ------------------------------------------------------ |
+| `brand`         | Resting brand bg / accent text                         |
+| `brand-hover`   | Hover state for `brand`-bg elements; brand text colour |
+| `brand-fg`      | Text/icons on `brand` surfaces                         |
+| `brand-soft`    | Soft tinted bg (callout panels, gradient highlights)   |
+| `brand-soft-fg` | Text/icons on `brand-soft` surfaces                    |
 
 #### Testnet-warning banner
 
@@ -97,20 +97,20 @@ cautionary colour even when a deployment's brand accent is a low-contrast hue.
 The banner only renders on testnet builds (`VITE_NETWORK_ID == 0`); on mainnet
 it never appears, so these keys have no effect there.
 
-| Key                          | Controls                                            |
-| ---                          | ---                                                 |
-| `network-warning`            | Testnet-banner background                           |
+| Key                          | Controls                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `network-warning`            | Testnet-banner background                                                   |
 | `network-warning-foreground` | Banner text. **Auto-derived** (white on dark, black on light) when omitted. |
 
 #### Geometry & typography
 
-| Key             | Format                          | Controls                                            |
-| ---             | ---                             | ---                                                 |
-| `radius`        | CSS length (`0.5rem`, `8px`)    | Base corner radius (cards, buttons, inputs)         |
-| `font-heading`  | Google Fonts family name        | `h1` / `h2` / `h3`                                  |
-| `font-body`     | Google Fonts family name        | Body copy                                           |
+| Key            | Format                       | Controls                                    |
+| -------------- | ---------------------------- | ------------------------------------------- |
+| `radius`       | CSS length (`0.5rem`, `8px`) | Base corner radius (cards, buttons, inputs) |
+| `font-heading` | Google Fonts family name     | `h1` / `h2` / `h3`                          |
+| `font-body`    | Google Fonts family name     | Body copy                                   |
 
-### What's *not* themable here
+### What's _not_ themable here
 
 - The `slate-*` Tailwind classes used throughout the app remain (neutral
   spine; see `.claude/design/STYLE_GUIDE.md` §2.1). They're meant to stay
@@ -201,15 +201,15 @@ copy is actually requested by the browser.
 `static/brand/<deployment>/` over the build root, replacing the default
 Ekklesia icons for the active deployment:
 
-| Filename                          | Served at                       | Used by                          |
-| ---                               | ---                             | ---                              |
-| `favicon.ico`                     | `/favicon.ico`                  | Browser tab + bookmarks          |
-| `favicon-16x16.png`               | `/favicon-16x16.png`            | Browser tab (small)              |
-| `favicon-32x32.png`               | `/favicon-32x32.png`            | Browser tab (retina)             |
-| `apple-touch-icon.png`            | `/apple-touch-icon.png`         | iOS home screen                  |
-| `android-chrome-192x192.png`      | `/android-chrome-192x192.png`   | Android home screen / PWA        |
-| `android-chrome-512x512.png`      | `/android-chrome-512x512.png`   | Android PWA install card         |
-| `social.png`                      | `/social.png`                   | OpenGraph / Twitter card preview |
+| Filename                     | Served at                     | Used by                          |
+| ---------------------------- | ----------------------------- | -------------------------------- |
+| `favicon.ico`                | `/favicon.ico`                | Browser tab + bookmarks          |
+| `favicon-16x16.png`          | `/favicon-16x16.png`          | Browser tab (small)              |
+| `favicon-32x32.png`          | `/favicon-32x32.png`          | Browser tab (retina)             |
+| `apple-touch-icon.png`       | `/apple-touch-icon.png`       | iOS home screen                  |
+| `android-chrome-192x192.png` | `/android-chrome-192x192.png` | Android home screen / PWA        |
+| `android-chrome-512x512.png` | `/android-chrome-512x512.png` | Android PWA install card         |
+| `social.png`                 | `/social.png`                 | OpenGraph / Twitter card preview |
 
 Only drop the files you want to override — the rest fall through to the
 default. The script logs every file it copies so a build log shows the
@@ -233,16 +233,16 @@ deployment's brand colours.
 
 Mapping (theme.json key → OG palette key):
 
-| theme.json                | OG palette                                  | Notes                                          |
-| ---                       | ---                                         | ---                                            |
-| `header-background`       | `bgVia` (mid gradient stop)                 | Lightness capped at 16% so the editorial dark backdrop survives even when the header is a saturated mid-lightness colour (e.g. Intersect's `#0228AA` at L=34% — would otherwise wash out same-hue brand text). Hue + saturation preserved. |
-| derived darker            | `bgFrom`                                    | `bgVia` × 0.53 lightness (or × 1.06 for light headers) |
-| derived lighter           | `bgTo`                                      | `bgVia` × 1.27 lightness (or × 0.94 for light headers) |
-| **contrast-ranked** from `brand` / `primary` / `brand-hover` | `brandPrimary` | The highest-contrast candidate against `bgVia` wins, so same-hue deployments auto-promote a brighter colour. Drives the eyebrow text, top-right glow, and bottom-row dot. |
-| **contrast-ranked** (second-best, distinct from `brandPrimary`) | `brandSecondary` | Bottom-left glow. Auto-derives to `brand-hover` for monochromatic deployments. |
-| `header-foreground`       | `textPrimary` + `decorativeOverlay`         | Body title + diagonal hairline                 |
-| derived (70% alpha)       | `textSecondary`                             | Period label, host label                       |
-| derived (8% / 18% alpha)  | `chipBg` / `chipBorder`                     | "BALLOT" / "PROPOSAL" chip                     |
+| theme.json                                                      | OG palette                          | Notes                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `header-background`                                             | `bgVia` (mid gradient stop)         | Lightness capped at 16% so the editorial dark backdrop survives even when the header is a saturated mid-lightness colour (e.g. Intersect's `#0228AA` at L=34% — would otherwise wash out same-hue brand text). Hue + saturation preserved. |
+| derived darker                                                  | `bgFrom`                            | `bgVia` × 0.53 lightness (or × 1.06 for light headers)                                                                                                                                                                                     |
+| derived lighter                                                 | `bgTo`                              | `bgVia` × 1.27 lightness (or × 0.94 for light headers)                                                                                                                                                                                     |
+| **contrast-ranked** from `brand` / `primary` / `brand-hover`    | `brandPrimary`                      | The highest-contrast candidate against `bgVia` wins, so same-hue deployments auto-promote a brighter colour. Drives the eyebrow text, top-right glow, and bottom-row dot.                                                                  |
+| **contrast-ranked** (second-best, distinct from `brandPrimary`) | `brandSecondary`                    | Bottom-left glow. Auto-derives to `brand-hover` for monochromatic deployments.                                                                                                                                                             |
+| `header-foreground`                                             | `textPrimary` + `decorativeOverlay` | Body title + diagonal hairline                                                                                                                                                                                                             |
+| derived (70% alpha)                                             | `textSecondary`                     | Period label, host label                                                                                                                                                                                                                   |
+| derived (8% / 18% alpha)                                        | `chipBg` / `chipBorder`             | "BALLOT" / "PROPOSAL" chip                                                                                                                                                                                                                 |
 
 > **Why contrast-rank the brand colours:** the OG card paints the eyebrow
 > text (`"EKKLESIA VOTE"` / `"BALLOT"`) in `brandPrimary` on top of the

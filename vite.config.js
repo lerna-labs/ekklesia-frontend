@@ -3,14 +3,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { resolve } from 'path';
 
 export default defineConfig(() => ({
-	plugins: [sveltekit()],
-	resolve: {
-		alias: {
-			$stores: resolve('./src/stores'),
-			$lib: resolve('./src/lib')
-		}
-	},
-	server: {
-		allowedHosts: ['a1bc-24-121-173-86.ngrok-free.app', 'localhost']
-	}
+  plugins: [sveltekit()],
+  resolve: {
+    alias: {
+      $stores: resolve('./src/stores'),
+      $lib: resolve('./src/lib'),
+    },
+  },
+  server: {
+    allowedHosts: ['a1bc-24-121-173-86.ngrok-free.app', 'localhost'],
+  },
 }));
