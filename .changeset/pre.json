@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "rc",
+  "initialVersions": {
+    "ekklesia-frontend": "0.9.0"
+  },
+  "changesets": []
+}
