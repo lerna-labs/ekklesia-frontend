@@ -33,13 +33,13 @@
  * when narrowing MethodTally or validating payload shape.
  */
 export const VOTE_METHODS = Object.freeze({
-	BINARY: 'binary',
-	SINGLE_CHOICE: 'single-choice',
-	MULTI_CHOICE: 'multi-choice',
-	RANGE: 'range',
-	RANKED: 'ranked',
-	WEIGHTED: 'weighted',
-	LIKERT: 'likert'
+  BINARY: 'binary',
+  SINGLE_CHOICE: 'single-choice',
+  MULTI_CHOICE: 'multi-choice',
+  RANGE: 'range',
+  RANKED: 'ranked',
+  WEIGHTED: 'weighted',
+  LIKERT: 'likert',
 });
 
 /**
@@ -47,17 +47,17 @@ export const VOTE_METHODS = Object.freeze({
  * through to the UI on /draft and /signature failures.
  */
 export const ERROR_CODES = Object.freeze({
-	// `/vote` and `/vote-and-register` — voter-facing ("please assign all
-	// 100 points across options").
-	INVALID_VOTE: 'INVALID_VOTE',
-	// `/prepare` and `/prepare/update` — ballot authoring ("fix the step
-	// grid"). Should not occur from a voter-side submission, but the
-	// broker surfaces it for completeness.
-	INVALID_INPUT: 'INVALID_INPUT',
-	// `/draft` on a multisig package that already carries cosigner
-	// signatures — the voter changed their selections after at least one
-	// cosigner signed. Returned as 409; frontend offers cancel+redraft.
-	PACKAGE_ALREADY_SIGNED: 'PACKAGE_ALREADY_SIGNED'
+  // `/vote` and `/vote-and-register` — voter-facing ("please assign all
+  // 100 points across options").
+  INVALID_VOTE: 'INVALID_VOTE',
+  // `/prepare` and `/prepare/update` — ballot authoring ("fix the step
+  // grid"). Should not occur from a voter-side submission, but the
+  // broker surfaces it for completeness.
+  INVALID_INPUT: 'INVALID_INPUT',
+  // `/draft` on a multisig package that already carries cosigner
+  // signatures — the voter changed their selections after at least one
+  // cosigner signed. Returned as 409; frontend offers cancel+redraft.
+  PACKAGE_ALREADY_SIGNED: 'PACKAGE_ALREADY_SIGNED',
 });
 
 /**
@@ -96,30 +96,30 @@ const V2_METHOD_VALUES = new Set(Object.values(VOTE_METHODS));
  * @returns {VoteMethod}
  */
 export function methodForProposal(proposal) {
-	const type = String(proposal?.voteType ?? 'default').toLowerCase();
-	// Migrated ballots already carry the explicit Hydra method.
-	if (V2_METHOD_VALUES.has(type)) return /** @type {VoteMethod} */ (type);
-	switch (type) {
-		case 'preference':
-		case 'budget':
-			return VOTE_METHODS.MULTI_CHOICE;
-		case 'scale':
-			return VOTE_METHODS.RANGE;
-		case 'ranked':
-			return VOTE_METHODS.RANKED;
-		case 'likert':
-			return VOTE_METHODS.LIKERT;
-		case 'weighted':
-			return VOTE_METHODS.WEIGHTED;
-		case 'default':
-		default: {
-			// Legacy: two-option ballots are binary; anything with more options
-			// is single-choice. Both share the same wire shape (length-1
-			// number[]) — the method label just drives results rendering.
-			const count = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
-			return count === 2 ? VOTE_METHODS.BINARY : VOTE_METHODS.SINGLE_CHOICE;
-		}
-	}
+  const type = String(proposal?.voteType ?? 'default').toLowerCase();
+  // Migrated ballots already carry the explicit Hydra method.
+  if (V2_METHOD_VALUES.has(type)) return /** @type {VoteMethod} */ (type);
+  switch (type) {
+    case 'preference':
+    case 'budget':
+      return VOTE_METHODS.MULTI_CHOICE;
+    case 'scale':
+      return VOTE_METHODS.RANGE;
+    case 'ranked':
+      return VOTE_METHODS.RANKED;
+    case 'likert':
+      return VOTE_METHODS.LIKERT;
+    case 'weighted':
+      return VOTE_METHODS.WEIGHTED;
+    case 'default':
+    default: {
+      // Legacy: two-option ballots are binary; anything with more options
+      // is single-choice. Both share the same wire shape (length-1
+      // number[]) — the method label just drives results rendering.
+      const count = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+      return count === 2 ? VOTE_METHODS.BINARY : VOTE_METHODS.SINGLE_CHOICE;
+    }
+  }
 }
 
 /**
@@ -133,12 +133,12 @@ export function methodForProposal(proposal) {
  * @returns {boolean}
  */
 export function isAbstainAllowed(proposal) {
-	if (!proposal) return true;
-	if (proposal.requireAnswer === true) return false;
-	// Defensive fallback: if a legacy ballot still carries abstainAllowed:
-	// false and hasn't been re-prepared under schema v2, respect that.
-	if (proposal.abstainAllowed === false) return false;
-	return true;
+  if (!proposal) return true;
+  if (proposal.requireAnswer === true) return false;
+  // Defensive fallback: if a legacy ballot still carries abstainAllowed:
+  // false and hasn't been re-prepared under schema v2, respect that.
+  if (proposal.abstainAllowed === false) return false;
+  return true;
 }
 
 /**
@@ -151,10 +151,10 @@ export function isAbstainAllowed(proposal) {
  * @returns {VoteSelection}
  */
 export function toWireSelection(questionId, draft) {
-	if (draft?.kind === 'abstain') {
-		return { questionId, abstain: true };
-	}
-	return { questionId, selection: draft?.selection ?? [] };
+  if (draft?.kind === 'abstain') {
+    return { questionId, abstain: true };
+  }
+  return { questionId, selection: draft?.selection ?? [] };
 }
 
 /**
@@ -164,9 +164,9 @@ export function toWireSelection(questionId, draft) {
  * @param {{ rankCount?: number, voteOptions?: Array<unknown> }} proposal
  */
 function rankCountOf(proposal) {
-	const rc = Number(proposal?.rankCount);
-	if (Number.isFinite(rc) && rc > 0) return rc;
-	return Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+  const rc = Number(proposal?.rankCount);
+  if (Number.isFinite(rc) && rc > 0) return rc;
+  return Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
 }
 
 /**
@@ -183,11 +183,11 @@ function rankCountOf(proposal) {
  * @returns {{ min: number, max: number }}
  */
 function selectionBoundsOf(proposal) {
-	const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
-	const max =
-		Number(proposal?.maxSelections) || Number(proposal?.voterBudget) || optionCount || Infinity;
-	const min = Math.max(1, Number(proposal?.minSelections) || 0);
-	return { min, max };
+  const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+  const max =
+    Number(proposal?.maxSelections) || Number(proposal?.voterBudget) || optionCount || Infinity;
+  const min = Math.max(1, Number(proposal?.minSelections) || 0);
+  return { min, max };
 }
 
 /**
@@ -204,44 +204,44 @@ function selectionBoundsOf(proposal) {
  * @returns {boolean}
  */
 export function draftIsComplete(proposal, draft) {
-	if (!draft) return true;
-	if (draft.kind === 'abstain') return true;
-	// A `cleared` draft submits as an omitted question — Hydra accepts the
-	// new package as canonical and removes the prior vote on that question.
-	// That's a valid "remove my vote" signal when the proposal allows
-	// abstention, but the broker rejects it on `requireAnswer: true`
-	// proposals, so route those through the incomplete-drafts checklist
-	// pre-submit instead of letting the voter hit a generic INVALID_VOTE.
-	if (draft.kind === 'cleared') return isAbstainAllowed(proposal);
-	if (draft.kind !== 'selection' || !Array.isArray(draft.selection)) return false;
+  if (!draft) return true;
+  if (draft.kind === 'abstain') return true;
+  // A `cleared` draft submits as an omitted question — Hydra accepts the
+  // new package as canonical and removes the prior vote on that question.
+  // That's a valid "remove my vote" signal when the proposal allows
+  // abstention, but the broker rejects it on `requireAnswer: true`
+  // proposals, so route those through the incomplete-drafts checklist
+  // pre-submit instead of letting the voter hit a generic INVALID_VOTE.
+  if (draft.kind === 'cleared') return isAbstainAllowed(proposal);
+  if (draft.kind !== 'selection' || !Array.isArray(draft.selection)) return false;
 
-	const sel = draft.selection;
-	const method = methodForProposal(proposal);
-	switch (method) {
-		case VOTE_METHODS.BINARY:
-		case VOTE_METHODS.SINGLE_CHOICE:
-		case VOTE_METHODS.RANGE:
-			return sel.length === 1;
-		case VOTE_METHODS.MULTI_CHOICE: {
-			// Preference / budget allow a range of picks — satisfy the
-			// ballot's minSelections..maxSelections bounds.
-			const { min, max } = selectionBoundsOf(proposal);
-			return sel.length >= min && sel.length <= max;
-		}
-		case VOTE_METHODS.RANKED:
-			return sel.length === rankCountOf(proposal);
-		case VOTE_METHODS.WEIGHTED: {
-			const budget = Number(proposal?.voterBudget) || 0;
-			const total = sel.reduce((s, e) => s + (Number(e?.value) || 0), 0);
-			return total === budget;
-		}
-		case VOTE_METHODS.LIKERT: {
-			const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
-			return sel.length === optionCount;
-		}
-		default:
-			return true;
-	}
+  const sel = draft.selection;
+  const method = methodForProposal(proposal);
+  switch (method) {
+    case VOTE_METHODS.BINARY:
+    case VOTE_METHODS.SINGLE_CHOICE:
+    case VOTE_METHODS.RANGE:
+      return sel.length === 1;
+    case VOTE_METHODS.MULTI_CHOICE: {
+      // Preference / budget allow a range of picks — satisfy the
+      // ballot's minSelections..maxSelections bounds.
+      const { min, max } = selectionBoundsOf(proposal);
+      return sel.length >= min && sel.length <= max;
+    }
+    case VOTE_METHODS.RANKED:
+      return sel.length === rankCountOf(proposal);
+    case VOTE_METHODS.WEIGHTED: {
+      const budget = Number(proposal?.voterBudget) || 0;
+      const total = sel.reduce((s, e) => s + (Number(e?.value) || 0), 0);
+      return total === budget;
+    }
+    case VOTE_METHODS.LIKERT: {
+      const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+      return sel.length === optionCount;
+    }
+    default:
+      return true;
+  }
 }
 
 /**
@@ -254,34 +254,34 @@ export function draftIsComplete(proposal, draft) {
  * @returns {string | null}
  */
 export function incompleteDraftReason(proposal, draft) {
-	if (draftIsComplete(proposal, draft)) return null;
-	if (draft?.kind === 'cleared') return 'Cleared — this question requires an answer';
-	if (!draft || draft.kind !== 'selection' || !Array.isArray(draft.selection)) return null;
+  if (draftIsComplete(proposal, draft)) return null;
+  if (draft?.kind === 'cleared') return 'Cleared — this question requires an answer';
+  if (!draft || draft.kind !== 'selection' || !Array.isArray(draft.selection)) return null;
 
-	const sel = draft.selection;
-	const method = methodForProposal(proposal);
-	switch (method) {
-		case VOTE_METHODS.MULTI_CHOICE: {
-			const { min, max } = selectionBoundsOf(proposal);
-			if (sel.length < min) return `Choose at least ${min}`;
-			if (sel.length > max) return `Choose at most ${max}`;
-			return null;
-		}
-		case VOTE_METHODS.RANKED: {
-			const need = rankCountOf(proposal);
-			return `Ranked ${sel.length} of ${need}`;
-		}
-		case VOTE_METHODS.WEIGHTED: {
-			const budget = Number(proposal?.voterBudget) || 0;
-			const total = sel.reduce((s, e) => s + (Number(e?.value) || 0), 0);
-			if (total > budget) return `Over budget by ${total - budget}`;
-			return `Allocated ${total} of ${budget}`;
-		}
-		case VOTE_METHODS.LIKERT: {
-			const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
-			return `Rated ${sel.length} of ${optionCount} options`;
-		}
-		default:
-			return null;
-	}
+  const sel = draft.selection;
+  const method = methodForProposal(proposal);
+  switch (method) {
+    case VOTE_METHODS.MULTI_CHOICE: {
+      const { min, max } = selectionBoundsOf(proposal);
+      if (sel.length < min) return `Choose at least ${min}`;
+      if (sel.length > max) return `Choose at most ${max}`;
+      return null;
+    }
+    case VOTE_METHODS.RANKED: {
+      const need = rankCountOf(proposal);
+      return `Ranked ${sel.length} of ${need}`;
+    }
+    case VOTE_METHODS.WEIGHTED: {
+      const budget = Number(proposal?.voterBudget) || 0;
+      const total = sel.reduce((s, e) => s + (Number(e?.value) || 0), 0);
+      if (total > budget) return `Over budget by ${total - budget}`;
+      return `Allocated ${total} of ${budget}`;
+    }
+    case VOTE_METHODS.LIKERT: {
+      const optionCount = Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0;
+      return `Rated ${sel.length} of ${optionCount} options`;
+    }
+    default:
+      return null;
+  }
 }

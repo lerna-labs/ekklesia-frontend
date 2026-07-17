@@ -1,10 +1,10 @@
 ---
-question: "Final results deviate slightly from the last preliminary results — why?"
+question: 'Final results deviate slightly from the last preliminary results — why?'
 order: 60
 ---
 
-Ekklesia tabulates the cryptographic record of *who voted* and *how they
-voted*. Voting power, eligibility thresholds, and any post-vote weighting are
+Ekklesia tabulates the cryptographic record of _who voted_ and _how they
+voted_. Voting power, eligibility thresholds, and any post-vote weighting are
 applied by the **voting authority** — the organisation running the ballot —
 not by Ekklesia itself.
 

@@ -1,5 +1,5 @@
 ---
-title: "Live Ballots"
+title: 'Live Ballots'
 ---
 
 The following ballots are open for voting. Connect a CIP-30 or CIP-95 compatible

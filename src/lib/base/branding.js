@@ -9,20 +9,20 @@
  */
 
 export const BRAND_DEFAULTS = Object.freeze({
-	name: 'Ekklesia',
-	title: 'Ekklesia — Verifiable, Hydra-Powered Voting on Cardano',
-	description:
-		'Cast verifiable on-chain votes for Cardano governance. One tool for DReps, SPOs, CC members, and token holders — fast, auditable, Hydra-powered.',
-	ogImage: '/social.png'
+  name: 'Ekklesia',
+  title: 'Ekklesia — Verifiable, Hydra-Powered Voting on Cardano',
+  description:
+    'Cast verifiable on-chain votes for Cardano governance. One tool for DReps, SPOs, CC members, and token holders — fast, auditable, Hydra-powered.',
+  ogImage: '/social.png',
 });
 
 const env = import.meta.env;
 
 export const BRAND = Object.freeze({
-	name: env.VITE_APP_NAME || BRAND_DEFAULTS.name,
-	title: env.VITE_APP_TITLE || BRAND_DEFAULTS.title,
-	description: env.VITE_APP_DESCRIPTION || BRAND_DEFAULTS.description,
-	url: env.VITE_APP_URL || '',
-	ogImage: env.VITE_APP_OG_IMAGE || BRAND_DEFAULTS.ogImage,
-	twitterHandle: env.VITE_APP_TWITTER_HANDLE || ''
+  name: env.VITE_APP_NAME || BRAND_DEFAULTS.name,
+  title: env.VITE_APP_TITLE || BRAND_DEFAULTS.title,
+  description: env.VITE_APP_DESCRIPTION || BRAND_DEFAULTS.description,
+  url: env.VITE_APP_URL || '',
+  ogImage: env.VITE_APP_OG_IMAGE || BRAND_DEFAULTS.ogImage,
+  twitterHandle: env.VITE_APP_TWITTER_HANDLE || '',
 });

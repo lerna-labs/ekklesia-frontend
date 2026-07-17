@@ -12,16 +12,16 @@
  */
 
 const FALLBACKS = {
-	brand: '#F97316',
-	'brand-hover': '#EA580C',
-	'brand-fg': '#FFFFFF',
-	'brand-soft': '#FFF7ED',
-	'brand-soft-fg': '#7C2D12'
+  brand: '#F97316',
+  'brand-hover': '#EA580C',
+  'brand-fg': '#FFFFFF',
+  'brand-soft': '#FFF7ED',
+  'brand-soft-fg': '#7C2D12',
 };
 
 export function brandColor(token = 'brand') {
-	if (typeof document === 'undefined') return FALLBACKS[token] || FALLBACKS.brand;
-	const raw = getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim();
-	if (!raw) return FALLBACKS[token] || FALLBACKS.brand;
-	return `hsl(${raw})`;
+  if (typeof document === 'undefined') return FALLBACKS[token] || FALLBACKS.brand;
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(`--${token}`).trim();
+  if (!raw) return FALLBACKS[token] || FALLBACKS.brand;
+  return `hsl(${raw})`;
 }

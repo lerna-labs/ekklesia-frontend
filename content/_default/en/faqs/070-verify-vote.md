@@ -1,5 +1,5 @@
 ---
-question: "How do I verify my vote was included in the final results?"
+question: 'How do I verify my vote was included in the final results?'
 order: 70
 ---
 
