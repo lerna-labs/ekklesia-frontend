@@ -3,6 +3,7 @@
   import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
   import { ListOrdered } from 'lucide-svelte';
   import OptionDetails from '$lib/OptionDetails.svelte';
+  import { brandColor } from '$lib/base/brandColor.js';
 
   /**
    * Per-group visualization for `ranked` (ranked-choice) vote types.
@@ -60,18 +61,22 @@
     (group.ranked?.rows ?? []).reduce((s, r) => s + (r.power?.[0] || 0), 0),
   );
   const ABSTAIN_COLOR = '#1e293b';
-  const RANKED_ACCENT = '#c2410e'; // orange-700 — matches the rank-1 bar color
+  // Rank-1 / accent both read brand. The deployment's `--brand-hover` flows
+  // into anything tied to the "winner" position.
+  const RANKED_ACCENT = brandColor('brand-hover');
 
   // Dimension toggle mirrors the scale card: count vs voting power. Only
   // available when the ballot is weighted.
   let dimension = $state('count');
 
-  // Rank-position palette. Rank 1 leads with the brand orange (the
-  // "winner" position); subsequent ranks step into contrasting hues
-  // rather than a single-hue tint ramp so adjacent ranks read as
+  // Rank-position palette. Rank 1 leads with the deployment's brand colour
+  // (the "winner" position); subsequent ranks step into curated contrasting
+  // hues rather than a single-hue tint ramp so adjacent ranks read as
   // distinct at a glance. All 700-weight for consistent visual mass.
+  // (Ranks 2-8 are intentionally not themed — they're a fixed distinct-hue
+  // palette, independent of brand.)
   const RANK_COLORS = [
-    '#c2410e', // rank 1 — orange-700 (brand / winner)
+    brandColor('brand-hover'), // rank 1 — brand / winner
     '#1d4ed8', // rank 2 — blue-700
     '#047857', // rank 3 — emerald-700
     '#be123c', // rank 4 — rose-700

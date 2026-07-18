@@ -1,9 +1,8 @@
 <script>
   import * as Select from '$lib/components/ui/select/index.js';
-  import { user } from '$stores/sessionManager';
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
-  let { value = undefined, disabled = false, mode = 'signer' } = $props();
+  let { value = undefined, disabled = false } = $props();
 
   const USER_TYPES = import.meta.env.VITE_WALLETSIGNER_USER_TYPES || '';
   const voterTypes = USER_TYPES.split(',');

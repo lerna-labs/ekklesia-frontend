@@ -1,11 +1,11 @@
 <script>
   import { loggedIn, user } from '$stores/sessionManager.js';
   import { createEventDispatcher } from 'svelte';
-  import { Button, buttonVariants } from '$lib/components/ui/button';
+  import { Button } from '$lib/components/ui/button';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import { toast } from 'svelte-sonner';
-  import { getPayload, signData, submitSignature } from '$lib/WalletSigner/WalletSigner.js';
+  import { getPayload, submitSignature } from '$lib/WalletSigner/WalletSigner.js';
   import SignerCommand from './SignerCommand.svelte';
 
   const dispatch = createEventDispatcher();
@@ -37,7 +37,9 @@
   async function requestPayload() {
     loading = true;
     let url = mode === 'login' ? '/session' : '/dashboard/' + ballot._id + '/checkout';
-    if (multiSig) {
+    // Dashboard checkout still routes multisig via the `/multisig` suffix;
+    // the session endpoint no longer does — script address is in the body.
+    if (multiSig && mode !== 'login') {
       url += '/multisig';
     }
     if (tx) {
@@ -64,13 +66,15 @@
     let signature;
     try {
       signature = JSON.parse(signatureJSON);
-    } catch (e) {
+    } catch {
       toast.error('Invalid JSON format');
       loading = false;
       return;
     }
     let url = mode === 'login' ? '/session' : '/dashboard/' + ballot._id + '/checkout';
-    if (multiSig) {
+    // Dashboard checkout still routes multisig via the `/multisig` suffix;
+    // the session endpoint no longer does — script address is in the body.
+    if (multiSig && mode !== 'login') {
       url += '/multisig';
     }
     try {

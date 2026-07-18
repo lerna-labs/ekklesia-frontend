@@ -2,15 +2,14 @@
   import { Badge } from '$lib/components/ui/badge/index.js';
   let { voterType } = $props();
 
-  let label = $state('');
-
-  if (voterType == 'stake') {
-    label = 'Stake Address';
-  } else if (voterType == 'pool') {
-    label = 'Stake Pool';
-  } else if (voterType == 'drep') {
-    label = 'DRep';
-  }
+  let label = $derived.by(() => {
+    if (voterType == 'stake') return 'Stake Address';
+    if (voterType == 'pool') return 'Stake Pool';
+    if (voterType == 'drep') return 'DRep';
+    return '';
+  });
 </script>
 
-<Badge class="bg-slate-500">{label}</Badge>
+<!-- Voter type is informational (not a state), so it picks up the
+     themed `secondary` surface tokens rather than a fixed neutral. -->
+<Badge variant="secondary">{label}</Badge>

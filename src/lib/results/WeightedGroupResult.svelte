@@ -68,7 +68,10 @@
     return rows.find((r) => String(r.id).toLowerCase() === 'abstain') ?? null;
   });
   const abstainCount = $derived(abstainRow?.count ?? 0);
-  const abstainPower = $derived(abstainRow?.votingPower ?? 0);
+  // NOTE(incomplete-wiring): abstain voting power is computed but never
+  // displayed (unlike abstainCount). Kept underscore-prefixed rather than
+  // deleted so the intended-but-unrendered metric stays visible. See report.
+  const _abstainPower = $derived(abstainRow?.votingPower ?? 0);
 
   const ABSTAIN_COLOR = '#1e293b';
   const accent = $derived(GROUP_ACCENTS[groupIdentity(group.key, group.label).accent]);

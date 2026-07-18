@@ -226,7 +226,7 @@
                       type="button"
                       class="rounded border px-2 py-1 font-mono text-xs tabular-nums transition-colors
 												{selected
-                        ? 'border-orange-500 bg-orange-50 text-orange-900'
+                        ? 'border-brand bg-brand-soft text-brand-soft-fg'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'}"
                       disabled={disabled || isAbstaining}
                       onclick={() => rateOption(option.id, grade)}
@@ -245,7 +245,7 @@
               {:else}
                 <input
                   type="number"
-                  class="w-24 rounded-md border border-input bg-background px-2 py-1 text-right font-mono text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  class="w-24 rounded-md border border-input bg-background px-2 py-1 text-right font-mono text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-brand"
                   min={ratingDef.min}
                   max={ratingDef.max}
                   step={ratingDef.step}

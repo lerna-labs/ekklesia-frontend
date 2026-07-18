@@ -20,7 +20,6 @@
   let loading = $state(false);
   let connecting = $state(false);
   let connectedWallet = $state(undefined);
-  let payload = $state(undefined);
   let multiSigCheck = $derived(multiSig);
 
   // Surface combined busy state to the parent so it can disable tabs etc.
@@ -81,10 +80,10 @@
   async function login() {
     loading = true;
     let payload;
-    let url = '/session';
-    if (multiSigCheck) {
-      url = '/session/multisig';
-    }
+    // Backend consolidated /session/multisig into /session on 2026-02-28; the
+    // multisig path is now selected by the `scriptAddress` body field that
+    // getPayload() already attaches.
+    const url = '/session';
 
     // replace connected wallet address with pool id
     if (signType === 'pool' && poolId) {
@@ -116,6 +115,10 @@
     if (signType === 'pool' && poolId) {
       signer = payload.calidusID;
     }
+    let drepIdHex;
+    if (signType === 'drep') {
+      drepIdHex = payload.userIdHex;
+    }
     const signature = await signData(connectedWallet, signer, payload.dataHex, signType);
     if (signature?.error) {
       toast.error(signature.error);
@@ -123,7 +126,9 @@
       return;
     }
     let url = mode === 'login' ? '/session' : '/dashboard/' + ballot._id + '/checkout';
-    if (multiSigCheck) {
+    // Dashboard checkout still routes multisig via the `/multisig` suffix;
+    // the session endpoint no longer does — script address is in the body.
+    if (multiSigCheck && mode !== 'login') {
       url += '/multisig';
     }
     const submitResponse = await submitSignature(
@@ -148,11 +153,8 @@
         token: submitResponse.token,
         expiresIn: submitResponse.expiresIn,
         maxAge: submitResponse.maxAge,
-        // `payload.calidusID` is only on the POST /session response;
-        // surface it to the parent so it can be persisted onto
-        // $user — without it, the broker sign step has no signer
-        // address for pool voters. See $lib/calidusCache.js.
         calidusID: payload?.calidusID,
+        drepIdHex: drepIdHex,
       });
     } else {
       dispatch('success', submitResponse);
