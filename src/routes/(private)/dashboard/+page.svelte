@@ -1,6 +1,6 @@
 <script>
   import { logout, user } from '$stores/sessionManager.js';
-  import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
+  import { Button } from '$lib/components/ui/button/index.js';
   import Checkout from '$lib/WalletSigner/WalletSigner.svelte';
   import * as Card from '$lib/components/ui/card/index.js';
   import { shortenString } from '$lib/utils.js';
@@ -9,7 +9,7 @@
   import TransactionDetails from '$lib/TransactionDetails.svelte';
   import TransactionVotes from '$lib/TransactionVotes.svelte';
   import { convertTimestamp } from '$lib/utils.js';
-  import { invalidate, invalidateAll } from '$app/navigation';
+  import { invalidateAll } from '$app/navigation';
   let { data } = $props();
 
   let submittedTransactions = $derived(data.transactions.filter((el) => el.status == 'submitted'));
@@ -59,7 +59,7 @@
 {#if pendingTransactions.length > 0}
   <section class="mt-6" id="transaction-history">
     <h2>Your Pending MultiSig Transactions</h2>
-    {#each pendingTransactions as transaction, i}
+    {#each pendingTransactions as transaction}
       <div id="transaction-{transaction._id}">
         <Card.Root class="mb-4">
           <Card.Header class="p-5">

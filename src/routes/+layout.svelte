@@ -11,7 +11,7 @@
   import PageHead from '$lib/base/PageHead.svelte';
   import { applyTheme } from '$lib/base/theme.js';
 
-  let { children, data } = $props();
+  let { children } = $props();
   const NETWORK_ID = import.meta.env.VITE_NETWORK_ID;
 
   let notice = $state(undefined);

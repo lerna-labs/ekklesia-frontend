@@ -5,7 +5,6 @@
 
   let { ballot } = $props();
   let proposals = $derived(ballot.proposals);
-  import { convertTimestamp } from '$lib/utils.js';
   import { Button } from '$lib/components/ui/button/index.js';
 
   // The voters API returns most vote types as flat label arrays

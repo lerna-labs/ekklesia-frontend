@@ -1,6 +1,5 @@
 <script>
   import Navigation from './Navigation.svelte';
-  import Breadcrumbs from './Breadcrumbs.svelte';
   import { BRAND } from './branding.js';
   import { content } from '$lib/content.js';
 

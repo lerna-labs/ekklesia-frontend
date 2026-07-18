@@ -154,7 +154,9 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {}
+      } catch {
+        // Ignore teardown errors from an already-disposed chart instance.
+      }
       chart = null;
     }
     const cfg = buildConfig();
@@ -167,7 +169,9 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {}
+      } catch {
+        // Ignore teardown errors from an already-disposed chart instance.
+      }
     }
   });
 

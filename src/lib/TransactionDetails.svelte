@@ -6,14 +6,17 @@
   import DownloadJson from '$lib/DownloadJson.svelte';
   let { transaction } = $props();
   const transactionData = $derived.by(() => transaction);
-  let ballotData = $state(undefined);
+  // NOTE(incomplete-wiring): the fetched ballot is stored but never rendered in
+  // this dialog. Kept underscore-prefixed (to satisfy no-unused-vars) rather
+  // than deleted so the intended-but-unrendered fetch stays visible. See report.
+  let _ballotData = $state(undefined);
 
   async function fetchBallotData() {
     console.log('Fetching ballot data for transaction:', transactionData._id);
     const response = await api.v1.fetch(fetch, '/ballots/' + transactionData.ballotId);
     if (response.ok) {
       const payload = await response.json();
-      ballotData = normalizeBallot(payload?.data ?? payload);
+      _ballotData = normalizeBallot(payload?.data ?? payload);
     } else {
       console.error('Error fetching ballot data:', response.statusText);
       return null;

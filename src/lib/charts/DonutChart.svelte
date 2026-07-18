@@ -21,7 +21,7 @@
   function deepClone(obj) {
     try {
       return JSON.parse(JSON.stringify(obj));
-    } catch (e) {
+    } catch {
       // Fallback: return the reference (Chart will attempt to work with it)
       return obj;
     }
@@ -81,7 +81,9 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch (e) {}
+      } catch {
+        // Ignore teardown errors from an already-disposed chart instance.
+      }
       chart = null;
     }
 
@@ -107,7 +109,9 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch (e) {}
+      } catch {
+        // Ignore teardown errors from an already-disposed chart instance.
+      }
       chart = null;
     }
   });
@@ -129,7 +133,7 @@
         }
         if (plugins) chart.config.plugins = plugins;
         chart.update();
-      } catch (e) {
+      } catch {
         // If update failed for structural reasons, recreate chart
         createChart();
       }

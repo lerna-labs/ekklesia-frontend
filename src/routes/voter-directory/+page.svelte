@@ -1,15 +1,11 @@
 <script>
-  import { toast } from 'svelte-sonner';
   import * as Table from '$lib/components/ui/table/index.js';
-  import { goto } from '$app/navigation';
   import { shortenString, convertTimestamp, voterDisplayName } from '$lib/utils.js';
   import Search from '$lib/base/Search.svelte';
   import Sort from '$lib/base/Sort.svelte';
-  import Filter from '$lib/base/Filter.svelte';
   import Pagination from '$lib/base/Pagination.svelte';
   import MarkdownBrief from '$lib/base/MarkdownBrief.svelte';
   import { content } from '$lib/content.js';
-  let search = $state('');
   let { data } = $props();
 
   let voters = $derived(data.voters);

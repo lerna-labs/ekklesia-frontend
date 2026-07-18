@@ -5,7 +5,7 @@
   import { loggedIn } from '$stores/sessionManager';
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
-  import { invalidate, goto } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
 
   // Define props to receive data from parent component
