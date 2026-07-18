@@ -1,9 +1,9 @@
 <script>
   import * as Popover from '$lib/components/ui/popover/index.js';
   import * as Select from '$lib/components/ui/select/index.js';
-  import { Button, buttonVariants } from '$lib/components/ui/button';
+  import { buttonVariants } from '$lib/components/ui/button';
   import { Label } from '$lib/components/ui/label/index.js';
-  import { SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-svelte';
+  import { SlidersHorizontal, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-svelte';
   import { goto } from '$app/navigation';
 
   /**

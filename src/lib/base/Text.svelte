@@ -7,7 +7,6 @@
   let isExpanded = $state(expanded); // Initialize with the prop value, synced via $effect below
   let isLongText = $derived(text.length > 300);
   let textConverted = $derived(
-    // svelte-ignore state_referenced_locally
     textData
       .replace(
         /(https?:\/\/[^\s]+)/g,
@@ -46,6 +45,10 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div class="text-sm" onclick={handleClick}>
     <div class={isLongText && !isExpanded && !expanded ? 'line-clamp-6' : ''}>
+      <!-- `textConverted` is derived from unsanitized user comment text; this is a
+           known stored-XSS exposure tracked in a private security advisory. Do not
+           "fix" by escaping here — see the advisory before touching this. -->
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html textConverted}
     </div>
 

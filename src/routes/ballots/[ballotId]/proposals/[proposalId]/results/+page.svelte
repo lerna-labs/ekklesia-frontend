@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import BallotBadge from '$lib/BallotBadge.svelte';
   import CertificationBadge from '$lib/CertificationBadge.svelte';
   import CertificationHistoryDisclosure from '$lib/CertificationHistoryDisclosure.svelte';
@@ -19,7 +19,9 @@
   const hasWeight = $derived(ballot.voteWeighted);
 
   // Live-updating result. Seeded from the load fn, refreshed by the poller.
-  let result = $state(data.initialResult);
+  // `untrack` marks the seed as a deliberate initial read; the $effect below
+  // re-syncs `result` whenever `data.initialResult` changes (e.g. navigation).
+  let result = $state(untrack(() => data.initialResult));
   $effect(() => {
     result = data.initialResult;
   });

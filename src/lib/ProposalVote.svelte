@@ -1,5 +1,4 @@
 <script>
-  import * as Card from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { loggedIn, user, showLogin } from '$stores/sessionManager';
   import { onMount } from 'svelte';
@@ -9,12 +8,16 @@
   import ProposalVoteRanked from './ProposalVoteRanked.svelte';
   import ProposalVoteLikert from './ProposalVoteLikert.svelte';
   import ProposalVoteWeighted from './ProposalVoteWeighted.svelte';
-  import { Archive, Clock, UserX, TriangleAlert } from 'lucide-svelte';
+  import { Archive, Clock } from 'lucide-svelte';
   import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
-  import { acceptedCredentialsOf, credentialLabel, voterCredentialFromId } from '$lib/utils.js';
+  import { acceptedCredentialsOf, voterCredentialFromId } from '$lib/utils.js';
 
-  let loading = $state(true);
-  let { proposal, ballot, inline } = $props();
+  // NOTE(incomplete-wiring): `_loading` is toggled on mount but never gates the
+  // template render — the intended loading state was never wired in. Kept
+  // (underscore-prefixed to satisfy no-unused-vars) rather than deleted so the
+  // half-built feature is visible. See lint-debt report.
+  let _loading = $state(true);
+  let { proposal, ballot } = $props();
 
   const isLegacy = $derived(ballot?.source === 'legacy');
   const isLive = $derived(ballot?.status === 'live');
@@ -38,7 +41,7 @@
   const locked = $derived(!isLive || !$loggedIn || hasTypeMismatch || hasSnapshotIneligibility);
 
   onMount(async () => {
-    loading = false;
+    _loading = false;
   });
 </script>
 

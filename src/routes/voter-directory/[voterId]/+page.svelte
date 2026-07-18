@@ -1,13 +1,9 @@
 <script>
-  import { Input } from '$lib/components/ui/input/index.js';
-  import { ThumbsUp, ThumbsDown, CircleSlash } from 'lucide-svelte';
   import VoterInfo from '$lib/VoterInfo.svelte';
-  import { Button } from '$lib/components/ui/button/index.js';
-  import * as Card from '$lib/components/ui/card/index.js';
 
   import BallotCardVotes from '$lib/BallotCardVotes.svelte';
   let { data } = $props();
-  let { voterData } = data;
+  let voterData = $derived(data.voterData);
 </script>
 
 <section>

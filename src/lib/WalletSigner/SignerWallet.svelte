@@ -20,7 +20,6 @@
   let loading = $state(false);
   let connecting = $state(false);
   let connectedWallet = $state(undefined);
-  let payload = $state(undefined);
   let multiSigCheck = $derived(multiSig);
 
   // Surface combined busy state to the parent so it can disable tabs etc.
