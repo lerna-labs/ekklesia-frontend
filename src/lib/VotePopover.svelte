@@ -11,13 +11,13 @@
   const activeVoterPerc = $derived(
     totalAllowedVoterCount
       ? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
-      : '0.00'
+      : '0.00',
   );
 
   const activeVotingPowerPerc = $derived(
     ballot.totalVotingPower
       ? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
-      : '0.00'
+      : '0.00',
   );
 </script>
 

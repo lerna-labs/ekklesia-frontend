@@ -33,7 +33,6 @@
 
   // Disabled when not live, not logged in, or ineligible.
   const locked = $derived(!isLive || !$loggedIn || hasTypeMismatch || hasSnapshotIneligibility);
-
 </script>
 
 <section id="vote" class="mt-6">

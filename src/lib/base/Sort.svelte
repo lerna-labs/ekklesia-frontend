@@ -14,7 +14,7 @@
   // Filter out the cost option when it should not be shown, staying reactive
   // to changes in the incoming props.
   const filteredSortOptions = $derived(
-    showCost ? sortOptions : sortOptions.filter((option) => option.value !== 'cost')
+    showCost ? sortOptions : sortOptions.filter((option) => option.value !== 'cost'),
   );
 
   // Define available limit options
@@ -90,7 +90,6 @@
     // Use goto to navigate to the new URL with the updated query params
     goto(url.toString(), { replaceState: true, keepFocus: true });
   }
-
 </script>
 
 <Popover.Root>

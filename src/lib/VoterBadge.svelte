@@ -9,7 +9,7 @@
         ? 'Stake Pool'
         : voterType == 'drep'
           ? 'DRep'
-          : ''
+          : '',
   );
 </script>
 
