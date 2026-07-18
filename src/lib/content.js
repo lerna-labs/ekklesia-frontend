@@ -122,10 +122,30 @@ const errors = pick('errors/');
 // JSON object at `content/<deployment>/theme.json` (sibling to `<lang>/`)
 // overrides the corresponding CSS custom properties at boot. Partial
 // overrides fall through to the defaults declared in `src/app.css`.
-const THEMES = import.meta.glob('/content/*/theme.json', { eager: true, import: 'default' });
-const defaultTheme = THEMES['/content/_default/theme.json'] || {};
+//
+// Loaded as `?raw` (same as the markdown above) so Vite inlines the file
+// at transform time — otherwise the dev server's narrowed fs.allow list
+// (src/, .svelte-kit/, node_modules/) blocks the HTTP fetch with a 404.
+const THEMES = import.meta.glob('/content/*/theme.json', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+});
+function parseTheme(raw) {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    // `npm run lint:content` catches this before commit; log loudly if a
+    // malformed theme.json somehow ships, then fall back to defaults
+    // rather than crashing module init.
+    console.error('[content] failed to parse theme.json — falling back to defaults:', e);
+    return {};
+  }
+}
+const defaultTheme = parseTheme(THEMES['/content/_default/theme.json']);
 const deploymentTheme =
-  DEPLOYMENT === '_default' ? {} : THEMES[`/content/${DEPLOYMENT}/theme.json`] || {};
+  DEPLOYMENT === '_default' ? {} : parseTheme(THEMES[`/content/${DEPLOYMENT}/theme.json`]);
 const theme = { ...defaultTheme, ...deploymentTheme };
 
 export const content = {

@@ -2,23 +2,20 @@
   import * as Popover from '$lib/components/ui/popover/index.js';
   import DonutChart from '$lib/charts/DonutChart.svelte';
   import { Button, buttonVariants } from '$lib/components/ui/button/index.js';
-  import { lovelaceToAda } from '$lib/utils.js';
+  import { lovelaceToAda, convertTimestamp } from '$lib/utils.js';
   let { proposal, ballot, outline = false } = $props();
   let totalVotes = $derived(proposal.voteCount);
-  let hasWeight = $derived(ballot.voteWeighted);
-  const totalAllowedVoterCount = $derived(ballot.totalAllowedVoterCount);
+  let hasWeight = ballot.voteWeighted;
+  let resultsSorted = $state([]);
+  const totalAllowedVoterCount = ballot.totalAllowedVoterCount;
 
-  const activeVoterPerc = $derived(
-    totalAllowedVoterCount
-      ? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
-      : '0.00',
-  );
+  const activeVoterPerc = totalAllowedVoterCount
+    ? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
+    : '0.00';
 
-  const activeVotingPowerPerc = $derived(
-    ballot.totalVotingPower
-      ? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
-      : '0.00',
-  );
+  const activeVotingPowerPerc = ballot.totalVotingPower
+    ? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
+    : '0.00';
 </script>
 
 <Popover.Root>
@@ -95,9 +92,8 @@
       <div class="pt-2">
         <Button
           href={'/ballots/' + ballot._id + '/proposals/' + proposal._id + '/results'}
-          variant="primary"
           size="sm"
-          class="m-auto w-full bg-orange-600 text-white"
+          class="m-auto w-full"
         >
           View {ballot.status == 'live' ? 'Preliminary' : 'Final'} Results
         </Button>

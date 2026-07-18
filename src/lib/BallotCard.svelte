@@ -5,6 +5,7 @@
   import BallotDetails from './BallotDetails.svelte';
   import * as Card from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
+  import { convertTimestamp, lovelaceToAda } from '$lib/utils.js';
   let { ballot } = $props();
 
   const isLong = $derived((ballot.description ?? '').length > 300);
@@ -30,7 +31,7 @@
       {#if isLong}
         <button
           onclick={() => (expanded = !expanded)}
-          class="mt-2 text-xs font-medium text-orange-500 hover:text-orange-700"
+          class="mt-2 text-xs font-medium text-brand hover:text-brand-hover"
         >
           {expanded ? 'Show less' : 'Show more'}
         </button>

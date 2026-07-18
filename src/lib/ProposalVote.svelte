@@ -1,17 +1,20 @@
 <script>
+  import * as Card from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import { loggedIn, user, showLogin } from '$stores/sessionManager';
+  import { onMount } from 'svelte';
   import ProposalVoteDefault from './ProposalVoteDefault.svelte';
   import ProposalVoteBudget from './ProposalVoteBudget.svelte';
   import ProposalVoteScale from './ProposalVoteScale.svelte';
   import ProposalVoteRanked from './ProposalVoteRanked.svelte';
   import ProposalVoteLikert from './ProposalVoteLikert.svelte';
   import ProposalVoteWeighted from './ProposalVoteWeighted.svelte';
-  import { Archive, Clock } from 'lucide-svelte';
+  import { Archive, Clock, UserX, TriangleAlert } from 'lucide-svelte';
   import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
-  import { acceptedCredentialsOf, voterCredentialFromId } from '$lib/utils.js';
+  import { acceptedCredentialsOf, credentialLabel, voterCredentialFromId } from '$lib/utils.js';
 
-  let { proposal, ballot } = $props();
+  let loading = $state(true);
+  let { proposal, ballot, inline } = $props();
 
   const isLegacy = $derived(ballot?.source === 'legacy');
   const isLive = $derived(ballot?.status === 'live');
@@ -33,6 +36,10 @@
 
   // Disabled when not live, not logged in, or ineligible.
   const locked = $derived(!isLive || !$loggedIn || hasTypeMismatch || hasSnapshotIneligibility);
+
+  onMount(async () => {
+    loading = false;
+  });
 </script>
 
 <section id="vote" class="mt-6">
@@ -69,10 +76,10 @@
   {:else if isLive}
     {#if !$loggedIn}
       <div
-        class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
+        class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-brand bg-gradient-to-br from-brand-soft to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-fg"
         >
           <WalletMinimalIcon class="h-5 w-5" aria-hidden="true" />
         </div>
@@ -83,11 +90,7 @@
             your vote.
           </p>
         </div>
-        <Button
-          size="sm"
-          class="bg-orange-600 text-white hover:bg-orange-700"
-          onclick={() => showLogin.set(true)}
-        >
+        <Button size="sm" onclick={() => showLogin.set(true)}>
           <WalletMinimalIcon class="h-4 w-4" aria-hidden="true" />
           Connect Wallet
         </Button>

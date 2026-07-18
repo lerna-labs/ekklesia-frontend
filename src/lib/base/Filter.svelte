@@ -5,7 +5,7 @@
   import { loggedIn } from '$stores/sessionManager';
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
-  import { goto } from '$app/navigation';
+  import { invalidate, goto } from '$app/navigation';
   import { page } from '$app/stores';
 
   // Define props to receive data from parent component
@@ -74,7 +74,7 @@
     <div class="relative">
       <SlidersHorizontal />
       {#if filtersActive}
-        <span class="buzz absolute -right-2 -top-1 h-2 w-2 rounded-full bg-orange-500"></span>
+        <span class="buzz absolute -right-2 -top-1 h-2 w-2 rounded-full bg-brand"></span>
       {/if}
     </div>
   </Popover.Trigger>

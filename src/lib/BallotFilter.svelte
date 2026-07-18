@@ -4,7 +4,7 @@
   import { SlidersHorizontal } from 'lucide-svelte';
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
-  import { goto } from '$app/navigation';
+  import { invalidate, goto } from '$app/navigation';
 
   // Define props to receive data from parent component
   const { data } = $props();

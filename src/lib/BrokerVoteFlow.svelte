@@ -3,6 +3,7 @@
   import * as Tabs from '$lib/components/ui/tabs/index.js';
   import { Button } from '$lib/components/ui/button';
   import { Textarea } from '$lib/components/ui/textarea/index.js';
+  import { Input } from '$lib/components/ui/input/index.js';
   import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
   import { TriangleAlert } from 'lucide-svelte';
   import { toast } from 'svelte-sonner';
@@ -97,7 +98,7 @@
   const signerAddress = $derived.by(() => {
     if (!connectedWallet) return undefined;
     if (signType === 'pool' && $user?.calidusID) return $user.calidusID;
-    if (signType === 'drep' && $user?.voterId) return $user.voterId;
+    if (signType === 'drep' && $user?.drepIdHex) return $user.drepIdHex;
     return connectedWallet.address;
   });
 

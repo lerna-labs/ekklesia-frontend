@@ -4,6 +4,7 @@
   import BallotFilter from '$lib/BallotFilter.svelte';
   import Pagination from '$lib/base/Pagination.svelte';
   import Search from '$lib/base/Search.svelte';
+  import { XCircle } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   let { data } = $props();
 

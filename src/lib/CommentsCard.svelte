@@ -7,7 +7,7 @@
   // Initialize the relativeTime plugin
   dayjs.extend(relativeTime);
 
-  let { comment } = $props();
+  let { comment, index } = $props();
 
   // Use a derived value instead of modifying the prop
   let formattedTime = $derived(formatTimestamp(comment.createdAt));

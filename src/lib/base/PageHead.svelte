@@ -88,6 +88,7 @@
     // For specific paths with available data
     if (pathSegments.length >= 2) {
       const resourceType = pathSegments[0];
+      const resourceId = pathSegments[1];
 
       // Handle ballot pages
       if (resourceType === 'ballots') {

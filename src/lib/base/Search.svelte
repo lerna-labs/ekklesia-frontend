@@ -1,5 +1,5 @@
 <script>
-  import { X, Search } from 'lucide-svelte';
+  import { LayoutGrid, List, X, Search } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { Input } from '$lib/components/ui/input/index.js';

@@ -41,7 +41,7 @@
               <Button
                 href={`/ballots/${ballot._id}/proposals/${proposal._id}`}
                 size="sm"
-                variant="secondary"
+                variant="outline"
               >
                 View Proposal
               </Button>

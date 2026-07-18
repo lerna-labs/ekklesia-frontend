@@ -75,8 +75,16 @@
   const isPreference = $derived(
     voteType === 'preference' || (voteType === 'multi-choice' && uniformCosts),
   );
-  const hasSelectionBudget = $derived(isBudget || isPreference);
   const voterBudget = $derived(Number(proposal?.voterBudget) || 0);
+  // Preference cap on how many options each voter could pick. Schema v2
+  // carries it as `maxSelections`; legacy `preference` ballots used
+  // `voterBudget`. Don't trust a bare `voterBudget` for multi-choice — the
+  // backend emits a stray `voterBudget: 1` there that is not a selection cap.
+  const maxSelections = $derived(
+    Number(proposal?.maxSelections) ||
+      voterBudget ||
+      (Array.isArray(proposal?.voteOptions) ? proposal.voteOptions.length : 0),
+  );
   const capacityUnits = $derived(proposal?.data?.capacityUnits || null);
 
   const costByOptionId = $derived.by(() => {
@@ -271,7 +279,7 @@
           </div>
         </div>
       {/if}
-      {#if (hasSelectionBudget && voterBudget > 0) || hasWeight}
+      {#if (isBudget && voterBudget > 0) || (isPreference && maxSelections > 0) || hasWeight}
         <div
           class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50/60 px-3 py-2 text-[11px]"
         >
@@ -281,10 +289,10 @@
               <span class="font-mono tabular-nums text-slate-900">
                 {voterBudget}{capacityUnits ? ` ${capacityUnits}` : ''}
               </span>
-            {:else if isPreference && voterBudget > 0}
+            {:else if isPreference && maxSelections > 0}
               <span class="font-semibold text-slate-700">Voters may pick up to</span>
               <span class="font-mono tabular-nums text-slate-900">
-                {voterBudget} option{voterBudget === 1 ? '' : 's'}
+                {maxSelections} option{maxSelections === 1 ? '' : 's'}
               </span>
             {:else}
               <!-- No selection budget — keep the left side empty so the

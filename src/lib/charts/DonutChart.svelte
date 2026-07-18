@@ -21,7 +21,7 @@
   function deepClone(obj) {
     try {
       return JSON.parse(JSON.stringify(obj));
-    } catch {
+    } catch (e) {
       // Fallback: return the reference (Chart will attempt to work with it)
       return obj;
     }
@@ -81,9 +81,7 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {
-        // ignore: chart was already disposed
-      }
+      } catch (e) {}
       chart = null;
     }
 
@@ -109,9 +107,7 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {
-        // ignore: chart was already disposed
-      }
+      } catch (e) {}
       chart = null;
     }
   });
@@ -133,7 +129,7 @@
         }
         if (plugins) chart.config.plugins = plugins;
         chart.update();
-      } catch {
+      } catch (e) {
         // If update failed for structural reasons, recreate chart
         createChart();
       }

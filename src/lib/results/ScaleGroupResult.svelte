@@ -2,7 +2,7 @@
   import GroupCardShell from './GroupCardShell.svelte';
   import Histogram from '$lib/charts/Histogram.svelte';
   import { GROUP_ACCENTS, groupIdentity } from './groupResults.js';
-  import { formatPercent, lovelaceToAdaCompact } from '$lib/utils.js';
+  import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
   import { BarChart3 } from 'lucide-svelte';
 
   /**

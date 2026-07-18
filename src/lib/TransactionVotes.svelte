@@ -2,6 +2,7 @@
   import { api } from '$stores/sessionManager.js';
   import { onMount } from 'svelte';
   let { vote } = $props();
+  console.log('vote in TransactionVotes:', vote);
 
   let proposal = $state(false);
   let voteOptions = $state([]);

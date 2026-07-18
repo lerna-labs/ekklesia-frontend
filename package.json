@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build --mode production && node scripts/brand-build-output.js production",
+    "build:intersect": "vite build --mode intersect.production && node scripts/brand-build-output.js intersect.production",
     "build:preprod": "vite build --mode preprod && node scripts/brand-build-output.js preprod",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",

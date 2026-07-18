@@ -6,10 +6,6 @@
   import DownloadJson from '$lib/DownloadJson.svelte';
   let { transaction } = $props();
   const transactionData = $derived.by(() => transaction);
-  // NOTE: incomplete wiring — the fetched ballot detail is not yet rendered in
-  // the dialog. Kept (with the fetch on open) so the feature can be completed;
-  // see lint-cleanup report.
-  // eslint-disable-next-line no-unused-vars
   let ballotData = $state(undefined);
 
   async function fetchBallotData() {

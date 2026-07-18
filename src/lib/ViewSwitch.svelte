@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { LayoutGrid, List } from 'lucide-svelte';
   import { Button } from '$lib/components/ui/button/index.js';
+  import { on } from 'svelte/events';
   let { onChange } = $props();
 
   // Initialize with default, will be updated in onMount

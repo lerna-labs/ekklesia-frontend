@@ -139,7 +139,7 @@
           {#each ranking as id, i}
             {@const opt = optionFor(id)}
             <li class="flex items-center gap-2 rounded-md border bg-slate-50 px-2 py-1">
-              <span class="font-mono text-sm font-semibold tabular-nums text-orange-600">
+              <span class="font-mono text-sm font-semibold tabular-nums text-brand">
                 {i + 1}.
               </span>
               <div class="min-w-0 flex-1">

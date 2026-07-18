@@ -1,5 +1,4 @@
 <script>
-  import { untrack } from 'svelte';
   import { config } from '$stores/sessionManager.js';
   import { convertTimestamp } from '$lib/utils.js';
   import { ChevronDown } from 'lucide-svelte';
@@ -9,9 +8,7 @@
   // vertical space otherwise.
   let { ballot, collapsible = false } = $props();
 
-  // Capture the initial collapse state once; `collapsible` is a static
-  // config prop and `open` is toggled by the user afterwards.
-  let open = $state(untrack(() => !collapsible));
+  let open = $state(!collapsible);
 
   // Per VOTER_GROUPS_V1.md, a ballot may carry a structured
   // `voterGroups: [{ group, powerSource }]` list that encodes

@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import Chart from 'chart.js/auto';
   import { lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
+  import { brandColor } from '$lib/base/brandColor.js';
 
   /**
    * Minimal histogram wrapper around Chart.js bar. Takes the backend's
@@ -128,7 +129,7 @@
         const ctx = c.ctx;
         ctx.save();
         ctx.beginPath();
-        ctx.strokeStyle = '#f97316'; // orange-500
+        ctx.strokeStyle = brandColor('brand');
         ctx.setLineDash([4, 3]);
         ctx.lineWidth = 1.5;
         ctx.moveTo(x, yAxis.top);
@@ -137,7 +138,7 @@
         ctx.setLineDash([]);
         // Label
         ctx.font = '9px ui-sans-serif, system-ui, sans-serif';
-        ctx.fillStyle = '#c2410e'; // orange-700
+        ctx.fillStyle = brandColor('brand-hover');
         ctx.textAlign = x > (xStart + xEnd) / 2 ? 'right' : 'left';
         const label =
           'Median ' + (Number.isInteger(medianMark) ? medianMark : medianMark.toFixed(1));
@@ -153,9 +154,7 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {
-        // ignore: chart was already disposed
-      }
+      } catch {}
       chart = null;
     }
     const cfg = buildConfig();
@@ -168,9 +167,7 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {
-        // ignore: chart was already disposed
-      }
+      } catch {}
     }
   });
 

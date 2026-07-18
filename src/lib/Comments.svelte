@@ -6,7 +6,7 @@
   import { Textarea } from '$lib/components/ui/textarea/index.js';
   import { api } from '$stores/sessionManager.js';
   import CommentsCard from '$lib/CommentsCard.svelte';
-  let { proposal, ballot, outline } = $props();
+  let { proposal, ballot, inline = false, outline } = $props();
   let comments = $state([]);
   let comment = $state('');
   let commentCount = $derived(proposal.commentCount || 0);
