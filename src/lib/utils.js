@@ -48,6 +48,16 @@ export function credentialLabel(kind) {
   return CREDENTIAL_LABELS[k] ?? (k ? k.charAt(0).toUpperCase() + k.slice(1) : '');
 }
 
+// Friendly display name for a voter — the backend's resolved `name`
+// (DRep registered name for `drep…` ids, Cardano $handle for `stake…` ids)
+// when present, else null. Treat empty/whitespace as unresolved so callers
+// can cleanly fall back to the bech32 id.
+export function voterDisplayName(voter) {
+  if (!voter) return null;
+  const raw = typeof voter.name === 'string' ? voter.name.trim() : '';
+  return raw.length > 0 ? raw : null;
+}
+
 // Resolve the list of credential kinds a ballot accepts, preferring a
 // top-level `acceptedCredentials` field (the ideal future shape) and
 // falling back to the Hydra ballot definition's nested value if that's
@@ -121,6 +131,25 @@ export function lovelaceToAdaCompact(lovelace) {
   if (abs >= 1e6) return (ada / 1e6).toFixed(1).replace(/\.0$/, '') + 'M ADA';
   if (abs >= 1e3) return (ada / 1e3).toFixed(1).replace(/\.0$/, '') + 'K ADA';
   return Math.round(ada) + ' ADA';
+}
+
+// Compact formatter for an amount ALREADY denominated in ADA — e.g.
+// proposal facet values like "Total Budget", which the proposals module
+// supplies as a plain ADA figure (NOT lovelace). Distinct from
+// `lovelaceToAdaCompact`, which divides a lovelace integer by 1e6 first;
+// running a facet value through that scales a 65-million-ADA budget down
+// to "65.41 ADA". Two-decimal abbreviation: 65_405_000 → "65.41M ADA".
+export function adaCompact(ada) {
+  const n = Number(ada);
+  if (!Number.isFinite(n) || n === 0) return '0 ADA';
+  const abs = Math.abs(n);
+  // Drop a trailing ".00" entirely and a lone trailing zero ("65.40" →
+  // "65.4") so round figures don't carry dead precision.
+  const trim = (s) => s.replace(/\.?0+$/, '');
+  if (abs >= 1e9) return trim((n / 1e9).toFixed(2)) + 'B ADA';
+  if (abs >= 1e6) return trim((n / 1e6).toFixed(2)) + 'M ADA';
+  if (abs >= 1e3) return trim((n / 1e3).toFixed(2)) + 'K ADA';
+  return n.toLocaleString() + ' ADA';
 }
 
 // Format a percentage where tiny-but-nonzero values shouldn't look like 0.

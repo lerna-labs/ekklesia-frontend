@@ -88,7 +88,7 @@
         Filters
         {#if hasActiveFilters}
           <span
-            class="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] text-white"
+            class="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-brand text-[10px] text-brand-fg"
           >
             {Object.keys(activeFilters).length}
           </span>
@@ -191,7 +191,7 @@
               type="button"
               aria-label="Sort {opt.label} ascending"
               class="rounded p-1 {isActive && activeSort.direction === 'asc'
-                ? 'bg-orange-500 text-white'
+                ? 'bg-brand text-brand-fg'
                 : 'text-muted-foreground hover:text-slate-900'}"
               onclick={() => applySort(opt.key, 'asc')}
             >
@@ -201,7 +201,7 @@
               type="button"
               aria-label="Sort {opt.label} descending"
               class="rounded p-1 {isActive && activeSort.direction === 'desc'
-                ? 'bg-orange-500 text-white'
+                ? 'bg-brand text-brand-fg'
                 : 'text-muted-foreground hover:text-slate-900'}"
               onclick={() => applySort(opt.key, 'desc')}
             >

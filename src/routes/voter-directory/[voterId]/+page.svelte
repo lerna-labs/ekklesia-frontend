@@ -3,7 +3,7 @@
 
   import BallotCardVotes from '$lib/BallotCardVotes.svelte';
   let { data } = $props();
-  const voterData = $derived(data.voterData);
+  let voterData = $derived(data.voterData);
 </script>
 
 <section>

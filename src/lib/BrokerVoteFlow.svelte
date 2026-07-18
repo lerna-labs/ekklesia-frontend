@@ -97,7 +97,7 @@
   const signerAddress = $derived.by(() => {
     if (!connectedWallet) return undefined;
     if (signType === 'pool' && $user?.calidusID) return $user.calidusID;
-    if (signType === 'drep' && $user?.voterId) return $user.voterId;
+    if (signType === 'drep' && $user?.drepIdHex) return $user.drepIdHex;
     return connectedWallet.address;
   });
 

@@ -37,7 +37,9 @@
   async function requestPayload() {
     loading = true;
     let url = mode === 'login' ? '/session' : '/dashboard/' + ballot._id + '/checkout';
-    if (multiSig) {
+    // Dashboard checkout still routes multisig via the `/multisig` suffix;
+    // the session endpoint no longer does — script address is in the body.
+    if (multiSig && mode !== 'login') {
       url += '/multisig';
     }
     if (tx) {
@@ -70,7 +72,9 @@
       return;
     }
     let url = mode === 'login' ? '/session' : '/dashboard/' + ballot._id + '/checkout';
-    if (multiSig) {
+    // Dashboard checkout still routes multisig via the `/multisig` suffix;
+    // the session endpoint no longer does — script address is in the body.
+    if (multiSig && mode !== 'login') {
       url += '/multisig';
     }
     try {

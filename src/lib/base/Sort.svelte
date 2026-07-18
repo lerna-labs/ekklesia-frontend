@@ -11,9 +11,10 @@
   // Define props with default values
   let { showCost = true, sortOptions = [], defaultLimit = '25', defaultSort = '_id' } = $props();
 
-  // Filter out the cost option when it should not be shown, staying reactive
-  // to changes in the incoming props.
-  const filteredSortOptions = $derived(
+  // Filter out the cost option when it shouldn't be shown. Derived so it
+  // reacts to prop changes instead of mutating the `sortOptions` prop once
+  // at component setup.
+  let visibleSortOptions = $derived(
     showCost ? sortOptions : sortOptions.filter((option) => option.value !== 'cost'),
   );
 
@@ -25,10 +26,12 @@
     { value: '100', label: '100 per page' },
   ]);
 
-  // Initialize sort params from URL or default values
-  let sort = $state($page.url.searchParams.get('sort') || untrack(() => defaultSort));
+  // Initialize sort params from URL or default values. The default props are
+  // read once here as initial seeds (untrack marks that intent); the URL is
+  // the source of truth afterward.
+  let sort = $state(untrack(() => $page.url.searchParams.get('sort') || defaultSort));
   let direction = $state($page.url.searchParams.get('direction') || 'desc');
-  let limit = $state($page.url.searchParams.get('limit') || untrack(() => defaultLimit));
+  let limit = $state(untrack(() => $page.url.searchParams.get('limit') || defaultLimit));
 
   // Computed property to determine if sort is active (not using default)
   let sortActive = $derived.by(() => {
@@ -37,7 +40,7 @@
 
   // Generate a human-readable description of the current sort
   let sortDescription = $derived.by(() => {
-    const option = filteredSortOptions.find((o) => o.value === sort);
+    const option = visibleSortOptions.find((o) => o.value === sort);
     if (!option) return 'Default';
 
     return `${option.label} (${direction === 'asc' ? 'Low to High' : 'High to Low'})`;
@@ -97,7 +100,7 @@
     <div class="relative">
       <ArrowUpDown />
       {#if sortActive}
-        <span class="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-orange-500"></span>
+        <span class="absolute -right-2 -top-1 h-2 w-2 rounded-full bg-brand"></span>
       {/if}
     </div>
   </Popover.Trigger>
@@ -118,7 +121,7 @@
         <Select.Trigger>{sortDescription}</Select.Trigger>
         <Select.Content>
           <Select.Item value="_id">Default</Select.Item>
-          {#each filteredSortOptions as option}
+          {#each visibleSortOptions as option}
             <Select.Item value={option.value}>
               {option.label}
             </Select.Item>

@@ -7,6 +7,7 @@
   import ProposalVote from '$lib/ProposalVote.svelte';
   import VotePopover from './VotePopover.svelte';
   import ProposalDetails from './ProposalDetails.svelte';
+  import ProposalModuleLink from './ProposalModuleLink.svelte';
   import {
     draftsTree,
     submittedTree,
@@ -193,7 +194,7 @@
         <Button
           href={`/ballots/${ballot._id}/proposals/${proposal._id}`}
           size="sm"
-          variant="secondary"
+          variant="outline"
         >
           View Proposal
         </Button>
@@ -201,6 +202,7 @@
           <VotePopover {proposal} {ballot} />
         {/if}
       </div>
+      <ProposalModuleLink {proposal} variant="inline" />
     </div>
   </Card.Footer>
 </Card.Root>

@@ -7,8 +7,13 @@
   const copyright = content.footer.copyright;
 </script>
 
-<div class="mt-auto w-full bg-slate-900">
-  <footer class="m-auto max-w-3xl items-center justify-between bg-slate-900 p-4 text-slate-300">
+<!-- Footer shares the sticky-header chrome tokens so deployments only have
+     to pick one "chamber" colour and the top + bottom of the page stay in
+     visual lockstep. Muted variants step down via header-foreground alpha. -->
+<div class="mt-auto w-full bg-header">
+  <footer
+    class="m-auto max-w-3xl items-center justify-between bg-header p-4 text-header-foreground"
+  >
     {#if tagline}
       <div class="mb-8 mt-1 leading-7">
         <h3 class="font-medium">
@@ -26,7 +31,7 @@
       </div>
     {/if}
 
-    <div class="w-full items-center text-xs text-slate-400 sm:flex sm:justify-between">
+    <div class="w-full items-center text-xs text-header-foreground/80 sm:flex sm:justify-between">
       <div class="mb-1">
         {#if copyright?.data.holder}
           &copy; {copyright.data.holder}{copyright.data.year ? ` ${copyright.data.year}` : ''} |
@@ -34,7 +39,7 @@
         Version {$versionInfo.version}
       </div>
       {#if $versionInfo.buildTime}
-        <span class="ml-1 text-gray-500">
+        <span class="ml-1 text-header-foreground/60">
           (Built: {new Date($versionInfo.buildTime).toLocaleDateString()})
         </span>
       {/if}

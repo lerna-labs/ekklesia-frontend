@@ -82,7 +82,7 @@
       try {
         chart.destroy();
       } catch {
-        // ignore: chart was already disposed
+        // Ignore teardown errors from an already-disposed chart instance.
       }
       chart = null;
     }
@@ -110,7 +110,7 @@
       try {
         chart.destroy();
       } catch {
-        // ignore: chart was already disposed
+        // Ignore teardown errors from an already-disposed chart instance.
       }
       chart = null;
     }

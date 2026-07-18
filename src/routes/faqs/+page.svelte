@@ -77,7 +77,7 @@
         {/each}
         {#if data.selectedTag}
           <span
-            class="cursor-pointer rounded-full border border-orange-500 bg-orange-500 px-2 py-0.5 text-xs text-white transition-opacity hover:opacity-80"
+            class="cursor-pointer rounded-full border border-brand bg-brand px-2 py-0.5 text-xs text-brand-fg transition-opacity hover:opacity-80"
             onclick={clearFilter}
             role="button"
             tabindex="0"

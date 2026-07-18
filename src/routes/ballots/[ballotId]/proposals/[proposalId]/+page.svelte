@@ -4,6 +4,7 @@
   import BallotBadge from '$lib/BallotBadge.svelte';
   import ProposalVote from '$lib/ProposalVote.svelte';
   import ProposalDetails from '$lib/ProposalDetails.svelte';
+  import ProposalModuleLink from '$lib/ProposalModuleLink.svelte';
   import BallotDetails from '$lib/BallotDetails.svelte';
   import BallotEligibilityBanner from '$lib/BallotEligibilityBanner.svelte';
   import Button from '$lib/components/ui/button/button.svelte';
@@ -53,7 +54,7 @@
         href="{basePath}/{data.prev._id}"
         class="group flex min-w-0 flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-white hover:shadow-sm"
       >
-        <ChevronLeft class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-orange-600" />
+        <ChevronLeft class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-brand" />
         <div class="min-w-0">
           <div class="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             Previous
@@ -83,7 +84,7 @@
           </div>
           <div class="truncate text-xs font-medium text-foreground">{data.next.title}</div>
         </div>
-        <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-orange-600" />
+        <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-brand" />
       </a>
     {:else}
       <div class="flex-1"></div>
@@ -159,7 +160,7 @@
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="text-orange-600 hover:underline"
+            class="text-brand hover:underline"
           >
             {link.name || link.url}
           </a>
@@ -168,6 +169,8 @@
     </ul>
   </section>
 {/if}
+
+<ProposalModuleLink {proposal} />
 
 <div id="results"></div>
 <div class="mt-[72px]"></div>
@@ -183,8 +186,7 @@
       {#if ballot.status !== 'upcoming'}
         <Button
           href={'/ballots/' + ballot._id + '/proposals/' + proposal._id + '/results'}
-          variant="primary"
-          class="m-auto bg-orange-600 text-white"
+          class="m-auto"
         >
           View {ballot.status == 'live' ? 'Preliminary' : 'Final'} Results
         </Button>

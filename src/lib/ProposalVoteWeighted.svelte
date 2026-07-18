@@ -180,7 +180,7 @@
                 <input
                   id={'voteWeighted-' + proposal._id + '-' + option.id}
                   type="number"
-                  class="w-20 rounded-md border border-input bg-background px-2 py-1 text-right font-mono text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  class="w-20 rounded-md border border-input bg-background px-2 py-1 text-right font-mono text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-brand"
                   min={0}
                   max={voterBudget}
                   step={1}
@@ -192,7 +192,7 @@
                 <Button
                   variant="ghost"
                   size="icon"
-                  class="h-7 w-7 shrink-0 text-muted-foreground hover:text-orange-600"
+                  class="h-7 w-7 shrink-0 text-muted-foreground hover:text-brand"
                   disabled={disabled || isAbstaining || remaining <= 0}
                   onclick={() => setAllocation(option.id, v + remaining)}
                   aria-label="Add remaining {remaining} to {option.label}"
@@ -210,7 +210,7 @@
                 aria-hidden="true"
               >
                 <div
-                  class="h-full bg-orange-500 transition-[width] duration-200"
+                  class="h-full bg-brand transition-[width] duration-200"
                   style="width: {pct}%"
                 ></div>
               </div>

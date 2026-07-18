@@ -3,13 +3,16 @@ question: 'How do I vote?'
 order: 20
 ---
 
-Connect a CIP-95 compatible wallet. If you use a hardware wallet like Ledger or
-Keystone, pair it with a compatible browser extension such as Eternl, Yoroi, or
-Lace.
+Connect a Cardano wallet that supports the standard required for your voter
+type — most browser wallets work for token, NFT, and address-based ballots,
+while DRep voting requires a CIP-95 compatible wallet. See "Which wallets are
+supported?" below for details. Hardware wallets like Ledger or Keystone work
+when paired with a compatible browser extension.
 
 Once connected, browse the live ballots you are eligible to vote on and save
-your vote. **All votes need to be signed and submitted** — if you see a red
-"Pending Votes" alert at the top of the page, you still need to sign and submit.
+your selections. **All votes need to be signed and submitted** — if you see an
+"Unsubmitted Votes" badge in the header, you still need to sign and submit.
 Until then your vote will not be included in the results.
 
-You can change your vote as many times as you like while a ballot is still live.
+You can change your vote as many times as you like while a ballot is still
+live.

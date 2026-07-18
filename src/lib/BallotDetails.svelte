@@ -9,8 +9,8 @@
   // vertical space otherwise.
   let { ballot, collapsible = false } = $props();
 
-  // Capture the initial collapse state once; `collapsible` is a static
-  // config prop and `open` is toggled by the user afterwards.
+  // Initial open state seeds from `collapsible` once; user toggles it after.
+  // `untrack` marks this as a deliberate initial-value read, not reactive.
   let open = $state(untrack(() => !collapsible));
 
   // Per VOTER_GROUPS_V1.md, a ballot may carry a structured

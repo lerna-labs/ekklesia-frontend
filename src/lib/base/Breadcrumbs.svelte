@@ -87,26 +87,32 @@
 </script>
 
 {#if breadcrumbItems.length > 1}
-  <Breadcrumb.Root class="w-full border-t border-slate-700 bg-[#1E1E2F] text-white">
+  <!-- Breadcrumbs live inside the sticky header chrome and inherit its
+     background + foreground tokens. Inactive items + chevron separators
+     are alpha-stepped so they remain legible against any header bg while
+     still reading as secondary. -->
+  <Breadcrumb.Root
+    class="w-full border-t border-header-foreground/15 bg-header text-header-foreground"
+  >
     <Breadcrumb.List
-      class="m-auto flex w-full max-w-3xl items-center overflow-hidden whitespace-nowrap p-4 pt-4 text-xs text-white *:gap-0"
+      class="m-auto flex w-full max-w-3xl items-center overflow-hidden whitespace-nowrap p-4 pt-4 text-xs text-header-foreground *:gap-0"
     >
       {#each breadcrumbItems as item, i}
         {#if i > 0}
-          <Breadcrumb.Separator class="mx-0 flex-shrink-0 p-0 text-slate-500">
+          <Breadcrumb.Separator class="mx-0 flex-shrink-0 p-0 text-header-foreground/40">
             <ChevronRight class="h-3 w-3" />
           </Breadcrumb.Separator>
         {/if}
 
-        <Breadcrumb.Item class="m-0 min-w-0 flex-shrink p-0 text-slate-500">
+        <Breadcrumb.Item class="m-0 min-w-0 flex-shrink p-0">
           {#if item.active}
-            <Breadcrumb.Page class="block truncate text-slate-500" title={item.label}>
+            <Breadcrumb.Page class="block truncate text-header-foreground" title={item.label}>
               {item.label}
             </Breadcrumb.Page>
           {:else}
             <Breadcrumb.Link
               href={item.path}
-              class="block truncate text-slate-500 hover:text-slate-300"
+              class="block truncate text-header-foreground/70 transition-colors hover:text-header-foreground"
               title={item.label}
             >
               {item.label}
@@ -114,8 +120,10 @@
           {/if}
         </Breadcrumb.Item>
       {:else}
-        <Breadcrumb.Item class="m-0 p-0 text-slate-500">
-          <Breadcrumb.Link href="/" class="text-slate-500 hover:text-slate-300"
+        <Breadcrumb.Item class="m-0 p-0">
+          <Breadcrumb.Link
+            href="/"
+            class="text-header-foreground/70 hover:text-header-foreground transition-colors"
             >Home</Breadcrumb.Link
           >
         </Breadcrumb.Item>

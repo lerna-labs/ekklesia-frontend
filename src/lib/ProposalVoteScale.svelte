@@ -148,7 +148,7 @@
 			     alone; a paired number input gives precise entry. -->
       <input
         type="number"
-        class="w-28 rounded-md border border-input bg-background px-2 py-1 text-center font-mono text-lg tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
+        class="w-28 rounded-md border border-input bg-background px-2 py-1 text-center font-mono text-lg tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
         {min}
         {max}
         {step}
@@ -164,7 +164,7 @@
     </div>
     <input
       type="range"
-      class="w-full accent-orange-500"
+      class="w-full accent-brand"
       {min}
       {max}
       {step}

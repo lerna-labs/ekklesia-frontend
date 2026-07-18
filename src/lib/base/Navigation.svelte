@@ -18,14 +18,21 @@
   {#if !$loggedIn}
     <WalletSigner mode="login" dark={true} />
   {:else}
-    <Button href="/dashboard" size="sm" class="bg-white text-black hover:bg-gray-200">
+    <!-- Dashboard pill inverts header-foreground (text colour on header bg
+		     becomes the pill bg; pill text becomes header bg). Auto-contrast
+		     against whatever the deployment picks. -->
+    <Button
+      href="/dashboard"
+      size="sm"
+      class="bg-header-foreground text-header hover:bg-header-foreground/85"
+    >
       <User />
       {shortenString($user?.voterId, 10, true)}
     </Button>
     <Button
       size="sm"
       variant="ghost"
-      class="text-white hover:bg-red-600 hover:text-white"
+      class="text-header-foreground hover:bg-red-600 hover:text-white"
       onclick={logout}
       aria-label="Log out"
       title="Log out"

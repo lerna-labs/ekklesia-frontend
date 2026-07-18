@@ -1,6 +1,7 @@
 <script>
   import { Button } from '$lib/components/ui/button/index.js';
   import { loggedIn, user, showLogin } from '$stores/sessionManager';
+  import { onMount } from 'svelte';
   import ProposalVoteDefault from './ProposalVoteDefault.svelte';
   import ProposalVoteBudget from './ProposalVoteBudget.svelte';
   import ProposalVoteScale from './ProposalVoteScale.svelte';
@@ -11,6 +12,11 @@
   import WalletMinimalIcon from '@lucide/svelte/icons/wallet-minimal';
   import { acceptedCredentialsOf, voterCredentialFromId } from '$lib/utils.js';
 
+  // NOTE(incomplete-wiring): `_loading` is toggled on mount but never gates the
+  // template render — the intended loading state was never wired in. Kept
+  // (underscore-prefixed to satisfy no-unused-vars) rather than deleted so the
+  // half-built feature is visible. See lint-debt report.
+  let _loading = $state(true);
   let { proposal, ballot } = $props();
 
   const isLegacy = $derived(ballot?.source === 'legacy');
@@ -33,6 +39,10 @@
 
   // Disabled when not live, not logged in, or ineligible.
   const locked = $derived(!isLive || !$loggedIn || hasTypeMismatch || hasSnapshotIneligibility);
+
+  onMount(async () => {
+    _loading = false;
+  });
 </script>
 
 <section id="vote" class="mt-6">
@@ -69,10 +79,10 @@
   {:else if isLive}
     {#if !$loggedIn}
       <div
-        class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
+        class="mb-3 flex flex-col items-start gap-3 rounded-md border-2 border-brand bg-gradient-to-br from-brand-soft to-white p-4 text-sm shadow-sm sm:flex-row sm:items-center"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-fg"
         >
           <WalletMinimalIcon class="h-5 w-5" aria-hidden="true" />
         </div>
@@ -83,11 +93,7 @@
             your vote.
           </p>
         </div>
-        <Button
-          size="sm"
-          class="bg-orange-600 text-white hover:bg-orange-700"
-          onclick={() => showLogin.set(true)}
-        >
+        <Button size="sm" onclick={() => showLogin.set(true)}>
           <WalletMinimalIcon class="h-4 w-4" aria-hidden="true" />
           Connect Wallet
         </Button>

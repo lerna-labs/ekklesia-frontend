@@ -112,13 +112,13 @@
     font-style: italic;
   }
   :global(.md-brief a) {
-    color: rgb(234 88 12); /* orange-600 — matches the brand link color */
+    color: hsl(var(--brand-hover));
     text-decoration: underline;
     text-underline-offset: 2px;
-    text-decoration-color: rgb(253 186 116); /* orange-300 */
+    text-decoration-color: hsl(var(--brand) / 0.5);
   }
   :global(.md-brief a:hover) {
-    text-decoration-color: rgb(234 88 12);
+    text-decoration-color: hsl(var(--brand-hover));
   }
 
   /* Trailing ExternalLink glyph injected by `applyExternalLinkDecoration`.
