@@ -38,6 +38,7 @@ jobs:
       github.event_name == 'pull_request' &&
       github.base_ref == 'development' &&
       github.event.pull_request.user.login != 'ekklesia-release-manager[bot]' &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
       !contains(github.event.pull_request.labels.*.name, 'skip-changelog')
     runs-on: ubuntu-latest
     steps:
