@@ -2,3 +2,8 @@
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Release automation (shared templates and tool-managed files, not app source)
+.github/
+.changeset/
+scripts/tag-release.mjs
