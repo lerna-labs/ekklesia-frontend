@@ -68,7 +68,6 @@
     return rows.find((r) => String(r.id).toLowerCase() === 'abstain') ?? null;
   });
   const abstainCount = $derived(abstainRow?.count ?? 0);
-  const abstainPower = $derived(abstainRow?.votingPower ?? 0);
 
   const ABSTAIN_COLOR = '#1e293b';
   const accent = $derived(GROUP_ACCENTS[groupIdentity(group.key, group.label).accent]);

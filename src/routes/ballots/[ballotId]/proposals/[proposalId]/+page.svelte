@@ -1,5 +1,4 @@
 <script>
-  import { loggedIn } from '$stores/sessionManager.js';
   import * as Card from '$lib/components/ui/card/index.js';
   import * as Accordion from '$lib/components/ui/accordion/index.js';
   import BallotBadge from '$lib/BallotBadge.svelte';
@@ -7,7 +6,6 @@
   import ProposalDetails from '$lib/ProposalDetails.svelte';
   import BallotDetails from '$lib/BallotDetails.svelte';
   import BallotEligibilityBanner from '$lib/BallotEligibilityBanner.svelte';
-  import { convertTimestamp } from '$lib/utils';
   import Button from '$lib/components/ui/button/button.svelte';
   import Markdown from '$lib/base/Markdown.svelte';
   import { ChevronLeft, ChevronRight } from 'lucide-svelte';
@@ -15,7 +13,6 @@
   let { data } = $props();
   const ballot = $derived(data.ballot);
   const proposal = $derived(data.proposal);
-  const proposalData = $derived(proposal.data);
   const basePath = $derived(`/ballots/${ballot._id}/proposals`);
 
   // Mirror /mine into the local drafts + submitted-baseline stores so the
