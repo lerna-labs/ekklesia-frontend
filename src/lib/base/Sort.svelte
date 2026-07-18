@@ -6,14 +6,16 @@
   import { Label } from '$lib/components/ui/label/index.js';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { untrack } from 'svelte';
 
   // Define props with default values
   let { showCost = true, sortOptions = [], defaultLimit = '25', defaultSort = '_id' } = $props();
 
-  // Filter out cost option if not shown
-  if (!showCost) {
-    sortOptions = sortOptions.filter((option) => option.value !== 'cost');
-  }
+  // Filter out the cost option when it should not be shown, staying reactive
+  // to changes in the incoming props.
+  const filteredSortOptions = $derived(
+    showCost ? sortOptions : sortOptions.filter((option) => option.value !== 'cost')
+  );
 
   // Define available limit options
   let limitOptions = $state([
@@ -24,9 +26,9 @@
   ]);
 
   // Initialize sort params from URL or default values
-  let sort = $state($page.url.searchParams.get('sort') || defaultSort);
+  let sort = $state($page.url.searchParams.get('sort') || untrack(() => defaultSort));
   let direction = $state($page.url.searchParams.get('direction') || 'desc');
-  let limit = $state($page.url.searchParams.get('limit') || defaultLimit);
+  let limit = $state($page.url.searchParams.get('limit') || untrack(() => defaultLimit));
 
   // Computed property to determine if sort is active (not using default)
   let sortActive = $derived.by(() => {
@@ -35,7 +37,7 @@
 
   // Generate a human-readable description of the current sort
   let sortDescription = $derived.by(() => {
-    const option = sortOptions.find((o) => o.value === sort);
+    const option = filteredSortOptions.find((o) => o.value === sort);
     if (!option) return 'Default';
 
     return `${option.label} (${direction === 'asc' ? 'Low to High' : 'High to Low'})`;
@@ -89,11 +91,6 @@
     goto(url.toString(), { replaceState: true, keepFocus: true });
   }
 
-  // Toggle direction between asc and desc
-  function toggleDirection() {
-    direction = direction === 'asc' ? 'desc' : 'asc';
-    updateSortParams();
-  }
 </script>
 
 <Popover.Root>
@@ -122,7 +119,7 @@
         <Select.Trigger>{sortDescription}</Select.Trigger>
         <Select.Content>
           <Select.Item value="_id">Default</Select.Item>
-          {#each sortOptions as option}
+          {#each filteredSortOptions as option}
             <Select.Item value={option.value}>
               {option.label}
             </Select.Item>
