@@ -23,7 +23,9 @@ try {
     const summary = m[2].trim().split(/\r?\n/)[0].trim();
     if (summary) items.push(`- **${bump}**: ${summary}`);
   }
-} catch {}
+} catch {
+  // .changeset directory may be absent; treat as no pending changesets.
+}
 
 const list = items.length ? items.join("\n") : "_No pending changesets._";
 process.stdout.write(`${intro}\n\n### Changes queued (${items.length})\n\n${list}\n`);
