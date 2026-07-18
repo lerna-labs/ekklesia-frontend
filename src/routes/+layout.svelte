@@ -14,9 +14,7 @@
   let { children, data } = $props();
   const NETWORK_ID = import.meta.env.VITE_NETWORK_ID;
 
-  let notice = $state(
-    'Voting is currently suspended for Hydra maintenance. Please check back soon.',
-  );
+  let notice = $state(undefined);
 
   // Apply the deployment theme BEFORE children render so any component that
   // reads CSS vars at setup time (chart palettes, canvas strokeStyle, etc.)
@@ -34,7 +32,7 @@
   {/if}
 
   {#if notice}
-    <div class="w-full bg-orange-500 p-2 text-center text-xs font-semibold uppercase text-white">
+    <div class="w-full bg-brand p-2 text-center text-xs font-semibold uppercase text-brand-fg">
       {notice}
     </div>
   {/if}
