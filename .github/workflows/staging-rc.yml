@@ -56,8 +56,8 @@ jobs:
         id: pkg
         run: |
           # Stable asset name so the preprod server always pulls the same URL:
-          # releases/download/staging/ekklesia-frontend-staging.tgz
-          asset="ekklesia-frontend-staging.tgz"
+          # releases/download/preprod/ekklesia-frontend-preprod.tgz
+          asset="ekklesia-frontend-preprod.tgz"
           tar -czf "$asset" -C build/preprod .
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
 
@@ -67,14 +67,17 @@ jobs:
           client-id: ${{ vars.RELEASE_MANAGER_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_MANAGER_APP_PRIVATE_KEY }}
 
-      - name: Publish rolling staging prerelease
+      - name: Publish rolling preprod prerelease
+        # The rolling release is tagged `preprod`, NOT `staging` — a tag named
+        # `staging` would collide with the staging branch and break ref
+        # resolution for promotion/backport PRs targeting the branch.
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh release delete staging --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
-          gh release create staging --repo "$GITHUB_REPOSITORY" \
+          gh release delete preprod --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create preprod --repo "$GITHUB_REPOSITORY" \
             --prerelease --target "$GITHUB_SHA" \
-            --title "Staging preview (${{ steps.rc.outputs.version }})" \
+            --title "Preprod preview (${{ steps.rc.outputs.version }})" \
             --notes "Rolling preprod build of staging. Version ${{ steps.rc.outputs.version }}. Download the asset, extract, and serve as static files." \
             "${{ steps.pkg.outputs.asset }}"
 
