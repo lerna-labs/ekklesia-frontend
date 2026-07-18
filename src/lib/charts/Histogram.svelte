@@ -153,7 +153,9 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {}
+      } catch {
+        // ignore: chart was already disposed
+      }
       chart = null;
     }
     const cfg = buildConfig();
@@ -166,7 +168,9 @@
     if (chart) {
       try {
         chart.destroy();
-      } catch {}
+      } catch {
+        // ignore: chart was already disposed
+      }
     }
   });
 

@@ -1,8 +1,6 @@
 <script>
-  import { Button } from '$lib/components/ui/button/index.js';
   import { fly } from 'svelte/transition';
   import { versionChange } from '$stores/versionStore.js';
-  import { page } from '$app/stores';
 
   function reload(e) {
     e.preventDefault();
