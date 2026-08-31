@@ -1,4 +1,12 @@
 version: 2
+# Automatic pull requests are disabled: open-pull-requests-limit is 0 on every
+# block below. Dependabot alerts stay enabled and are the signal; dependency
+# updates land as maintainer-authored batches that carry a changeset, which an
+# automated pull request cannot provide. Dependabot security updates are
+# disabled in repository settings for the same reason.
+#
+# To re-enable, restore a non-zero open-pull-requests-limit here and turn
+# Dependabot security updates back on in repository settings.
 updates:
   - package-ecosystem: 'npm'
     directory: '/'
@@ -9,6 +17,7 @@ updates:
       semver-patch-days: 3
       semver-minor-days: 7
       semver-major-days: 14
+    open-pull-requests-limit: 0
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -17,3 +26,4 @@ updates:
       interval: 'weekly'
     cooldown:
       default-days: 3
+    open-pull-requests-limit: 0
