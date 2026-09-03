@@ -25,6 +25,8 @@ jobs:
         if: steps.run.outputs.go == 'true'
       - run: npm run lint
         if: steps.run.outputs.go == 'true'
+      - run: npm run test
+        if: steps.run.outputs.go == 'true'
       - run: npm run build
         if: steps.run.outputs.go == 'true'
 
