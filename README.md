@@ -109,6 +109,15 @@ The application will be available at `http://localhost:5173` (or the next availa
 - `npm run preview` - Preview production build locally
 - `npm run format` - Format code with Prettier
 - `npm run lint` - Lint and check code formatting
+- `npm run test` - Run the test suite with Vitest
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm run test
+```
 
 ## Building for Production
 
@@ -161,6 +170,22 @@ The application uses SvelteKit's file-based routing:
 - Client-side rendering (CSR) mode enabled
 - Server-side rendering (SSR) disabled
 - Static site generation for production builds
+
+## Before Opening a Pull Request
+
+Run these locally; CI runs the same three, in this order:
+
+```bash
+npm run lint
+npm run test
+npm run build
+```
+
+If the change is user-facing, add a changelog entry:
+
+```bash
+npm run changeset
+```
 
 ## License
 
