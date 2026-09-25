@@ -1,5 +1,14 @@
 # ekklesia-frontend
 
+## 1.0.2
+
+### Patch Changes
+
+- bf5f5d8: Bump svelte to 5.57.0, @sveltejs/kit to 2.70.3, vite to 6.4.3, and js-cookie to 3.0.8, closing multiple high and medium severity advisories in the Svelte toolchain, Vite dev server, and the cookie mirror used for the auth token. Refresh the lockfile so postcss, devalue, brace-expansion, picomatch, @humanfs/node, nanoid, and browserslist resolve to their patched versions. Override cookie to 0.7.0+ since @sveltejs/kit still declares a pre-fix range, closing an out-of-bounds cookie name/path/domain advisory. Drop the js-yaml, flatted, minimatch, and rollup overrides added for prior advisories: their direct parents now resolve patched versions on their own.
+- 81abdfc: Refresh the lockfile so `yaml` (nested under `postcss-load-config`, used by `eslint-plugin-svelte`) resolves to 1.10.3 and `ajv` (used by `eslint`) resolves to 6.15.0, closing a stack-overflow-via-deep-nesting advisory in `yaml` and a ReDoS advisory in `ajv`. Both packages stay within their parents' already-declared version ranges, so no dependency ranges or overrides changed.
+- a266da9: Pin js-yaml, flatted, minimatch, and rollup to patched versions via npm overrides, closing high-severity denial-of-service, prototype-pollution, and path-traversal advisories in transitive build tooling.
+- 6b7e1b5: Render comment and proposal blurb text (`Text.svelte`) with plain Svelte template syntax instead of building a raw HTML string, so linkified URLs and line breaks can no longer carry attacker-controlled markup or event-handler attributes through to other viewers; bare `http(s)` links and newline-to-line-break formatting behave the same as before.
+
 ## 1.0.1
 
 ### Patch Changes
