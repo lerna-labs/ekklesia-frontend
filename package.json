@@ -60,7 +60,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul-svelte": "^1.0.0-next.7",
     "vite": "^6.4.3",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "chart.js": "^4.4.9",
