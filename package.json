@@ -67,6 +67,6 @@
     "dayjs": "^1.11.21",
     "js-cookie": "^3.0.8",
     "lucide-svelte": "^0.503.0",
-    "markdown-it": "^14.3.0"
+    "markdown-it": "^14.3.1"
   }
 }
