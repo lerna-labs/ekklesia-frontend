@@ -119,6 +119,8 @@ Run the test suite:
 npm run test
 ```
 
+Tests run under Vitest with jsdom. Component tests mount `.svelte` files with `@testing-library/svelte`, and the `$lib` and `$stores` aliases resolve as in the application. `vitest.setup.js` unmounts components after each test and stubs `$app/stores` and `$app/navigation`; a test that needs a specific page value or a navigation spy overrides the stub with its own `vi.mock`. Pure-logic tests that need no DOM can opt out of jsdom with a `// @vitest-environment node` comment on the first line.
+
 ## Building for Production
 
 Build the static site:
