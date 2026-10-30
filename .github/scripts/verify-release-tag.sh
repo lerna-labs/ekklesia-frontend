@@ -2,7 +2,8 @@
 # Verifies that a release tag is a signed annotated tag that GitHub verifies,
 # points at a commit on main, and matches the version in package.json.
 # Usage: verify-release-tag.sh <tag>
-# Environment: GITHUB_REPOSITORY (owner/name), GH_TOKEN.
+# Environment: GITHUB_REPOSITORY (owner/name), GH_TOKEN, and GITHUB_SHA (the
+# pushed commit; when unset, the signed tag's own commit is used).
 set -uo pipefail
 
 tag="${1:-}"
@@ -27,11 +28,20 @@ tag_json=$(gh api "repos/$repo/git/tags/$object_sha") ||
   fail "could not read tag object $object_sha for $tag"
 verified=$(jq -r '.verification.verified' <<<"$tag_json")
 reason=$(jq -r '.verification.reason' <<<"$tag_json")
+target_type=$(jq -r '.object.type' <<<"$tag_json")
+target_sha=$(jq -r '.object.sha' <<<"$tag_json")
 [ "$verified" = "true" ] ||
   fail "tag $tag signature is not verified by GitHub (reason: $reason)"
+[ "$target_type" = "commit" ] ||
+  fail "tag $tag points at a $target_type, not a commit"
 
-commit=$(git rev-parse "refs/tags/$tag^{commit}" 2>/dev/null) ||
-  fail "tag $tag is not available in the local checkout; fetch tags first"
+expected="${GITHUB_SHA:-$target_sha}"
+[ "$target_sha" = "$expected" ] ||
+  fail "signed tag $tag points at $target_sha, not the pushed commit $expected"
+
+commit="$target_sha"
+git cat-file -e "$commit^{commit}" 2>/dev/null ||
+  fail "commit $commit is not available in the local checkout; fetch it first"
 git merge-base --is-ancestor "$commit" origin/main 2>/dev/null ||
   fail "tagged commit $commit is not an ancestor of origin/main"
 
