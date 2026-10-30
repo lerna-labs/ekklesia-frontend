@@ -141,7 +141,7 @@ git tag -s vX.Y.Z -m "vX.Y.Z" <version-commit-sha>
 git push origin vX.Y.Z
 ```
 
-The tag push starts the publish workflow. Its first job refuses to continue unless the tag is annotated, GitHub reports its signature as verified, the tagged commit is an ancestor of `main`, and the tag is `v` followed by the version in `package.json` at that commit. It then builds the production tarball and creates the GitHub Release with the changelog section as notes, skipping creation if the release already exists. You can run the check locally with `GITHUB_REPOSITORY=lerna-labs/ekklesia-frontend GH_TOKEN=$(gh auth token) .github/scripts/verify-release-tag.sh vX.Y.Z`.
+The tag push starts the publish workflow. Its first job refuses to continue unless the tag is an annotated tag of a commit, GitHub reports its signature as verified, the signed tag's commit is the pushed commit, that commit is an ancestor of `main`, and the tag is `v` followed by the version in `package.json` at that commit. When `GITHUB_SHA` is unset, as in a manual run against a tag already pushed, the signed tag's own commit is used. It then builds the production tarball and creates the GitHub Release with the changelog section as notes, skipping creation if the release already exists. You can run the check locally with `GITHUB_REPOSITORY=lerna-labs/ekklesia-frontend GH_TOKEN=$(gh auth token) .github/scripts/verify-release-tag.sh vX.Y.Z`.
 
 ## Project Structure
 
