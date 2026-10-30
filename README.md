@@ -131,6 +131,18 @@ npm run build
 
 The output will be in the `build/` directory, ready to be served by any static file server or integrated into an Express backend.
 
+## Releasing
+
+Merging a promotion into `main` makes the release workflow open or update the Version Packages pull request. Merging that pull request does not tag or publish anything. The maintainer then creates a signed annotated tag at the version commit on `main` and pushes it:
+
+```bash
+git fetch origin main
+git tag -s vX.Y.Z -m "vX.Y.Z" <version-commit-sha>
+git push origin vX.Y.Z
+```
+
+The tag push starts the publish workflow. Its first job refuses to continue unless the tag is annotated, GitHub reports its signature as verified, the tagged commit is an ancestor of `main`, and the tag equals the version in `package.json` at that commit. It then builds the production tarball and creates the GitHub Release with the changelog section as notes, skipping creation if the release already exists. You can run the check locally with `GITHUB_REPOSITORY=lerna-labs/ekklesia-frontend GH_TOKEN=$(gh auth token) .github/scripts/verify-release-tag.sh vX.Y.Z`.
+
 ## Project Structure
 
 ```text
