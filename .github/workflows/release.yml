@@ -2,11 +2,12 @@ name: Release
 
 # Runs on every push to main. changesets/action checks for pending changeset
 # files: if there are any (a staging -> main promotion just landed), it
-# opens/updates the "chore: release" PR (branch changeset-release/main) that bumps package.json and rolls the
-# changesets into CHANGELOG.md. Merging that PR does not tag or publish
-# anything: automation never creates a version tag. The maintainer creates and pushes a
-# signed annotated v<version> tag at the version commit, and publish.yml
-# verifies it before building the release artifact.
+# opens/updates the "chore: release" PR (branch changeset-release/main) that
+# bumps package.json and rolls the changesets into CHANGELOG.md. Merging that
+# PR does not tag or publish anything: automation never creates a version tag.
+# The maintainer creates and pushes a signed annotated v<version> tag at the
+# version commit, and publish.yml verifies it before building the release
+# artifact.
 #
 # There is no prerelease mode here. Release candidates are ephemeral snapshots
 # built on staging (staging-rc.yml); main only ever cuts clean X.Y.Z versions.
