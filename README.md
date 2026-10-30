@@ -133,7 +133,7 @@ The output will be in the `build/` directory, ready to be served by any static f
 
 ## Releasing
 
-Merging a promotion into `main` makes the release workflow open or update the Version Packages pull request. Merging that pull request does not tag or publish anything. The maintainer then creates a signed annotated tag at the version commit on `main` and pushes it:
+Merging a promotion into `main` makes the release workflow open or update the `chore: release` pull request. Merging that pull request does not tag or publish anything. The maintainer then creates a signed annotated tag at the version commit on `main` and pushes it:
 
 ```bash
 git fetch origin main
