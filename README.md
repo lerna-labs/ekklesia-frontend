@@ -119,6 +119,8 @@ Run the test suite:
 npm run test
 ```
 
+Tests run under Vitest with jsdom. Component tests mount `.svelte` files with `@testing-library/svelte`, and the `$lib` and `$stores` aliases resolve as in the application. `vitest.setup.js` unmounts components after each test and stubs `$app/stores` and `$app/navigation`; a test that needs a specific page value or a navigation spy overrides the stub with its own `vi.mock`. Pure-logic tests that need no DOM can opt out of jsdom with a `// @vitest-environment node` comment on the first line.
+
 ## Building for Production
 
 Build the static site:
@@ -128,6 +130,18 @@ npm run build
 ```
 
 The output will be in the `build/` directory, ready to be served by any static file server or integrated into an Express backend.
+
+## Releasing
+
+Merging a promotion into `main` makes the release workflow open or update the `chore: release` pull request. Merging that pull request does not tag or publish anything. The maintainer then creates a signed annotated tag at the version commit on `main` and pushes it:
+
+```bash
+git fetch origin main
+git tag -s vX.Y.Z -m "vX.Y.Z" <version-commit-sha>
+git push origin vX.Y.Z
+```
+
+The tag push starts the publish workflow. Its first job refuses to continue unless the tag is an annotated tag of a commit, GitHub reports its signature as verified, the signed tag's commit is the pushed commit, that commit is an ancestor of `main`, and the tag is `v` followed by the version in `package.json` at that commit. When `GITHUB_SHA` is unset, as in a manual run against a tag already pushed, the signed tag's own commit is used. It then builds the production tarball and creates the GitHub Release with the changelog section as notes, skipping creation if the release already exists. You can run the check locally with `GITHUB_REPOSITORY=lerna-labs/ekklesia-frontend GH_TOKEN=$(gh auth token) .github/scripts/verify-release-tag.sh vX.Y.Z`.
 
 ## Project Structure
 
