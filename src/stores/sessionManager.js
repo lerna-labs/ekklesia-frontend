@@ -19,7 +19,7 @@ export const user = writable(null);
 export const jwt = writable(null);
 
 export const DEFAULT_WALLET_SIGNER = {
-  userTypes: ['drep', 'stake', 'pool', 'addr'],
+  userTypes: ['drep', 'stake', 'pool'],
   userDefault: 'stake',
   multisig: true,
 };

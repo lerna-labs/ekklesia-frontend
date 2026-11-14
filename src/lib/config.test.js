@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { networkIdFor, normalizeWalletSigner } from '$lib/config.js';
+import { networkIdFor, normalizeWalletSigner, signTypeOptions } from '$lib/config.js';
 
 describe('networkIdFor', () => {
   it('returns 1 for mainnet and 0 for any other network', () => {
@@ -12,7 +12,7 @@ describe('networkIdFor', () => {
 
 describe('normalizeWalletSigner', () => {
   const fallback = {
-    userTypes: ['drep', 'stake', 'pool', 'addr'],
+    userTypes: ['drep', 'stake', 'pool'],
     userDefault: 'stake',
     multisig: true,
   };
@@ -37,5 +37,17 @@ describe('normalizeWalletSigner', () => {
       userDefault: 'drep',
       multisig: true,
     });
+  });
+});
+
+describe('signTypeOptions', () => {
+  it('offers the enabled voter types and never the payment key outside multisig', () => {
+    expect(signTypeOptions(['drep', 'stake', 'pool'], false)).toEqual(['drep', 'stake', 'pool']);
+    expect(signTypeOptions(['stake', 'addr'], false)).toEqual(['stake']);
+  });
+
+  it('offers the wallet signing keys in multisig regardless of the enabled types', () => {
+    expect(signTypeOptions(['pool'], true)).toEqual(['drep', 'stake', 'addr']);
+    expect(signTypeOptions(['drep', 'stake', 'pool'], true)).toEqual(['drep', 'stake', 'addr']);
   });
 });

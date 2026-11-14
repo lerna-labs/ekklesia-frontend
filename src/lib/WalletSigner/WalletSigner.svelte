@@ -9,7 +9,7 @@
     showLogin,
     redirectAfterLogin,
   } from '$stores/sessionManager.js';
-  import { refreshUserSession } from '$lib/config.js';
+  import { refreshUserSession, signTypeOptions } from '$lib/config.js';
   import { saveSignerPreference } from '$lib/signerPreferences.js';
   import { saveCalidusID } from '$lib/calidusCache.js';
   import { get } from 'svelte/store';
@@ -35,16 +35,15 @@
   // Sign-type source of truth is config-gated + localStorage-persisted so returning
   // voters don't have to re-pick each time.
   const SIGNTYPE_STORAGE_KEY = 'walletSigner_signType';
-  const allowedTypes = get(config).walletSigner.userTypes;
-  const defaultType = get(config).walletSigner.userDefault;
   const storedSignType =
     typeof window !== 'undefined' ? localStorage.getItem(SIGNTYPE_STORAGE_KEY) : null;
-  const initialSignType =
-    storedSignType && allowedTypes.includes(storedSignType)
-      ? storedSignType
-      : allowedTypes.includes(defaultType)
-        ? defaultType
-        : allowedTypes[0] || 'stake';
+  function pickSignType(multisig) {
+    const { userTypes, userDefault } = get(config).walletSigner;
+    const options = signTypeOptions(userTypes, multisig);
+    if (storedSignType && options.includes(storedSignType)) return storedSignType;
+    return options.includes(userDefault) ? userDefault : options[0] || 'stake';
+  }
+  const initialSignType = pickSignType(Boolean($user?.multiSig));
 
   let signType = $state(initialSignType);
   const multisigEnabled = $derived($config.walletSigner.multisig);
@@ -60,6 +59,12 @@
   // Force multisig off when the deployment hasn't enabled it.
   $effect(() => {
     if (!multisigEnabled) multiSig = false;
+  });
+
+  // Keep the selected type among the options for the current mode.
+  $effect(() => {
+    const options = signTypeOptions($config.walletSigner.userTypes, Boolean(multiSig));
+    if (!$loggedIn && !options.includes(signType)) signType = pickSignType(Boolean(multiSig));
   });
 
   $effect(() => {
@@ -229,6 +234,7 @@
             <SelectSignType
               value={signType}
               mode={selected}
+              multisig={Boolean(multiSig)}
               disabled={walletLoading}
               on:change={onSignTypeChange}
             />
@@ -237,6 +243,7 @@
             <SelectSignType
               value={signType}
               mode={selected}
+              multisig={Boolean(multiSig)}
               disabled={walletLoading}
               on:change={onSignTypeChange}
             />
@@ -248,6 +255,7 @@
             <SelectSignType
               value={signType}
               mode={selected}
+              multisig={Boolean(multiSig)}
               disabled={walletLoading}
               on:change={onSignTypeChange}
             />

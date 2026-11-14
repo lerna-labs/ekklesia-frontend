@@ -6,6 +6,18 @@ export function networkIdFor(network) {
   return network === 'mainnet' ? 1 : 0;
 }
 
+// Keys a connected wallet can sign with through CIP-30 / CIP-95 `signData`.
+const MULTISIG_SIGN_TYPES = ['drep', 'stake', 'addr'];
+
+/**
+ * Sign types offered in the login dialog. A normal login offers the enabled
+ * voter types and never the payment key. A multisig login offers the keys a
+ * wallet can sign with, and the backend checks them against the script.
+ */
+export function signTypeOptions(userTypes, multisig) {
+  return multisig ? [...MULTISIG_SIGN_TYPES] : userTypes.filter((t) => t !== 'addr');
+}
+
 /**
  * Wallet signer settings from the backend's `walletSigner` object. A missing
  * or malformed object yields every sign type, `stake` as the default, and

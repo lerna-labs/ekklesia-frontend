@@ -1,11 +1,12 @@
 <script>
   import * as Select from '$lib/components/ui/select/index.js';
   import { config } from '$stores/sessionManager.js';
+  import { signTypeOptions } from '$lib/config.js';
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
-  let { value = undefined, disabled = false } = $props();
+  let { value = undefined, disabled = false, multisig = false } = $props();
 
-  const voterTypes = $derived($config.walletSigner.userTypes);
+  const voterTypes = $derived(signTypeOptions($config.walletSigner.userTypes, multisig));
 
   function handleValueChange(newValue) {
     dispatch('change', newValue);
