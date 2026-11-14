@@ -1,0 +1,53 @@
+import { describe, it, expect } from 'vitest';
+import { networkIdFor, normalizeWalletSigner, signTypeOptions } from '$lib/config.js';
+
+describe('networkIdFor', () => {
+  it('returns 1 for mainnet and 0 for any other network', () => {
+    expect(networkIdFor('mainnet')).toBe(1);
+    expect(networkIdFor('preprod')).toBe(0);
+    expect(networkIdFor('preview')).toBe(0);
+    expect(networkIdFor(undefined)).toBe(0);
+  });
+});
+
+describe('normalizeWalletSigner', () => {
+  const fallback = {
+    userTypes: ['drep', 'stake', 'pool'],
+    userDefault: 'stake',
+    multisig: true,
+  };
+
+  it('offers drep, stake and pool, defaults to stake and allows multisig when the object is absent', () => {
+    expect(normalizeWalletSigner(undefined)).toEqual(fallback);
+    expect(normalizeWalletSigner(null)).toEqual(fallback);
+    expect(normalizeWalletSigner('x')).toEqual(fallback);
+  });
+
+  it('uses the values the backend reports', () => {
+    expect(
+      normalizeWalletSigner({ userTypes: ['drep', 'addr'], userDefault: 'drep', multisig: false }),
+    ).toEqual({ userTypes: ['drep', 'addr'], userDefault: 'drep', multisig: false });
+  });
+
+  it('falls back per field when a field is missing or invalid', () => {
+    expect(normalizeWalletSigner({ userTypes: [] })).toEqual(fallback);
+    expect(normalizeWalletSigner({ userTypes: [1] })).toEqual(fallback);
+    expect(normalizeWalletSigner({ userTypes: ['drep', 'pool'], userDefault: 'addr' })).toEqual({
+      userTypes: ['drep', 'pool'],
+      userDefault: 'drep',
+      multisig: true,
+    });
+  });
+});
+
+describe('signTypeOptions', () => {
+  it('offers the enabled voter types and never the payment key outside multisig', () => {
+    expect(signTypeOptions(['drep', 'stake', 'pool'], false)).toEqual(['drep', 'stake', 'pool']);
+    expect(signTypeOptions(['stake', 'addr'], false)).toEqual(['stake']);
+  });
+
+  it('offers the wallet signing keys in multisig regardless of the enabled types', () => {
+    expect(signTypeOptions(['pool'], true)).toEqual(['drep', 'stake', 'addr']);
+    expect(signTypeOptions(['drep', 'stake', 'pool'], true)).toEqual(['drep', 'stake', 'addr']);
+  });
+});

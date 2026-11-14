@@ -41,6 +41,7 @@ jobs:
           fi
 
   rc-artifact:
+    environment: preprod
     needs: gate
     if: needs.gate.outputs.build == 'true'
     runs-on: ubuntu-latest
@@ -71,7 +72,18 @@ jobs:
             echo "No pending changesets; building a plain staging preview."
           fi
 
+      - name: Check frontend build variables
+        env:
+          VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+        run: |
+          if [ -z "$VITE_APP_URL" ]; then
+            echo "::error::Missing required frontend variable in the 'preprod' environment: VITE_APP_URL"
+            exit 1
+          fi
+
       - name: Build (preprod)
+        env:
+          VITE_APP_URL: ${{ vars.VITE_APP_URL }}
         run: npm run build:preprod
 
       - name: Package tarball
