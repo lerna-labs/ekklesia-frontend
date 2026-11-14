@@ -1,11 +1,11 @@
 <script>
   import * as Select from '$lib/components/ui/select/index.js';
+  import { config } from '$stores/sessionManager.js';
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
   let { value = undefined, disabled = false } = $props();
 
-  const USER_TYPES = import.meta.env.VITE_WALLETSIGNER_USER_TYPES || '';
-  const voterTypes = USER_TYPES.split(',');
+  const voterTypes = $derived($config.walletSigner.userTypes);
 
   function handleValueChange(newValue) {
     dispatch('change', newValue);

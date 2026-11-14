@@ -1,5 +1,32 @@
-import { api, config } from '$stores/sessionManager.js';
+import { api, config, DEFAULT_WALLET_SIGNER } from '$stores/sessionManager.js';
 import { loadCalidusID } from '$lib/calidusCache.js';
+
+/** Cardano network ID for a network name: 1 for mainnet, 0 for anything else. */
+export function networkIdFor(network) {
+  return network === 'mainnet' ? 1 : 0;
+}
+
+/**
+ * Wallet signer settings from the backend's `walletSigner` object. A missing
+ * or malformed object yields every sign type, `stake` as the default, and
+ * multisig on.
+ */
+export function normalizeWalletSigner(raw) {
+  const fallback = DEFAULT_WALLET_SIGNER;
+  if (!raw || typeof raw !== 'object') return { ...fallback, userTypes: [...fallback.userTypes] };
+  const userTypes =
+    Array.isArray(raw.userTypes) && raw.userTypes.length > 0
+      ? raw.userTypes.filter((t) => typeof t === 'string')
+      : [...fallback.userTypes];
+  const userDefault =
+    typeof raw.userDefault === 'string' && userTypes.includes(raw.userDefault)
+      ? raw.userDefault
+      : userTypes.includes(fallback.userDefault)
+        ? fallback.userDefault
+        : userTypes[0];
+  const multisig = typeof raw.multisig === 'boolean' ? raw.multisig : fallback.multisig;
+  return { userTypes, userDefault, multisig };
+}
 
 /**
  * Fetch the backend-served runtime config (IPFS gateway, explorer bases,
@@ -17,6 +44,7 @@ export async function loadFrontendConfig(fetch) {
         explorerTxBase: payload.explorerTxBase ?? 'https://cexplorer.io/tx/',
         explorerAddressBase: payload.explorerAddressBase ?? 'https://cexplorer.io/address/',
         network: payload.network ?? 'preprod',
+        walletSigner: normalizeWalletSigner(payload.walletSigner),
       });
     }
   } catch (err) {

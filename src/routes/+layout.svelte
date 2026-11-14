@@ -10,9 +10,11 @@
   import { Toaster } from '$lib/components/ui/sonner/index.js';
   import PageHead from '$lib/base/PageHead.svelte';
   import { applyTheme } from '$lib/base/theme.js';
+  import { config } from '$stores/sessionManager.js';
+  import { networkIdFor } from '$lib/config.js';
 
   let { children } = $props();
-  const NETWORK_ID = import.meta.env.VITE_NETWORK_ID;
+  const NETWORK_ID = $derived(networkIdFor($config.network));
 
   let notice = $state(undefined);
 

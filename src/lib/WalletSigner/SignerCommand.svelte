@@ -1,11 +1,11 @@
 <script>
   import { toast } from 'svelte-sonner';
   import { Copy } from 'lucide-svelte';
+  import { config } from '$stores/sessionManager.js';
+  import { networkIdFor } from '$lib/config.js';
   import { Button } from '$lib/components/ui/button/index.js';
   let { signType, signerAddress, payload } = $props();
-  // FIXME: IMPORT FROM HEALTH ENDPOINT INSTEAD
-  const NETWORK = import.meta.env.VITE_NETWORK_ID;
-  const testNetMagic = NETWORK == 1 ? '' : '--testnet-magic xxx';
+  const testNetMagic = $derived(networkIdFor($config.network) === 1 ? '' : '--testnet-magic xxx');
 
   // Create the complete command text with proper substitutions
   const command = $derived.by(() => {

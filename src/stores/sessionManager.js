@@ -3,11 +3,8 @@ import { error } from '@sveltejs/kit';
 import { writable, get } from 'svelte/store';
 import Cookies from 'js-cookie';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-// Normalize to the root `/api` base so we can prefix `/v0` or `/v1` explicitly.
-// Accepts either `<origin>/api` or `<origin>/api/v0` in VITE_API_URL.
-const API_BASE = (API_URL || '').replace(/\/v0\/?$/, '').replace(/\/$/, '');
+// The API is served on the page's own origin under `/api`.
+const API_BASE = '/api';
 const V0_BASE = `${API_BASE}/v0`;
 const V1_BASE = `${API_BASE}/v1`;
 
@@ -25,11 +22,18 @@ export const jwt = writable(null);
 // boot by +layout.js. Lets ops switch explorer / IPFS gateway / network
 // without a frontend redeploy. Default values mirror the backend defaults so
 // a bare-local dev bring-up still renders something sensible.
+export const DEFAULT_WALLET_SIGNER = {
+  userTypes: ['drep', 'stake', 'pool', 'addr'],
+  userDefault: 'stake',
+  multisig: true,
+};
+
 export const config = writable({
   ipfsGatewayBase: 'https://ipfs.io/ipfs/',
   explorerTxBase: 'https://cexplorer.io/tx/',
   explorerAddressBase: 'https://cexplorer.io/address/',
   network: 'preprod',
+  walletSigner: { ...DEFAULT_WALLET_SIGNER },
 });
 
 // Set JWT in cookie only. localStorage is intentionally NOT used: it would
