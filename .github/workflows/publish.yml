@@ -26,6 +26,7 @@ jobs:
         run: .github/scripts/verify-release-tag.sh "$GITHUB_REF_NAME"
 
   publish:
+    environment: production
     needs: verify
     runs-on: ubuntu-latest
     steps:
@@ -40,7 +41,21 @@ jobs:
 
       - run: npm ci
 
+      - name: Check frontend build variables
+        env:
+          VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+        run: |
+          if [ -z "$VITE_APP_URL" ]; then
+            echo "::error::Missing required frontend variable in the 'production' environment: VITE_APP_URL"
+            exit 1
+          fi
+
       - name: Build (production)
+        env:
+          VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME }}
+          VITE_APP_TITLE: ${{ vars.VITE_APP_TITLE }}
+          VITE_APP_TWITTER_HANDLE: ${{ vars.VITE_APP_TWITTER_HANDLE }}
         run: npm run build
 
       - name: Package tarball
