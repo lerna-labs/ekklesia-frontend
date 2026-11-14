@@ -56,37 +56,14 @@ A modern web application for verifiable on-chain voting on Cardano. This platfor
 
 ## Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+The app calls the API at `/api` and the health check at `/health` on the page's own origin, so no API URL is configured. The wallet signer types, the default type, the multisig switch and the network come from the backend's `GET /api/v1/config` at run time.
+
+Create a `.env` file in the root directory to customize branding (see `.env.example` for every variable). `VITE_APP_URL` is the canonical URL of the deployment and is the only variable a release build needs.
+
+During `npm run dev` the Vite dev server proxies `/api` and `/health` to `http://localhost:3000`. To use another backend, set `DEV_BACKEND_URL` in `.env`:
 
 ```env
-# Base API URL for the backend API (the `/api` root; do NOT include `/v0` or `/v1`)
-# The frontend appends `/v0/...` or `/v1/...` per call site.
-# Example: http://localhost:3000/api or https://api.example.com/api
-VITE_API_URL=
-
-# Server status endpoint URL (external endpoint)
-# Used to check server availability and network status
-# Example: http://localhost:3000/api/status or https://api.example.com/status
-VITE_SERVER_STATUS=
-
-# Cardano Network ID
-# Used for wallet connection and signing operations
-# Example: 0 (testnet/preview) or 1 (mainnet)
-VITE_NETWORK_ID=
-
-# Allowed sign-with types offered in the WalletSigner dialog.
-# Comma-separated subset of: drep, stake, pool, addr
-# Example: drep,stake,pool,addr
-VITE_WALLETSIGNER_USER_TYPES=
-
-# Default sign-with type used when the user has not yet made a choice.
-# Must be one of the values listed in VITE_WALLETSIGNER_USER_TYPES.
-# Example: stake
-VITE_WALLETSIGNER_USER_DEFAULT=
-
-# Enable the MultiSig toggle in the WalletSigner dialog.
-# Set to "true" to expose native-script multisig login + voting.
-VITE_WALLETSIGNER_MULTISIG=
+DEV_BACKEND_URL=http://localhost:3000
 ```
 
 **Note**: `VITE_APP_VERSION` is automatically set from `package.json` during build and does not need to be configured.

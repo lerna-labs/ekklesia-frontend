@@ -94,8 +94,8 @@ banner, filter/sort badges, markdown links, ranked result rank-1 bar, and
 The strip that warns voters they're on a non-production network (preprod) is
 themed **separately from `brand`** on purpose: it must stay a loud, obviously
 cautionary colour even when a deployment's brand accent is a low-contrast hue.
-The banner only renders on testnet builds (`VITE_NETWORK_ID == 0`); on mainnet
-it never appears, so these keys have no effect there.
+The banner renders whenever the backend's `network` is not `mainnet`; on
+mainnet it never appears, so these keys have no effect there.
 
 | Key                          | Controls                                                                    |
 | ---------------------------- | --------------------------------------------------------------------------- |
