@@ -17,7 +17,7 @@ describe('normalizeWalletSigner', () => {
     multisig: true,
   };
 
-  it('offers every type, defaults to stake and allows multisig when the object is absent', () => {
+  it('offers drep, stake and pool, defaults to stake and allows multisig when the object is absent', () => {
     expect(normalizeWalletSigner(undefined)).toEqual(fallback);
     expect(normalizeWalletSigner(null)).toEqual(fallback);
     expect(normalizeWalletSigner('x')).toEqual(fallback);

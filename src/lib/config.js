@@ -20,7 +20,7 @@ export function signTypeOptions(userTypes, multisig) {
 
 /**
  * Wallet signer settings from the backend's `walletSigner` object. A missing
- * or malformed object yields every sign type, `stake` as the default, and
+ * or malformed object yields `drep`, `stake` and `pool`, `stake` as the default, and
  * multisig on.
  */
 export function normalizeWalletSigner(raw) {
