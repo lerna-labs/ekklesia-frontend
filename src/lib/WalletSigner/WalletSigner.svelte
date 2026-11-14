@@ -36,14 +36,14 @@
   // voters don't have to re-pick each time.
   const SIGNTYPE_STORAGE_KEY = 'walletSigner_signType';
   const allowedTypes = get(config).walletSigner.userTypes;
-  const defaultFromEnv = get(config).walletSigner.userDefault;
+  const defaultType = get(config).walletSigner.userDefault;
   const storedSignType =
     typeof window !== 'undefined' ? localStorage.getItem(SIGNTYPE_STORAGE_KEY) : null;
   const initialSignType =
     storedSignType && allowedTypes.includes(storedSignType)
       ? storedSignType
-      : allowedTypes.includes(defaultFromEnv)
-        ? defaultFromEnv
+      : allowedTypes.includes(defaultType)
+        ? defaultType
         : allowedTypes[0] || 'stake';
 
   let signType = $state(initialSignType);

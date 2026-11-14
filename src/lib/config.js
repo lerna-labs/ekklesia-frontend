@@ -14,10 +14,10 @@ export function networkIdFor(network) {
 export function normalizeWalletSigner(raw) {
   const fallback = DEFAULT_WALLET_SIGNER;
   if (!raw || typeof raw !== 'object') return { ...fallback, userTypes: [...fallback.userTypes] };
-  const userTypes =
-    Array.isArray(raw.userTypes) && raw.userTypes.length > 0
-      ? raw.userTypes.filter((t) => typeof t === 'string')
-      : [...fallback.userTypes];
+  const reported = Array.isArray(raw.userTypes)
+    ? raw.userTypes.filter((t) => typeof t === 'string')
+    : [];
+  const userTypes = reported.length > 0 ? reported : [...fallback.userTypes];
   const userDefault =
     typeof raw.userDefault === 'string' && userTypes.includes(raw.userDefault)
       ? raw.userDefault

@@ -31,6 +31,7 @@ describe('normalizeWalletSigner', () => {
 
   it('falls back per field when a field is missing or invalid', () => {
     expect(normalizeWalletSigner({ userTypes: [] })).toEqual(fallback);
+    expect(normalizeWalletSigner({ userTypes: [1] })).toEqual(fallback);
     expect(normalizeWalletSigner({ userTypes: ['drep', 'pool'], userDefault: 'addr' })).toEqual({
       userTypes: ['drep', 'pool'],
       userDefault: 'drep',

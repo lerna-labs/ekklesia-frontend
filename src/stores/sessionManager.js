@@ -18,16 +18,16 @@ export const redirectAfterLogin = writable(null);
 export const user = writable(null);
 export const jwt = writable(null);
 
-// Runtime config served by the backend at GET /v1/config. Loaded once on app
-// boot by +layout.js. Lets ops switch explorer / IPFS gateway / network
-// without a frontend redeploy. Default values mirror the backend defaults so
-// a bare-local dev bring-up still renders something sensible.
 export const DEFAULT_WALLET_SIGNER = {
   userTypes: ['drep', 'stake', 'pool', 'addr'],
   userDefault: 'stake',
   multisig: true,
 };
 
+// Runtime config served by the backend at GET /v1/config. Loaded once on app
+// boot by +layout.js. Lets ops switch explorer / IPFS gateway / network
+// without a frontend redeploy. Default values mirror the backend defaults so
+// a bare-local dev bring-up still renders something sensible.
 export const config = writable({
   ipfsGatewayBase: 'https://ipfs.io/ipfs/',
   explorerTxBase: 'https://cexplorer.io/tx/',
