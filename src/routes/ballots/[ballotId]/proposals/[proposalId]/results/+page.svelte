@@ -2,6 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import BallotBadge from '$lib/BallotBadge.svelte';
   import CertificationBadge from '$lib/CertificationBadge.svelte';
+  import ThresholdBadge from '$lib/ThresholdBadge.svelte';
   import CertificationHistoryDisclosure from '$lib/CertificationHistoryDisclosure.svelte';
   import ProposalDetails from '$lib/ProposalDetails.svelte';
   import ResultsStatus from '$lib/ResultsStatus.svelte';
@@ -191,7 +192,8 @@
 <h1 class="mb-1 text-xl">{proposal.title}</h1>
 <div class="mb-3 mt-1 flex flex-wrap items-center gap-2">
   <BallotBadge status={ballot.status} />
-  <CertificationBadge {certification} ballotStatus={ballot.status} />
+  <CertificationBadge {certification} ballotStatus={ballot.status} ballotSource={ballot.source} />
+  <ThresholdBadge reached={proposal.thresholdReached} {ballot} />
 </div>
 
 <section class="text-sm text-muted-foreground">

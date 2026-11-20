@@ -1,13 +1,13 @@
 <script>
   import { convertTimestamp } from '$lib/utils.js';
   import { certificationState } from '$lib/certified.js';
-  import { CircleCheck, TriangleAlert, FileText, ExternalLink } from 'lucide-svelte';
+  import { CircleCheck, TriangleAlert, FileText, ExternalLink, Archive } from 'lucide-svelte';
 
   /**
    * @type {{
    *   result: { source?: string, finalizedAt?: string|null, updatedAt?: string, hydraFinalizeTxHash?: string|null } | null,
    *   certification?: { certified: boolean, version?: number, certifiedAt?: string, snapshotUrl?: string|null, snapshotHash?: string|null, snapshotEpoch?: number|null, narrative?: { url: string, label?: string } | null } | null,
-   *   ballot?: { status?: string } | null
+   *   ballot?: { status?: string, source?: string, votePeriodEnd?: string|null } | null
    * }}
    */
   let { result, certification = null, ballot = null } = $props();
@@ -91,6 +91,28 @@
       {#if result?.updatedAt}
         <p class="mt-1 text-xs opacity-75">
           Tally last updated {convertTimestamp(result.updatedAt)}
+        </p>
+      {/if}
+    </div>
+  </div>
+{:else if state === 'archived'}
+  <div
+    class="mb-4 flex items-start gap-3 rounded-md border border-slate-300 bg-slate-50 p-3 text-sm text-slate-900"
+  >
+    <div class="mt-0.5 shrink-0">
+      <Archive class="h-5 w-5" />
+    </div>
+    <div class="flex-1">
+      <div class="font-semibold uppercase tracking-wide">Archived result</div>
+      <p class="mt-1">
+        Voting is closed. This ballot ran on the earlier off-chain voting flow: votes were counted
+        off chain and the tally was not recorded on chain.{result
+          ? ' The figures below are final.'
+          : ''}
+      </p>
+      {#if ballot?.votePeriodEnd}
+        <p class="mt-1 text-xs opacity-75">
+          Voting closed {convertTimestamp(ballot.votePeriodEnd)}
         </p>
       {/if}
     </div>

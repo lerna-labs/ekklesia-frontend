@@ -122,7 +122,7 @@
       </div>
     {/if}
 
-    {#if ballot?.status == 'closed'}
+    {#if ballot?.status == 'closed' && ballot.source !== 'legacy'}
       <div>
         <span class="font-semibold">On-Chain Results:</span>
         {#if ballot.resultTxHash}

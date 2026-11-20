@@ -2,7 +2,7 @@ import { api } from '$stores/sessionManager.js';
 
 // Fetches the authority-certification payload for a ballot.
 //
-// Drives the three-state results display: provisional (Hydra-final,
+// Drives the multi-state results display: provisional (Hydra-final,
 // awaiting certification), narrative-only endorsement, or fully
 // certified. Public endpoint, no auth. Returns null on 404 / network
 // errors so callers can render sensibly even if the endpoint is absent
@@ -44,6 +44,8 @@ export function getCertifiedProposal(certification, proposalId) {
 //   'certified'          — authority-certified snapshot active
 //   'narrative'          — no re-weighting, but authority published a
 //                          narrative endorsement
+//   'archived'           — closed ballot from the earlier off-chain
+//                          flow (source 'legacy'); tally is final
 //   'hydra-provisional'  — voting is closed and Hydra has finalized
 //                          the tally, but no certification yet
 //   'voting'             — ballot is still accepting votes (running tally)
@@ -59,6 +61,7 @@ export function certificationState(certification, result, ballot) {
   if (certification && !certification.certified && certification.narrative?.url) return 'narrative';
 
   const closed = ballot?.status === 'closed';
+  if (closed && ballot?.source === 'legacy') return 'archived';
   const hydraFinal =
     result?.source === 'final' ||
     result?.source === 'certified' ||
