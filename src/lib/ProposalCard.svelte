@@ -7,7 +7,6 @@
   import ProposalVote from '$lib/ProposalVote.svelte';
   import VotePopover from './VotePopover.svelte';
   import ProposalDetails from './ProposalDetails.svelte';
-  import ThresholdBadge from './ThresholdBadge.svelte';
   import ProposalModuleLink from './ProposalModuleLink.svelte';
   import {
     draftsTree,
@@ -145,9 +144,6 @@
       </div>
     </Card.Title>
     <Card.Description>
-      {#if typeof proposal.thresholdReached === 'boolean'}
-        <div class="mb-2"><ThresholdBadge reached={proposal.thresholdReached} {ballot} /></div>
-      {/if}
       <ProposalDetails {proposal} {ballot} />
     </Card.Description>
   </Card.Header>

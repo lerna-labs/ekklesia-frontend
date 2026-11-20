@@ -7,7 +7,6 @@
   import Pagination from '$lib/base/Pagination.svelte';
   import FacetControls from '$lib/FacetControls.svelte';
   import { certificationState } from '$lib/certified.js';
-  import ThresholdFilter from '$lib/ThresholdFilter.svelte';
   import Search from '$lib/base/Search.svelte';
   import BallotDetails from '$lib/BallotDetails.svelte';
   import MarkdownBrief from '$lib/base/MarkdownBrief.svelte';
@@ -299,9 +298,6 @@
             <Switch bind:checked={undraftedFirst} id="undraftedFirst" />
             <Label for="undraftedFirst" class="cursor-pointer">Not voted first</Label>
           </label>
-        {/if}
-        {#if typeof ballot.voteThreshold === 'number'}
-          <ThresholdFilter />
         {/if}
         <FacetControls facets={ballot.facets} applied={data.applied} />
       </div>
