@@ -83,7 +83,7 @@ Used by `src/routes/ballots/+page.js`.
 ### `GET /api/v0/ballots/:id/proposals`
 
 Paginated proposals for a ballot. Supports `?search`, `?tags`,
-`?categories`, `?sort`, `?direction`, `?hasVoted`, `?thresholdReached`,
+`?categories`, `?sort`, `?direction`, `?hasVoted`,
 `?page`, `?limit`.
 
 Used by the proposals listing + proposal detail load functions.
