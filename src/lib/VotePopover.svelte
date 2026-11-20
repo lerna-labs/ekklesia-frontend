@@ -33,53 +33,53 @@
   <Popover.Content>
     <h1 class="text-sm font-semibold">Participation</h1>
     <div class="max-h-100 space-y-2 text-xs">
-      <div
-        class={hasVoterDenom && hasPowerDenom
-          ? 'mb-4 grid w-full grid-cols-2 gap-4'
-          : hasVoterDenom || hasPowerDenom
-            ? 'mb-4 grid w-full grid-cols-1 gap-4'
-            : 'hidden'}
-      >
-        {#if hasVoterDenom}
-          <DonutChart
-            segments={[
-              {
-                label: 'Active',
-                value: Number(activeVoterPerc),
-                color: '#f97316',
-                count: totalVotes,
-              },
-              {
-                label: 'Inactive',
-                value: 100 - Number(activeVoterPerc),
-                color: '#e5e7eb',
-                count: totalAllowedVoterCount - totalVotes,
-              },
-            ]}
-            title="By Voter Count"
-            valueUnit="Voters"
-          />
-        {/if}
-        {#if hasPowerDenom}
-          <DonutChart
-            segments={[
-              {
-                label: 'Active',
-                value: Number(activeVotingPowerPerc),
-                color: '#f97316',
-                absoluteLabel: lovelaceToAda(proposal.votingPower),
-              },
-              {
-                label: 'Inactive',
-                value: 100 - Number(activeVotingPowerPerc),
-                color: '#e5e7eb',
-                absoluteLabel: lovelaceToAda(ballot.totalVotingPower - proposal.votingPower),
-              },
-            ]}
-            title="By Voting Power"
-          />
-        {/if}
-      </div>
+      {#if hasVoterDenom || hasPowerDenom}
+        <div
+          class={hasVoterDenom && hasPowerDenom
+            ? 'mb-4 grid w-full grid-cols-2 gap-4'
+            : 'mb-4 grid w-full grid-cols-1 gap-4'}
+        >
+          {#if hasVoterDenom}
+            <DonutChart
+              segments={[
+                {
+                  label: 'Active',
+                  value: Number(activeVoterPerc),
+                  color: '#f97316',
+                  count: totalVotes,
+                },
+                {
+                  label: 'Inactive',
+                  value: 100 - Number(activeVoterPerc),
+                  color: '#e5e7eb',
+                  count: totalAllowedVoterCount - totalVotes,
+                },
+              ]}
+              title="By Voter Count"
+              valueUnit="Voters"
+            />
+          {/if}
+          {#if hasPowerDenom}
+            <DonutChart
+              segments={[
+                {
+                  label: 'Active',
+                  value: Number(activeVotingPowerPerc),
+                  color: '#f97316',
+                  absoluteLabel: lovelaceToAda(proposal.votingPower),
+                },
+                {
+                  label: 'Inactive',
+                  value: 100 - Number(activeVotingPowerPerc),
+                  color: '#e5e7eb',
+                  absoluteLabel: lovelaceToAda(ballot.totalVotingPower - proposal.votingPower),
+                },
+              ]}
+              title="By Voting Power"
+            />
+          {/if}
+        </div>
+      {/if}
 
       <div class="flex justify-between">
         <span class="font-semibold">Active Voters:</span>

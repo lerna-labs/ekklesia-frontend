@@ -1,6 +1,6 @@
 <script>
   import GroupCardShell from './GroupCardShell.svelte';
-  import { GROUP_ACCENTS, groupIdentity, optionColor, isAbstainRow } from './groupResults.js';
+  import { GROUP_ACCENTS, groupIdentity, optionColor } from './groupResults.js';
   import { formatPercent, lovelaceToAdaCompact } from '$lib/utils.js';
   import { Scale } from 'lucide-svelte';
   import OptionDetails from '$lib/OptionDetails.svelte';
@@ -65,7 +65,7 @@
   // likert). Fold it into the split bar at the top.
   const abstainRow = $derived.by(() => {
     const rows = Array.isArray(group?.rows) ? group.rows : [];
-    return rows.find((r) => isAbstainRow(r, ballot)) ?? null;
+    return rows.find((r) => String(r.id).toLowerCase() === 'abstain') ?? null;
   });
   const abstainCount = $derived(abstainRow?.count ?? 0);
   // NOTE(incomplete-wiring): abstain voting power is computed but never

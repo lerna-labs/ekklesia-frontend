@@ -4,7 +4,6 @@
   import { ListOrdered } from 'lucide-svelte';
   import OptionDetails from '$lib/OptionDetails.svelte';
   import { brandColor } from '$lib/base/brandColor.js';
-  import { isAbstainRow } from './groupResults.js';
 
   /**
    * Per-group visualization for `ranked` (ranked-choice) vote types.
@@ -48,7 +47,7 @@
     // The page's `groups` derivation forwards the results array as
     // `group.rows` (sorted copy). Older `group.results` is never set.
     const rows = Array.isArray(group?.rows) ? group.rows : [];
-    return rows.find((r) => isAbstainRow(r, ballot)) ?? null;
+    return rows.find((r) => r.id === 'abstain') ?? null;
   });
   const abstainCount = $derived(abstainRow?.count ?? 0);
   const abstainPower = $derived(abstainRow?.votingPower ?? 0);

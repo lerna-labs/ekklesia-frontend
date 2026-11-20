@@ -1,7 +1,7 @@
 <script>
   import DonutChart from '$lib/charts/DonutChart.svelte';
   import GroupCardShell from './GroupCardShell.svelte';
-  import { optionColor, GROUP_ACCENTS, groupIdentity, isAbstainRow } from './groupResults.js';
+  import { optionColor, GROUP_ACCENTS, groupIdentity } from './groupResults.js';
   import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
   import OptionDetails from '$lib/OptionDetails.svelte';
 
@@ -37,7 +37,9 @@
   });
   const optionColors = $derived(group.rows.map((r) => colorByOptionId.get(String(r.id))));
 
-  const abstainRow = $derived(group.rows.find((r) => isAbstainRow(r, ballot)) ?? null);
+  const abstainRow = $derived(
+    group.rows.find((r) => String(r.id).toLowerCase() === 'abstain') ?? null,
+  );
   const abstainCount = $derived(abstainRow?.count ?? 0);
   const abstainPower = $derived(abstainRow?.votingPower ?? 0);
   const expressedCount = $derived(totalGroupCount - abstainCount);
@@ -97,7 +99,9 @@
     return costByOptionId.get(String(optionId)) ?? 0;
   }
 
-  const isAbstain = (row) => isAbstainRow(row, ballot);
+  function isAbstainRow(row) {
+    return String(row?.id).toLowerCase() === 'abstain';
+  }
 
   // Look up the original voteOption so OptionDetails can surface its
   // description / referenceUrl / imageUrl / metadata in the modal. The
@@ -122,8 +126,8 @@
   const tableRows = $derived.by(() => {
     const key = dimension === 'power' ? 'votingPower' : 'count';
     return [...group.rows].sort((a, b) => {
-      const aAbs = isAbstain(a);
-      const bAbs = isAbstain(b);
+      const aAbs = isAbstainRow(a);
+      const bAbs = isAbstainRow(b);
       if (aAbs !== bAbs) return aAbs ? 1 : -1;
       return (b[key] ?? 0) - (a[key] ?? 0);
     });
@@ -136,7 +140,7 @@
     if (!isBudget) return [];
     let running = 0;
     return tableRows.map((row) => {
-      if (isAbstain(row)) return { value: null, overBudget: false };
+      if (isAbstainRow(row)) return { value: null, overBudget: false };
       running += costOf(row.id);
       return { value: running, overBudget: voterBudget > 0 && running > voterBudget };
     });
@@ -365,7 +369,7 @@
             {@const color = colorByOptionId.get(String(row.id))}
             {@const rowIdx = tableRows.indexOf(row)}
             {@const cum = isBudget ? cumulativeCosts[rowIdx] : null}
-            {@const abstain = isAbstain(row)}
+            {@const abstain = isAbstainRow(row)}
             {@const opt = optionFor(row.id)}
             <tr class="border-t border-slate-100 align-middle">
               <td class="py-2">

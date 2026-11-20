@@ -1,7 +1,7 @@
 <script>
   import GroupCardShell from './GroupCardShell.svelte';
   import Histogram from '$lib/charts/Histogram.svelte';
-  import { GROUP_ACCENTS, groupIdentity, isAbstainRow } from './groupResults.js';
+  import { GROUP_ACCENTS, groupIdentity } from './groupResults.js';
   import { formatPercent, lovelaceToAdaCompact } from '$lib/utils.js';
   import { BarChart3 } from 'lucide-svelte';
 
@@ -40,7 +40,7 @@
     // The page's `groups` derivation forwards the results array as
     // `group.rows` (sorted copy). Older `group.results` is never set.
     const rows = Array.isArray(group?.rows) ? group.rows : [];
-    return rows.find((r) => isAbstainRow(r, ballot)) ?? null;
+    return rows.find((r) => r.id === 'abstain') ?? null;
   });
   const abstainCount = $derived(abstainRow?.count ?? 0);
   const abstainPower = $derived(abstainRow?.votingPower ?? 0);
