@@ -6,6 +6,7 @@
   import ProposalTable from '$lib/ProposalTable.svelte';
   import Pagination from '$lib/base/Pagination.svelte';
   import FacetControls from '$lib/FacetControls.svelte';
+  import { certificationState } from '$lib/certified.js';
   import ThresholdFilter from '$lib/ThresholdFilter.svelte';
   import Search from '$lib/base/Search.svelte';
   import BallotDetails from '$lib/BallotDetails.svelte';
@@ -138,6 +139,9 @@
       }
       if (ballot.certification?.narrative?.url) {
         return 'Voting has closed. The voting authority has published a narrative endorsement.';
+      }
+      if (certificationState(null, null, ballot) === 'archived') {
+        return 'Voting has closed. This ballot ran on the earlier off-chain voting flow: votes were counted off chain and the tally was not recorded on chain. The results below are final.';
       }
       return 'Voting has closed. Provisional results are below — awaiting authority certification.';
     }
