@@ -1,6 +1,6 @@
 <script>
   import GroupCardShell from './GroupCardShell.svelte';
-  import { GROUP_ACCENTS, groupIdentity } from './groupResults.js';
+  import { GROUP_ACCENTS, groupIdentity, isAbstainRow } from './groupResults.js';
   import { formatPercent, lovelaceToAda, lovelaceToAdaCompact } from '$lib/utils.js';
   import { BarChart3 } from 'lucide-svelte';
   import OptionDetails from '$lib/OptionDetails.svelte';
@@ -59,7 +59,7 @@
   // synthetic row, same convention as scale / ranked.
   const abstainRow = $derived.by(() => {
     const rows = Array.isArray(group?.rows) ? group.rows : [];
-    return rows.find((r) => String(r.id).toLowerCase() === 'abstain') ?? null;
+    return rows.find((r) => isAbstainRow(r, ballot)) ?? null;
   });
   const abstainCount = $derived(abstainRow?.count ?? 0);
   const abstainPower = $derived(abstainRow?.votingPower ?? 0);

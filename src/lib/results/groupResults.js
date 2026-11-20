@@ -77,3 +77,13 @@ export function optionColor(label, i) {
   if (idx === 0) return brandColor('brand-hover');
   return OTHER_OPTION_COLORS_SECONDARY[idx - 1];
 }
+
+/** True when a result row is the abstain option; legacy ballots label it with numeric id 0. */
+export function isAbstainRow(row, ballot) {
+  if (String(row?.id).toLowerCase() === 'abstain') return true;
+  return (
+    ballot?.source === 'legacy' &&
+    String(row?.id) === '0' &&
+    String(row?.label).toLowerCase() === 'abstain'
+  );
+}
