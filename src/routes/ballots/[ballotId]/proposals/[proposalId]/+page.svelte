@@ -2,6 +2,7 @@
   import * as Card from '$lib/components/ui/card/index.js';
   import * as Accordion from '$lib/components/ui/accordion/index.js';
   import BallotBadge from '$lib/BallotBadge.svelte';
+  import ThresholdBadge from '$lib/ThresholdBadge.svelte';
   import ProposalVote from '$lib/ProposalVote.svelte';
   import ProposalDetails from '$lib/ProposalDetails.svelte';
   import ProposalModuleLink from '$lib/ProposalModuleLink.svelte';
@@ -35,6 +36,7 @@
 <div class="flex gap-2 text-xl">
   <h1 class="mb-1">{proposal.title}</h1>
   <BallotBadge status={ballot.status} />
+  <ThresholdBadge reached={proposal.thresholdReached} {ballot} />
 </div>
 
 <section class="text-sm text-muted-foreground">

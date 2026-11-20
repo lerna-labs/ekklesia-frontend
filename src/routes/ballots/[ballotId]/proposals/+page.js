@@ -24,6 +24,10 @@ export async function load({ fetch, params, url }) {
   if (search.trim()) {
     qp.set('search', search.trim());
   }
+  const thresholdReached = url.searchParams.get('thresholdReached');
+  if (thresholdReached === 'true' || thresholdReached === 'false') {
+    qp.set('thresholdReached', thresholdReached);
+  }
   for (const [key, val] of url.searchParams.entries()) {
     if (key.startsWith('filter[') && val) {
       qp.set(key, val);
