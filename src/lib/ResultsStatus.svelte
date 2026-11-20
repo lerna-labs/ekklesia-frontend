@@ -106,7 +106,9 @@
       <div class="font-semibold uppercase tracking-wide">Archived result</div>
       <p class="mt-1">
         Voting is closed. This ballot ran on the earlier off-chain voting flow: votes were counted
-        off chain and the tally was not recorded on chain. The figures below are final.
+        off chain and the tally was not recorded on chain.{result
+          ? ' The figures below are final.'
+          : ''}
       </p>
       {#if ballot?.votePeriodEnd}
         <p class="mt-1 text-xs opacity-75">

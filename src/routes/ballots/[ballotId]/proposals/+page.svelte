@@ -199,7 +199,11 @@
 <div class="mb-3 mt-2 flex flex-wrap items-center gap-2">
   <Badge status={ballot.status} />
   <SourceBadge source={ballot.source} />
-  <CertificationBadge certification={ballot.certification} ballotStatus={ballot.status} />
+  <CertificationBadge
+    certification={ballot.certification}
+    ballotStatus={ballot.status}
+    ballotSource={ballot.source}
+  />
 </div>
 <BallotDetails {ballot} class="mt-2" />
 
