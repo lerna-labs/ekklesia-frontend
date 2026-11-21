@@ -15,16 +15,10 @@
   let tags = $state($page.url.searchParams.get('tags') || 'All');
   let categories = $state($page.url.searchParams.get('categories') || 'All');
   let hasVoted = $state($page.url.searchParams.get('hasVoted') || 'All');
-  let thresholdReached = $state($page.url.searchParams.get('thresholdReached') || 'All');
 
   // Computed property to determine if any filter is active
   const filtersActive = $derived.by(() => {
-    if (
-      tags !== 'All' ||
-      categories !== 'All' ||
-      hasVoted !== 'All' ||
-      thresholdReached !== 'All'
-    ) {
+    if (tags !== 'All' || categories !== 'All' || hasVoted !== 'All') {
       return true;
     }
   });
@@ -55,13 +49,6 @@
       url.searchParams.delete('hasVoted');
     } else {
       url.searchParams.set('hasVoted', hasVoted);
-    }
-
-    // Handle thresholdReached filter
-    if (thresholdReached === 'All') {
-      url.searchParams.delete('thresholdReached');
-    } else {
-      url.searchParams.set('thresholdReached', thresholdReached);
     }
 
     // Use goto to navigate to the new URL with the updated query params
@@ -152,34 +139,6 @@
             <Select.Item value="All">All</Select.Item>
             <Select.Item value="true">Voted</Select.Item>
             <Select.Item value="false">Not Voted</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </div>
-    {/if}
-
-    {#if filterOptions.thresholdReached}
-      <div class="mt-2">
-        <div class="mb-1">
-          <Label for="thresholdReached" class="text-xs">Threshold</Label>
-        </div>
-        <Select.Root
-          type="single"
-          id="thresholdReached"
-          class="w-full text-xs"
-          bind:value={thresholdReached}
-          onValueChange={handleFilterChange}
-        >
-          <Select.Trigger
-            >{thresholdReached === 'All'
-              ? 'All'
-              : thresholdReached === 'true'
-                ? 'Threshold Reached'
-                : 'Threshold Not Reached'}</Select.Trigger
-          >
-          <Select.Content>
-            <Select.Item value="All">All</Select.Item>
-            <Select.Item value="true">Threshold Reached</Select.Item>
-            <Select.Item value="false">Threshold Not Reached</Select.Item>
           </Select.Content>
         </Select.Root>
       </div>

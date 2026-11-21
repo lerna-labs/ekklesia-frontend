@@ -10,15 +10,16 @@
   //
   // Props:
   //   certification — { certified, version?, narrative? | null }
+  //   ballotSource  — 'legacy' ballots never show the provisional pill
   //   ballotStatus  — 'live' | 'closed' | 'upcoming' (used to decide if
   //                   a ballot with no certification yet is still open or
   //                   genuinely awaiting certification)
-  let { certification, ballotStatus } = $props();
+  let { certification, ballotStatus, ballotSource = null } = $props();
 
   const state = $derived.by(() => {
     if (certification?.certified) return 'certified';
     if (certification?.narrative?.url) return 'narrative';
-    if (ballotStatus === 'closed') return 'hydra-provisional';
+    if (ballotStatus === 'closed' && ballotSource !== 'legacy') return 'hydra-provisional';
     return null;
   });
 </script>
