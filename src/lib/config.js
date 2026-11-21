@@ -1,5 +1,44 @@
-import { api, config } from '$stores/sessionManager.js';
+import { api, config, DEFAULT_WALLET_SIGNER } from '$stores/sessionManager.js';
 import { loadCalidusID } from '$lib/calidusCache.js';
+
+/** Cardano network ID for a network name: 1 for mainnet, 0 for anything else. */
+export function networkIdFor(network) {
+  return network === 'mainnet' ? 1 : 0;
+}
+
+// Keys a connected wallet can sign with through CIP-30 / CIP-95 `signData`.
+const MULTISIG_SIGN_TYPES = ['drep', 'stake', 'addr'];
+
+/**
+ * Sign types offered in the login dialog. A normal login offers the enabled
+ * voter types and never the payment key. A multisig login offers the keys a
+ * wallet can sign with, and the backend checks them against the script.
+ */
+export function signTypeOptions(userTypes, multisig) {
+  return multisig ? [...MULTISIG_SIGN_TYPES] : userTypes.filter((t) => t !== 'addr');
+}
+
+/**
+ * Wallet signer settings from the backend's `walletSigner` object. A missing
+ * or malformed object yields `drep`, `stake` and `pool`, `stake` as the default, and
+ * multisig on.
+ */
+export function normalizeWalletSigner(raw) {
+  const fallback = DEFAULT_WALLET_SIGNER;
+  if (!raw || typeof raw !== 'object') return { ...fallback, userTypes: [...fallback.userTypes] };
+  const reported = Array.isArray(raw.userTypes)
+    ? raw.userTypes.filter((t) => typeof t === 'string')
+    : [];
+  const userTypes = reported.length > 0 ? reported : [...fallback.userTypes];
+  const userDefault =
+    typeof raw.userDefault === 'string' && userTypes.includes(raw.userDefault)
+      ? raw.userDefault
+      : userTypes.includes(fallback.userDefault)
+        ? fallback.userDefault
+        : userTypes[0];
+  const multisig = typeof raw.multisig === 'boolean' ? raw.multisig : fallback.multisig;
+  return { userTypes, userDefault, multisig };
+}
 
 /**
  * Fetch the backend-served runtime config (IPFS gateway, explorer bases,
@@ -17,6 +56,7 @@ export async function loadFrontendConfig(fetch) {
         explorerTxBase: payload.explorerTxBase ?? 'https://cexplorer.io/tx/',
         explorerAddressBase: payload.explorerAddressBase ?? 'https://cexplorer.io/address/',
         network: payload.network ?? 'preprod',
+        walletSigner: normalizeWalletSigner(payload.walletSigner),
       });
     }
   } catch (err) {

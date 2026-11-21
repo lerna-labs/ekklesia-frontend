@@ -8,9 +8,8 @@ the v1 broker surface instead.
 
 ## API versioning and wrapper
 
-- **Base URL**: `VITE_API_URL` is the `/api` root (never includes
-  `/v0` or `/v1`). For back-compat the wrapper strips a trailing
-  `/v0` from a legacy `.env` value.
+- **Base URL**: `/api` on the page's own origin (never includes
+  `/v0` or `/v1`). The Vite dev server proxies it to the backend.
 - **Wrapper**: `src/stores/sessionManager.js` exports `api.fetch(fetch,
 path, opts)` (prepends `/v0`) and `api.v1.fetch(fetch, path, opts)`
   (prepends `/v1`). Both attach the JWT Bearer header, send
@@ -84,7 +83,7 @@ Used by `src/routes/ballots/+page.js`.
 ### `GET /api/v0/ballots/:id/proposals`
 
 Paginated proposals for a ballot. Supports `?search`, `?tags`,
-`?categories`, `?sort`, `?direction`, `?hasVoted`, `?thresholdReached`,
+`?categories`, `?sort`, `?direction`, `?hasVoted`,
 `?page`, `?limit`.
 
 Used by the proposals listing + proposal detail load functions.
@@ -230,8 +229,8 @@ return it.
 
 ## Status / version / external
 
-- `GET ${VITE_SERVER_STATUS}` — external status probe used by the
-  root layout. Not under `/api`.
+- `GET /health` — status probe used by the root layout, on the page's
+  own origin. Not under `/api`.
 - `GET /version.json` — static asset served by the frontend. Written
   at build time by `svelte.config.js`.
 

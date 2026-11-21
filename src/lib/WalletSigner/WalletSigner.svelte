@@ -1,8 +1,15 @@
 <script>
   import { Label } from '$lib/components/ui/label/index.js';
   import { Switch } from '$lib/components/ui/switch/index.js';
-  import { loggedIn, user, setJWT, showLogin, redirectAfterLogin } from '$stores/sessionManager.js';
-  import { refreshUserSession } from '$lib/config.js';
+  import {
+    config,
+    loggedIn,
+    user,
+    setJWT,
+    showLogin,
+    redirectAfterLogin,
+  } from '$stores/sessionManager.js';
+  import { refreshUserSession, signTypeOptions } from '$lib/config.js';
   import { saveSignerPreference } from '$lib/signerPreferences.js';
   import { saveCalidusID } from '$lib/calidusCache.js';
   import { get } from 'svelte/store';
@@ -25,22 +32,21 @@
   let noWallets = $state(false);
   let walletLoading = $state(false);
 
-  // Sign-type source of truth is env-gated + localStorage-persisted so returning
+  // Sign-type source of truth is config-gated + localStorage-persisted so returning
   // voters don't have to re-pick each time.
   const SIGNTYPE_STORAGE_KEY = 'walletSigner_signType';
-  const allowedTypes = (import.meta.env.VITE_WALLETSIGNER_USER_TYPES || 'stake').split(',');
-  const defaultFromEnv = import.meta.env.VITE_WALLETSIGNER_USER_DEFAULT || 'stake';
   const storedSignType =
     typeof window !== 'undefined' ? localStorage.getItem(SIGNTYPE_STORAGE_KEY) : null;
-  const initialSignType =
-    storedSignType && allowedTypes.includes(storedSignType)
-      ? storedSignType
-      : allowedTypes.includes(defaultFromEnv)
-        ? defaultFromEnv
-        : allowedTypes[0] || 'stake';
+  function pickSignType(multisig) {
+    const { userTypes, userDefault } = get(config).walletSigner;
+    const options = signTypeOptions(userTypes, multisig);
+    if (storedSignType && options.includes(storedSignType)) return storedSignType;
+    return options.includes(userDefault) ? userDefault : options[0] || 'stake';
+  }
+  const initialSignType = pickSignType(Boolean($user?.multiSig));
 
   let signType = $state(initialSignType);
-  const multisigEnabledByEnv = import.meta.env.VITE_WALLETSIGNER_MULTISIG === 'true';
+  const multisigEnabled = $derived($config.walletSigner.multisig);
   let multiSig = $state($user?.multiSig || '');
   let poolId = $state($user?.voterId || '');
   let scriptAddress = $derived.by(() => {
@@ -52,7 +58,13 @@
 
   // Force multisig off when the deployment hasn't enabled it.
   $effect(() => {
-    if (!multisigEnabledByEnv) multiSig = false;
+    if (!multisigEnabled) multiSig = false;
+  });
+
+  // Keep the selected type among the options for the current mode.
+  $effect(() => {
+    const options = signTypeOptions($config.walletSigner.userTypes, Boolean(multiSig));
+    if (!$loggedIn && !options.includes(signType)) signType = pickSignType(Boolean(multiSig));
   });
 
   $effect(() => {
@@ -186,7 +198,7 @@
     <AlertDialog.Header class="mb-1 shrink-0">
       <AlertDialog.Title class="flex justify-between">
         {mode == 'login' ? 'Login' : 'Submit Votes'}
-        {#if multisigEnabledByEnv}
+        {#if multisigEnabled}
           <div class="flex items-center gap-2">
             <Label
               for="multisigsupport"
@@ -222,6 +234,7 @@
             <SelectSignType
               value={signType}
               mode={selected}
+              multisig={Boolean(multiSig)}
               disabled={walletLoading}
               on:change={onSignTypeChange}
             />
@@ -230,6 +243,7 @@
             <SelectSignType
               value={signType}
               mode={selected}
+              multisig={Boolean(multiSig)}
               disabled={walletLoading}
               on:change={onSignTypeChange}
             />
@@ -241,6 +255,7 @@
             <SelectSignType
               value={signType}
               mode={selected}
+              multisig={Boolean(multiSig)}
               disabled={walletLoading}
               on:change={onSignTypeChange}
             />

@@ -3,13 +3,12 @@ import { loadFrontendConfig, refreshUserSession } from '$lib/config.js';
 import { hydrateDrafts } from '$lib/draftVotes.js';
 export const csr = true; // Client-side rendering only
 export const ssr = false; // Disable server-side rendering
-const VITE_SERVER_STATUS = import.meta.env.VITE_SERVER_STATUS;
 import { error } from '@sveltejs/kit';
 
 export async function load({ fetch }) {
   let serverStatus;
   try {
-    serverStatus = await fetch(VITE_SERVER_STATUS);
+    serverStatus = await fetch('/health');
     if (!serverStatus.ok) {
       throw error(503, {
         message: 'Server not available',

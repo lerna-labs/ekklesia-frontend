@@ -8,16 +8,15 @@
   let hasWeight = $derived(ballot.voteWeighted);
   const totalAllowedVoterCount = $derived(ballot.totalAllowedVoterCount);
 
+  const hasVoterDenom = $derived(Number(totalAllowedVoterCount) > 0);
+  const hasPowerDenom = $derived(Number(ballot.totalVotingPower) > 0);
+
   const activeVoterPerc = $derived(
-    totalAllowedVoterCount
-      ? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2)
-      : '0.00',
+    hasVoterDenom ? ((proposal.voteCount / totalAllowedVoterCount) * 100).toFixed(2) : '0.00',
   );
 
   const activeVotingPowerPerc = $derived(
-    ballot.totalVotingPower
-      ? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2)
-      : '0.00',
+    hasPowerDenom ? ((proposal.votingPower / ballot.totalVotingPower) * 100).toFixed(2) : '0.00',
   );
 </script>
 
@@ -34,60 +33,78 @@
   <Popover.Content>
     <h1 class="text-sm font-semibold">Participation</h1>
     <div class="max-h-100 space-y-2 text-xs">
-      <div class="mb-4 grid w-full grid-cols-2 gap-4">
-        <DonutChart
-          segments={[
-            {
-              label: 'Active',
-              value: Number(activeVoterPerc),
-              color: '#f97316',
-              count: totalVotes,
-            },
-            {
-              label: 'Inactive',
-              value: 100 - Number(activeVoterPerc),
-              color: '#e5e7eb',
-              count: totalAllowedVoterCount - totalVotes,
-            },
-          ]}
-          title="By Voter Count"
-          valueUnit="Voters"
-        />
-        <DonutChart
-          segments={[
-            {
-              label: 'Active',
-              value: Number(activeVotingPowerPerc),
-              color: '#f97316',
-              absoluteLabel: lovelaceToAda(proposal.votingPower),
-            },
-            {
-              label: 'Inactive',
-              value: 100 - Number(activeVotingPowerPerc),
-              color: '#e5e7eb',
-              absoluteLabel: lovelaceToAda(ballot.totalVotingPower - proposal.votingPower),
-            },
-          ]}
-          title="By Voting Power"
-        />
-      </div>
+      {#if hasVoterDenom || hasPowerDenom}
+        <div
+          class={hasVoterDenom && hasPowerDenom
+            ? 'mb-4 grid w-full grid-cols-2 gap-4'
+            : 'mb-4 grid w-full grid-cols-1 gap-4'}
+        >
+          {#if hasVoterDenom}
+            <DonutChart
+              segments={[
+                {
+                  label: 'Active',
+                  value: Number(activeVoterPerc),
+                  color: '#f97316',
+                  count: totalVotes,
+                },
+                {
+                  label: 'Inactive',
+                  value: 100 - Number(activeVoterPerc),
+                  color: '#e5e7eb',
+                  count: totalAllowedVoterCount - totalVotes,
+                },
+              ]}
+              title="By Voter Count"
+              valueUnit="Voters"
+            />
+          {/if}
+          {#if hasPowerDenom}
+            <DonutChart
+              segments={[
+                {
+                  label: 'Active',
+                  value: Number(activeVotingPowerPerc),
+                  color: '#f97316',
+                  absoluteLabel: lovelaceToAda(proposal.votingPower),
+                },
+                {
+                  label: 'Inactive',
+                  value: 100 - Number(activeVotingPowerPerc),
+                  color: '#e5e7eb',
+                  absoluteLabel: lovelaceToAda(ballot.totalVotingPower - proposal.votingPower),
+                },
+              ]}
+              title="By Voting Power"
+            />
+          {/if}
+        </div>
+      {/if}
 
       <div class="flex justify-between">
         <span class="font-semibold">Active Voters:</span>
-        <span>{totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%) </span>
+        <span>
+          {#if hasVoterDenom}
+            {totalVotes}/{totalAllowedVoterCount} ({activeVoterPerc}%)
+          {:else}
+            {totalVotes}
+          {/if}
+        </span>
       </div>
 
       {#if hasWeight}
-        <div class="flex justify-between">
-          <span class="font-semibold">Total Voting Power:</span>
-          <span>{lovelaceToAda(ballot.totalVotingPower)}</span>
-        </div>
+        {#if hasPowerDenom}
+          <div class="flex justify-between">
+            <span class="font-semibold">Total Voting Power:</span>
+            <span>{lovelaceToAda(ballot.totalVotingPower)}</span>
+          </div>
+        {/if}
 
         <div class="flex justify-between">
           <span class="font-semibold">Active Voting Power:</span>
           <span class="text-nowrap">
             {lovelaceToAda(proposal.votingPower)}
-            ({activeVotingPowerPerc}%)
+            {#if hasPowerDenom}({activeVotingPowerPerc}%){/if}
           </span>
         </div>
       {/if}
