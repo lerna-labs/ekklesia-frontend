@@ -1,10 +1,11 @@
 name: Staging release candidate
 
-# On every push to staging, build the preprod bundle and publish it as a rolling
-# "staging" prerelease Release whose asset the preprod server pulls. The RC
-# version is a Changesets snapshot (X.Y.Z-rc-<timestamp>) computed from the
-# pending changesets; nothing is committed to staging and the changeset files
-# stay intact for the real release on main.
+# On every push to staging, build the preprod and preprod-intersect bundles, one
+# per environment, and attach both to the rolling "preprod" prerelease that the
+# preprod servers pull their assets from. The RC version is a Changesets
+# snapshot (X.Y.Z-rc-<timestamp>) computed from the pending changesets; nothing
+# is committed to staging and the changeset files stay intact for the real
+# release on main.
 #
 # Also keeps a single open staging -> main promotion PR alive.
 on:
@@ -41,8 +42,6 @@ jobs:
           fi
 
   rc-artifact:
-    # One build per flavor, each from its own GitHub environment. The Ekklesia
-    # flavor keeps the stable asset name ekklesia-frontend-preprod.tgz.
     name: rc-artifact (${{ matrix.environment }})
     environment: ${{ matrix.environment }}
     needs: gate
