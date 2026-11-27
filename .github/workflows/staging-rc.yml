@@ -41,10 +41,21 @@ jobs:
           fi
 
   rc-artifact:
-    environment: preprod
+    # One build per flavor, each from its own GitHub environment. The Ekklesia
+    # flavor keeps the stable asset name ekklesia-frontend-preprod.tgz.
+    name: rc-artifact (${{ matrix.environment }})
+    environment: ${{ matrix.environment }}
     needs: gate
     if: needs.gate.outputs.build == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - environment: preprod
+            asset: ekklesia-frontend-preprod.tgz
+          - environment: preprod-intersect
+            asset: ekklesia-frontend-preprod-intersect.tgz
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,23 +88,49 @@ jobs:
           VITE_APP_URL: ${{ vars.VITE_APP_URL }}
         run: |
           if [ -z "$VITE_APP_URL" ]; then
-            echo "::error::Missing required frontend variable in the 'preprod' environment: VITE_APP_URL"
+            echo "::error::Missing required frontend variable in the '${{ matrix.environment }}' environment: VITE_APP_URL"
             exit 1
           fi
 
-      - name: Build (preprod)
+      - name: Build (${{ matrix.environment }})
+        # A variable unset in the environment arrives as an empty string, which
+        # branding.js, brand-build-output.js and content.js treat as unset, so
+        # their defaults stay in force.
         env:
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME }}
+          VITE_APP_TITLE: ${{ vars.VITE_APP_TITLE }}
+          VITE_APP_DESCRIPTION: ${{ vars.VITE_APP_DESCRIPTION }}
           VITE_APP_URL: ${{ vars.VITE_APP_URL }}
+          VITE_APP_OG_IMAGE: ${{ vars.VITE_APP_OG_IMAGE }}
+          VITE_APP_TWITTER_HANDLE: ${{ vars.VITE_APP_TWITTER_HANDLE }}
+          VITE_APP_CONTENT: ${{ vars.VITE_APP_CONTENT }}
         run: npm run build:preprod
 
       - name: Package tarball
-        id: pkg
         run: |
-          # Stable asset name so the preprod server always pulls the same URL:
-          # releases/download/preprod/ekklesia-frontend-preprod.tgz
-          asset="ekklesia-frontend-preprod.tgz"
-          tar -czf "$asset" -C build/preprod .
-          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          # Stable asset names so the preprod servers always pull the same URLs:
+          # releases/download/preprod/<asset>
+          mkdir -p dist-rc
+          tar -czf "dist-rc/${{ matrix.asset }}" -C build/preprod .
+          echo "${{ steps.rc.outputs.version }}" > dist-rc/version.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rc-${{ matrix.environment }}
+          path: dist-rc
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-rc:
+    # A single job owns the rolling release so the per-flavor builds cannot
+    # delete each other's assets.
+    needs: rc-artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: rc-*
+          path: dist-rc
 
       - uses: actions/create-github-app-token@v3
         id: app-token
@@ -108,12 +145,14 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          version=$(cat dist-rc/rc-preprod/version.txt)
           gh release delete preprod --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
           gh release create preprod --repo "$GITHUB_REPOSITORY" \
             --prerelease --target "$GITHUB_SHA" \
-            --title "Preprod preview (${{ steps.rc.outputs.version }})" \
-            --notes "Rolling preprod build of staging. Version ${{ steps.rc.outputs.version }}. Download the asset, extract, and serve as static files." \
-            "${{ steps.pkg.outputs.asset }}"
+            --title "Preprod preview ($version)" \
+            --notes "Rolling preprod build of staging. Version $version. Download an asset, extract, and serve as static files." \
+            dist-rc/rc-preprod/ekklesia-frontend-preprod.tgz \
+            dist-rc/rc-preprod-intersect/ekklesia-frontend-preprod-intersect.tgz
 
   promote:
     runs-on: ubuntu-latest
