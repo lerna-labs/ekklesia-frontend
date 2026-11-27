@@ -232,7 +232,7 @@ return it.
 - `GET /health` — status probe used by the root layout, on the page's
   own origin. Not under `/api`.
 - `GET /version.json` — static asset served by the frontend. Written
-  at build time by `svelte.config.js`.
+  at build time by `vite.config.js`.
 
 ---
 
