@@ -1,14 +1,14 @@
 <script>
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import * as Pagination from '$lib/components/ui/pagination/index.js';
   import { goto } from '$app/navigation';
   import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
   // Get pagination data from page store
-  const count = $derived($page.data.pagination.total);
-  const perPage = $derived($page.data.pagination.limit);
-  const currentPage = $derived($page.data.pagination.page);
-  const totalPages = $derived($page.data.pagination.totalPages);
+  const count = $derived(page.data.pagination.total);
+  const perPage = $derived(page.data.pagination.limit);
+  const currentPage = $derived(page.data.pagination.page);
+  const totalPages = $derived(page.data.pagination.totalPages);
 
   // Function to navigate to a specific page while preserving other URL parameters
   function navigateTo(pageNum) {
@@ -43,7 +43,7 @@
   }
 </script>
 
-<Pagination.Root {count} {perPage} {currentPage} {...$page.data.pagination || {}}>
+<Pagination.Root {count} {perPage} {currentPage} {...page.data.pagination || {}}>
   {#snippet children({ pages, currentPage })}
     <Pagination.Content>
       <Pagination.Item>

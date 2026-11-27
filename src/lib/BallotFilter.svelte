@@ -51,7 +51,7 @@
     }
 
     // Use goto to navigate to the new URL with the updated query params
-    goto(url.toString(), { replaceState: true, keepFocus: true });
+    goto(url.toString(), { replace: true, reset: false });
   }
 </script>
 

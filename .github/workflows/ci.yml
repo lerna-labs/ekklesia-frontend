@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.run.outputs.go == 'true'
         with:
-          node-version: 20
+          node-version: 22.17
           cache: npm
       - run: npm ci
         if: steps.run.outputs.go == 'true'
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.run.outputs.go == 'true'
         with:
-          node-version: 20
+          node-version: 22.17
           cache: npm
       - run: npm ci
         if: steps.run.outputs.go == 'true'

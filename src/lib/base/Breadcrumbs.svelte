@@ -1,10 +1,10 @@
 <script>
   import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { ChevronRight } from 'lucide-svelte';
 
-  // This will reactively update when $page changes
-  $: breadcrumbItems = getBreadcrumbItems($page.url.pathname, $page.data);
+  // This will reactively update when page changes
+  const breadcrumbItems = $derived(getBreadcrumbItems(page.url.pathname, page.data));
 
   // Function to generate breadcrumb items based primarily on URL path
   function getBreadcrumbItems(pathname, pageData) {
