@@ -63,7 +63,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           asset="ekklesia-frontend-${version}.tgz"
-          tar -czf "$asset" -C build/production .
+          tar -czf "$asset" -C build/production . -C "$GITHUB_WORKSPACE" LICENSE
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
 
       - uses: actions/create-github-app-token@v3
