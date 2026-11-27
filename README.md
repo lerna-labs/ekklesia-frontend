@@ -24,8 +24,8 @@ A modern web application for verifiable on-chain voting on Cardano. This platfor
 
 ## Prerequisites
 
-- **Node.js**: v18 or higher
-- **npm**: v9 or higher (or compatible package manager)
+- **Node.js**: v22.17 or higher
+- **npm**: v10 or higher (or compatible package manager)
 - **Backend API**: A running Ekklesia backend API instance
 
 ## Installation
@@ -66,8 +66,6 @@ During `npm run dev` the Vite dev server proxies `/api` and `/health` to `http:/
 DEV_BACKEND_URL=http://localhost:3000
 ```
 
-**Note**: `VITE_APP_VERSION` is automatically set from `package.json` during build and does not need to be configured.
-
 ## Development
 
 Start the development server:
@@ -96,7 +94,7 @@ Run the test suite:
 npm run test
 ```
 
-Tests run under Vitest with jsdom. Component tests mount `.svelte` files with `@testing-library/svelte`, and the `$lib` and `$stores` aliases resolve as in the application. `vitest.setup.js` unmounts components after each test and stubs `$app/stores` and `$app/navigation`; a test that needs a specific page value or a navigation spy overrides the stub with its own `vi.mock`. Pure-logic tests that need no DOM can opt out of jsdom with a `// @vitest-environment node` comment on the first line.
+Tests run under Vitest with jsdom. Component tests mount `.svelte` files with `@testing-library/svelte`, and the `$lib` and `$stores` aliases resolve as in the application. `vitest.setup.js` unmounts components after each test and stubs `$app/state` and `$app/navigation`; a test that needs a specific page value or a navigation spy overrides the stub with its own `vi.mock`. Pure-logic tests that need no DOM can opt out of jsdom with a `// @vitest-environment node` comment on the first line.
 
 ## Building for Production
 

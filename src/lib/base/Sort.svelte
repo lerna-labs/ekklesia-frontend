@@ -5,7 +5,7 @@
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { untrack } from 'svelte';
 
   // Define props with default values
@@ -29,9 +29,9 @@
   // Initialize sort params from URL or default values. The default props are
   // read once here as initial seeds (untrack marks that intent); the URL is
   // the source of truth afterward.
-  let sort = $state(untrack(() => $page.url.searchParams.get('sort') || defaultSort));
-  let direction = $state($page.url.searchParams.get('direction') || 'desc');
-  let limit = $state(untrack(() => $page.url.searchParams.get('limit') || defaultLimit));
+  let sort = $state(untrack(() => page.url.searchParams.get('sort') || defaultSort));
+  let direction = $state(page.url.searchParams.get('direction') || 'desc');
+  let limit = $state(untrack(() => page.url.searchParams.get('limit') || defaultLimit));
 
   // Computed property to determine if sort is active (not using default)
   let sortActive = $derived.by(() => {
@@ -91,7 +91,7 @@
     }
 
     // Use goto to navigate to the new URL with the updated query params
-    goto(url.toString(), { replaceState: true, keepFocus: true });
+    goto(url.toString(), { replace: true, reset: false });
   }
 </script>
 
