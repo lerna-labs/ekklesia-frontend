@@ -24,8 +24,8 @@ A modern web application for verifiable on-chain voting on Cardano. This platfor
 
 ## Prerequisites
 
-- **Node.js**: v18 or higher
-- **npm**: v9 or higher (or compatible package manager)
+- **Node.js**: v22.17 or higher
+- **npm**: v10 or higher (or compatible package manager)
 - **Backend API**: A running Ekklesia backend API instance
 
 ## Installation

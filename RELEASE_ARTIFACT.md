@@ -19,4 +19,4 @@ Wiring the actual publish workflow (tagging a release, building, packaging the t
 
 ## Node version
 
-`package.json` declares `engines.node: ">=20"` regardless of the artifact strategy above.
+`package.json` declares `engines.node: ">=22.17"` regardless of the artifact strategy above.
