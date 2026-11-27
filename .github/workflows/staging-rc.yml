@@ -110,7 +110,7 @@ jobs:
           # Stable asset names so the preprod servers always pull the same URLs:
           # releases/download/preprod/<asset>
           mkdir -p dist-rc
-          tar -czf "dist-rc/${{ matrix.asset }}" -C build/preprod .
+          tar -czf "dist-rc/${{ matrix.asset }}" -C build/preprod . -C "$GITHUB_WORKSPACE" LICENSE
           echo "${{ steps.rc.outputs.version }}" > dist-rc/version.txt
 
       - uses: actions/upload-artifact@v4
