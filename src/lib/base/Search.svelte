@@ -1,11 +1,11 @@
 <script>
   import { X, Search } from 'lucide-svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { Input } from '$lib/components/ui/input/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
 
-  let searchInput = $state($page.url.searchParams.get('search') || '');
+  let searchInput = $state(page.url.searchParams.get('search') || '');
 
   // Handle search form submission
   function handleSearch(e) {
@@ -24,7 +24,7 @@
     }
 
     // Navigate to the new URL with updated search parameter
-    goto(url.toString(), { keepFocus: true });
+    goto(url.toString(), { reset: false });
   }
 
   // Handle clearing the search

@@ -30,14 +30,14 @@
     }
 
     // Preserve search parameter
-    goto(url.toString(), { replaceState: true });
+    goto(url.toString(), { replace: true });
   }
 
   function clearFilter() {
     const url = new URL(window.location.href);
     url.searchParams.delete('tag');
     // Preserve search parameter
-    goto(url.toString(), { replaceState: true });
+    goto(url.toString(), { replace: true });
   }
 </script>
 

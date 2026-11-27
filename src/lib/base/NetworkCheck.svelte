@@ -1,7 +1,7 @@
 <script>
   import * as Popover from '$lib/components/ui/popover/index.js';
-  import { page } from '$app/stores';
-  let { serverStatus } = $page.data;
+  import { page } from '$app/state';
+  let { serverStatus } = page.data;
   let { children } = $props();
 
   // The backend's health endpoint currently returns a lot of internals

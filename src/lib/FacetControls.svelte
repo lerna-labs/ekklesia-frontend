@@ -41,7 +41,7 @@
     } else {
       url.searchParams.delete(`filter[${key}]`);
     }
-    goto(url.toString(), { replaceState: true, keepFocus: true });
+    goto(url.toString(), { replace: true, reset: false });
   }
 
   function applySort(key, dir) {
@@ -54,7 +54,7 @@
       url.searchParams.delete('sort');
       url.searchParams.delete('dir');
     }
-    goto(url.toString(), { replaceState: true, keepFocus: true });
+    goto(url.toString(), { replace: true, reset: false });
   }
 
   function clearAll() {
@@ -65,7 +65,7 @@
     }
     url.searchParams.delete('sort');
     url.searchParams.delete('dir');
-    goto(url.toString(), { replaceState: true, keepFocus: true });
+    goto(url.toString(), { replace: true, reset: false });
   }
 
   function currentFilterValue(key) {

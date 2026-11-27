@@ -6,15 +6,15 @@
   import * as Select from '$lib/components/ui/select/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
   // Define props to receive data from parent component
   const { filterOptions, voteFilters } = $props();
 
   // Initialize filters from URL or default to 'All'
-  let tags = $state($page.url.searchParams.get('tags') || 'All');
-  let categories = $state($page.url.searchParams.get('categories') || 'All');
-  let hasVoted = $state($page.url.searchParams.get('hasVoted') || 'All');
+  let tags = $state(page.url.searchParams.get('tags') || 'All');
+  let categories = $state(page.url.searchParams.get('categories') || 'All');
+  let hasVoted = $state(page.url.searchParams.get('hasVoted') || 'All');
 
   // Computed property to determine if any filter is active
   const filtersActive = $derived.by(() => {
@@ -52,7 +52,7 @@
     }
 
     // Use goto to navigate to the new URL with the updated query params
-    goto(url.toString(), { replaceState: true, keepFocus: true });
+    goto(url.toString(), { replace: true, reset: false });
   }
 </script>
 
